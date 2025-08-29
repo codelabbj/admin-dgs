@@ -58,7 +58,7 @@ export function ProfileContent() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   useEffect(() => {
-    // Load user profile from localStorage first
+    // Charger le profil utilisateur depuis localStorage en premier
     const userData = getUserData()
     if (userData) {
       setUserProfile(userData)
@@ -81,24 +81,24 @@ export function ProfileContent() {
         method: 'POST',
         body: formData,
         headers: {
-          // Don't set Content-Type for FormData, let browser set it
+          // Ne pas définir Content-Type pour FormData, laisser le navigateur le définir
         }
       })
 
       if (res.ok) {
         const data = await res.json()
-        setSuccess('File uploaded successfully!')
-        // Update user profile with new logo
+        setSuccess('Fichier téléchargé avec succès!')
+        // Mettre à jour le profil utilisateur avec le nouveau logo
         if (data.logo) {
           setUserProfile((prev: any) => ({ ...prev, logo: data.logo }))
         }
       } else {
         const errorData = await res.json()
-        setError(errorData.detail || 'Failed to upload file')
+        setError(errorData.detail || 'Échec du téléchargement du fichier')
       }
     } catch (error) {
-      console.error('Upload error:', error)
-      setError('Failed to upload file')
+      console.error('Erreur de téléchargement:', error)
+      setError('Échec du téléchargement du fichier')
     } finally {
       setIsLoading(false)
     }
@@ -130,22 +130,22 @@ export function ProfileContent() {
       if (res.ok) {
         const data = await res.json()
         setUserProfile(data)
-        setSuccess('Profile updated successfully!')
-        // Update localStorage
+        setSuccess('Profil mis à jour avec succès!')
+        // Mettre à jour localStorage
         localStorage.setItem('user', JSON.stringify(data))
       } else {
         const errorData = await res.json()
-        setError(errorData.detail || 'Failed to update profile')
+        setError(errorData.detail || 'Échec de la mise à jour du profil')
       }
     } catch (error) {
-      console.error('Profile update error:', error)
-      setError('Failed to update profile')
+      console.error('Erreur de mise à jour du profil:', error)
+      setError('Échec de la mise à jour du profil')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Helper function to get user initials
+  // Fonction utilitaire pour obtenir les initiales de l'utilisateur
   const getUserInitials = () => {
     if (!userProfile) return ''
     const firstName = userProfile.first_name || ''
@@ -181,14 +181,14 @@ export function ProfileContent() {
   return (
     <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 p-6">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
+        {/* En-tête */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("profile")}</h1>
           <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("manageAccountInfo")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
+          {/* Carte de Profil */}
           <div className="lg:col-span-1">
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-100 dark:border-neutral-800 shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader className="text-center pb-6 pt-8">
@@ -200,7 +200,7 @@ export function ProfileContent() {
                       <span className="text-2xl font-bold drop-shadow-sm">{getUserInitials()}</span>
                     )}
                   </div>
-                  {/* Removed file upload label as it's now handled by Input */}
+                  {/* Étiquette de téléchargement de fichier supprimée car elle est maintenant gérée par Input */}
                 </div>
                 <CardTitle className="text-2xl font-bold text-neutral-900 dark:text-white">
                   {userProfile.first_name} {userProfile.last_name}
@@ -229,7 +229,7 @@ export function ProfileContent() {
                   </div>
                 </div>
 
-                {/* Status Badges */}
+                {/* Badges de Statut */}
                 <div className="mt-6 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("verificationStatus")}</span>
@@ -262,7 +262,7 @@ export function ProfileContent() {
             </Card>
           </div>
 
-          {/* Edit Form */}
+          {/* Formulaire de Modification */}
           <div className="lg:col-span-2">
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-100 dark:border-neutral-800 shadow-2xl rounded-3xl overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 pt-8">
@@ -275,13 +275,13 @@ export function ProfileContent() {
                   </CardDescription>
                 </div>
                 <div className="flex space-x-2">
-                  {/* Removed edit button as it's now handled by Input */}
+                  {/* Bouton d'édition supprimé car il est maintenant géré par Input */}
                 </div>
               </CardHeader>
               <CardContent className="px-8 pb-8">
                 <form onSubmit={handleProfileUpdate}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Personal Information */}
+                    {/* Informations Personnelles */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">{t("personalDetails")}</h3>
                       
@@ -357,7 +357,7 @@ export function ProfileContent() {
                       </div>
                     </div>
 
-                    {/* Business Information */}
+                    {/* Informations de l'Entreprise */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">{t("businessDetails")}</h3>
                       
@@ -470,7 +470,7 @@ export function ProfileContent() {
                     </div>
                   </div>
 
-                  {/* Account Information */}
+                  {/* Informations du Compte */}
                   <div className="mt-8 pt-6 border-t border-slate-200 dark:border-neutral-700">
                     <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">{t("accountInformation")}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

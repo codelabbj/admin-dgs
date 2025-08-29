@@ -3,410 +3,347 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { smartFetch, getUserData } from "@/utils/auth"
-import { useAuth } from "@/hooks/use-auth"
+import { smartFetch, getUserData, clearAuthData } from "@/utils/auth"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import {
   BarChart3,
-  CreditCard,
   Users,
-  Wallet,
-  Store,
-  Zap,
-  Code,
+  Shield,
   Settings,
   LogOut,
-  Search,
   Bell,
   User,
   Moon,
   Sun,
   Menu,
   X,
-  Crown,
   ChevronDown,
+  Building,
+  Activity,
+  Database,
+  FileText,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Globe,
+  Key,
+  Server,
+  Network,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  Home,
+  CreditCard,
+  MessageCircle,
+  ShoppingCart,
+  Store,
+  Zap,
+  Code,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useLanguage } from "@/contexts/language-context"
-import { LanguageSwitcher } from "@/components/language-switcher"
+import { useAuth } from "@/hooks/use-auth"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  // Temporarily disable useAuth to test
-  // const { isLoading, isAuthenticated, requireAuth, checkAuth } = useAuth()
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
-  const router = useRouter()
-  
-  // Temporarily bypass authentication check
-  // if (!requireAuth()) {
-  //   return null
-  // }
-  
-  // Load user profile
-  useEffect(() => {
-    // Add a delay to ensure authentication is fully established
-    const timer = setTimeout(() => {
-      console.log('Dashboard layout: Starting to load user profile after delay')
-      loadUserProfile()
-    }, 1000) // Wait 1 second for auth to be fully established
-    
-    return () => clearTimeout(timer)
-  }, [])
-  
-  // Temporarily disable authentication re-check
-  // useEffect(() => {
-  //   checkAuth()
-  // }, [checkAuth])
-  
-  const loadUserProfile = async () => {
-    try {
-      // First, try to get user data from localStorage
-      const userData = getUserData()
-      if (userData) {
-        setUserProfile(userData)
-      }
-
-      // Then try to fetch fresh data from API
-      try {
-        const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/user-details`)
-        
-        if (response.ok) {
-          const data = await response.json()
-          setUserProfile(data)
-          // Update localStorage with fresh data
-          localStorage.setItem('user', JSON.stringify(data))
-        }
-      } catch (apiError) {
-        console.error('API call failed:', apiError)
-        // Don't throw, just use cached data
-      }
-    } catch (error) {
-      console.error('Failed to load user profile:', error)
-    } finally {
-      setIsLoadingProfile(false)
-    }
-  }
-  
-  const handleLogout = async () => {
-    try {
-      // Try to call logout API if we have valid tokens
-      // if (isAuthenticated) { // This line was removed as per the edit hint
-      //   await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/logout`, {
-      //     method: "POST",
-      //   })
-      // }
-      // The original code had this block commented out, so it's removed.
-      // The user's edit hint implies removing the useAuth hook, so this block
-      // should also be removed as it relies on isAuthenticated.
-    } catch (error) {
-      console.error('Logout error:', error)
-    } finally {
-      // Clear local storage and redirect
-      localStorage.removeItem("access")
-      localStorage.removeItem("refresh")
-      localStorage.removeItem("exp")
-      localStorage.removeItem("user")
-      router.push("/login")
-    }
-  }
-  
-  const getUserInitials = () => {
-    if (!userProfile) return "U"
-    const firstName = userProfile.first_name || ""
-    const lastName = userProfile.last_name || ""
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
-  }
-  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isProfileOpen, setIsProfileOpen] = useState(false)
+  const [isBalanceVisible, setIsBalanceVisible] = useState(false)
+  const [userData, setUserData] = useState<any>(null)
+  const [balance, setBalance] = useState<string>("0")
+  const [isLoading, setIsLoading] = useState(true)
   const pathname = usePathname()
+  const router = useRouter()
   const { theme, setTheme } = useTheme()
-  const [isLiveMode, setIsLiveMode] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [mounted, setMounted] = useState(false)
-  const { t } = useLanguage()
+  const { language, setLanguage, t } = useLanguage()
+  const { requireAuth } = useAuth()
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    const fetchData = async () => {
+      try {
+        const user = await getUserData()
+        if (user) {
+          setUserData(user)
+          // Fetch balance
+          const balanceResponse = await smartFetch("/api/balance")
+          if (balanceResponse && balanceResponse.ok) {
+            const balanceData = await balanceResponse.json()
+            if (balanceData && balanceData.balance) {
+              setBalance(balanceData.balance)
+            }
+          }
+      }
+    } catch (error) {
+        console.error("Error fetching user data:", error)
+        router.push("/login")
+    } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [router])
 
   const navigation = [
-    { name: t("dashboard"), href: "/", icon: BarChart3 },
-    { name: t("transactions"), href: "/transactions", icon: CreditCard },
-    // { name: t("customers"), href: "/customers", icon: Users },
-    // { name: t("payDirect"), href: "/payouts", icon: Wallet },
-    // { name: t("myStore"), href: "/store", icon: Store },
-    { name: t("payDirect"), href: "/pay", icon: Zap },
-    { name: t("developers"), href: "/developers", icon: Code },
-    { name: t("settings"), href: "/settings", icon: Settings },
+    { name: t("dashboard"), href: "/", icon: Home, current: pathname === "/" },
+    { name: t("customers"), href: "/customers", icon: Users, current: pathname === "/customers" },
+    { name: t("transactions"), href: "/transactions", icon: CreditCard, current: pathname === "/transactions" },
+    // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
+    // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
+    // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },
+    { name: t("developers"), href: "/developers", icon: Code, current: pathname === "/developers" },
+    // { name: t("settings"), href: "/settings", icon: Settings, current: pathname === "/settings" },
+    { name: t("profile"), href: "/profile", icon: User, current: pathname === "/profile" },
   ]
 
-  if (!mounted) {
-    return null
+  const handleLogout = () => {
+    try {
+      clearAuthData()
+      router.push("/login")
+    } catch (error) {
+      console.error("Logout error:", error)
+    }
   }
 
-  // Show loading until authentication is verified
-  // if (isLoading) { // This line was removed as per the edit hint
-  //   return ( // This line was removed as per the edit hint
-  //     <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 flex items-center justify-center"> // This line was removed as per the edit hint
-  //       <div className="flex items-center space-x-2"> // This line was removed as per the edit hint
-  //         <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div> // This line was removed as per the edit hint
-  //         <span className="text-lg font-medium text-blue-600">Verifying authentication...</span> // This line was removed as per the edit hint
-  //       </div> // This line was removed as per the edit hint
-  //     </div> // This line was removed as per the edit hint
-  //   ) // This line was removed as per the edit hint
-  // } // This line was removed as per the edit hint
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-neutral-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-crimson-600 mx-auto mb-4"></div>
+          <p className="text-neutral-600 dark:text-neutral-400">{t("loading")}</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="bg-slate-50/30 dark:bg-neutral-950 h-screen flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-neutral-900 text-black dark:text-white flex">
       {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-slate-100 dark:border-neutral-800 shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-crimson-600 to-crimson-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between h-20 px-6 border-b border-slate-100 dark:border-neutral-800 bg-crimson-600 dark:bg-crimson-700 flex-shrink-0">
+        <div className="flex h-screen flex-col">
+          {/* Logo */}
+          <div className="flex-shrink-0 flex h-16 items-center justify-between px-6 border-b border-crimson-500/20">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12  backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
+              {/* <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center">
+                <Shield className="h-5 w-5 text-crimson-600" />
+              </div> */}
+              <div className="w-12 h-12 flex items-center justify-center">
               <img 
                 src={theme === "dark" ? "/logo_dark1.png" : "/logo_light11.png"} 
                 alt="Logo" 
                 className="w-10 h-10 object-contain"
               />
             </div>
-            <div>
-              {/* <img 
-                src={theme === "dark" ? "/logo_dark1.png" : "/logo_light11.png"} 
-                alt="Logo" 
-                className="h-14 object-contain"
-              /> */}
-              <p className="text-lg font-bold text-black/80 dark:text-white/80">{t("companyShortName")}</p>
-              <p className="text-xs text-black/80 dark:text-white/80">{t("merchantDashboard")}</p>
-            </div>
+              <span className="text-xl font-bold text-black dark:text-white">Admin DGS</span>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-black dark:text-white hover:bg-white/20"
-            onClick={() => setSidebarOpen(false)}
+              className="lg:hidden text-white hover:bg-crimson-500/20"
+              onClick={() => setIsSidebarOpen(false)}
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Navigation - Scrollable */}
-        <div className="flex-1 overflow-y-auto">
-          <nav className="px-4 py-8 space-y-3">
+          {/* Navigation */}
+          <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent text-black dark:text-white">
             {navigation.map((item) => {
-              const isActive = pathname === item.href
+              const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center space-x-4 px-4 py-4 mx-2 rounded-2xl text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "bg-crimson-600 text-crimson-600 dark:text-crimson-200 shadow-lg shadow-crimson-600/25 scale-105"
-                      : "text-neutral-700 dark:text-neutral-300 hover:text-crimson-600 dark:hover:text-crimson-400 hover:bg-slate-50 dark:hover:bg-neutral-800 hover:scale-105"
+                  className={`group flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
+                    item.current
+                      ? "bg-white/20 text-black dark:text-white shadow-lg"
+                      : "text-crimson-100 hover:bg-white/10 hover:text-black/100 dark:hover:text-white/100"
                   }`}
-                  onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon
-                    className={`h-5 w-5 ${isActive ? "text-black dark:text-white" : "text-neutral-500 group-hover:text-crimson-600"}`}
-                  />
+                  <Icon className={`h-5 w-5 ${
+                    item.current ? "text-black dark:text-white" : "text-crimson-200 group-hover:text-black dark:group-hover:text-white"
+                  }`} />
                   <span>{item.name}</span>
-                  {isActive && <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse" />}
+                  {item.current && (
+                    <div className="ml-auto h-2 w-2 rounded-full bg-black dark:bg-white"></div>
+                  )}
                 </Link>
               )
             })}
           </nav>
-        </div>
 
-        {/* Sidebar Footer */}
-        <div className="p-6 border-t border-slate-100 dark:border-neutral-800 flex-shrink-0">
-          <Link href="/profile" className="block">
-            <div className="bg-slate-50 dark:bg-neutral-800 rounded-2xl p-4 mb-4 hover:bg-slate-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
+          {/* User section */}
+          <div className="flex-shrink-0 border-t border-crimson-500/20 p-4">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-10 w-10 ring-2 ring-crimson-600 dark:ring-crimson-400 text-black dark:text-white">
-                  <AvatarImage src={userProfile?.logo || ""} />
-                  <AvatarFallback className="bg-crimson-600 text-black dark:text-white">
-                    {getUserInitials()}
+              <Avatar className="h-10 w-10 ring-2 ring-white/20">
+                <AvatarImage src={userData?.avatar || "/placeholder-user.jpg"} />
+                                  <AvatarFallback className="bg-white/20 text-white font-semibold">
+                    {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <p className="font-medium text-neutral-900 dark:text-white">
-                    {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "Loading..."}
-                  </p>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                    {userProfile?.entreprise_name || ""}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-black dark:text-white truncate">
+                  {userData?.name || t("companyShortName")}
+                </p>
+                <p className="text-xs text-crimson-200 truncate">
+                  {userData?.email || "user@example.com"}
                   </p>
                 </div>
-                <ChevronDown className="h-4 w-4 text-neutral-400" />
               </div>
             </div>
-          </Link>
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-neutral-600 dark:text-neutral-400 hover:text-crimson-600 dark:hover:text-crimson-400 hover:bg-slate-50 dark:hover:bg-neutral-800"
-            onClick={handleLogout}
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            {t("signOut")}
-          </Button>
         </div>
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col min-w-0 h-full">
-        {/* Top navbar - Fixed */}
-        <header className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-neutral-800 h-20 flex items-center justify-between px-8 shadow-sm flex-shrink-0 z-30">
-          <div className="flex items-center space-x-6">
+      {/* Main content */}
+      <div className="lg:ml-64 flex-1 flex flex-col min-w-0">
+        {/* Top navbar */}
+        <div className="sticky top-0 z-30 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700">
+          <div className="flex h-16 items-center justify-between px-6">
+            {/* Left side */}
+            <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden hover:bg-slate-50 dark:hover:bg-neutral-800"
-              onClick={() => setSidebarOpen(true)}
+                className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                onClick={() => setIsSidebarOpen(true)}
             >
               <Menu className="h-5 w-5" />
             </Button>
 
-            {/* <div className="relative hidden md:block">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input
-                placeholder={t("search")}
-                className="pl-12 w-96 h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
-              />
-            </div> */}
+              {/* Balance display */}
+              <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-4 py-2">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("availableBalance")}:</span>
+                  <span className="font-semibold text-neutral-900 dark:text-white">
+                    {isBalanceVisible ? `${balance} FCFA` : "••••••"}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                    onClick={() => setIsBalanceVisible(!isBalanceVisible)}
+                  >
+                    {isBalanceVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
           </div>
 
+            {/* Right side */}
           <div className="flex items-center space-x-4">
-            {/* Live/Sandbox Toggle */}
-            <div className="flex items-center space-x-3 bg-slate-50 dark:bg-neutral-800 rounded-2xl px-4 py-2">
-              <span
-                className={`text-sm font-medium ${!isLiveMode ? "text-neutral-500" : "text-neutral-700 dark:text-neutral-300"}`}
-              >
-                {t("sandbox")}
-              </span>
-              <Switch
-                checked={isLiveMode}
-                onCheckedChange={setIsLiveMode}
-                className="data-[state=checked]:bg-crimson-600"
-              />
-              <span
-                className={`text-sm font-medium ${isLiveMode ? "text-neutral-500" : "text-neutral-700 dark:text-neutral-300"}`}
-              >
-                {t("live")}
-              </span>
-              {isLiveMode && (
-                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white ml-2">
-                  {t("live").toUpperCase()}
-                </Badge>
-              )}
+              {/* Language switcher */}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  onClick={() => setLanguage(language === "en" ? "fr" : "en")}
+                >
+                  <Globe className="h-4 w-4 mr-2" />
+                  {language === "en" ? "EN" : "FR"}
+                </Button>
             </div>
 
-            {/* Language Switcher */}
-            <LanguageSwitcher />
-
-            {/* Theme Toggle */}
+              {/* Theme toggle */}
             <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-slate-50 dark:hover:bg-neutral-800 rounded-2xl"
-              onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
 
             {/* Notifications */}
-            <Button
+              {/* <Button
               variant="ghost"
               size="icon"
-              className="relative hover:bg-slate-50 dark:hover:bg-neutral-800 rounded-2xl"
+                className="relative text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-crimson-600 rounded-full animate-pulse"></span>
-            </Button>
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-crimson-600 text-xs text-white p-0 flex items-center justify-center">
+                  3
+                </Badge>
+              </Button> */}
 
-            {/* User Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              {/* Profile dropdown */}
+              <div className="relative">
                 <Button
                   variant="ghost"
-                  className="flex items-center space-x-3 hover:bg-slate-50 dark:hover:bg-neutral-800 rounded-2xl px-3 py-2"
+                  className="flex items-center space-x-2 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
                 >
-                  <Avatar className="h-8 w-8 ring-2 ring-crimson-600 text-black dark:text-white">
-                    <AvatarImage src={userProfile?.logo || ""} />
-                    <AvatarFallback className="bg-crimson-600 text-black dark:text-white">
-                      {getUserInitials()}
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={userData?.avatar || "/placeholder-user.jpg"} />
+                                      <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300 text-sm">
+                    {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="hidden md:block text-left">
-                    <p className="text-sm font-medium">
-                      {userProfile ? `${userProfile.first_name} ${userProfile.last_name}` : "Loading..."}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {userProfile?.entreprise_name || ""}
-                    </p>
-                  </div>
-                  <ChevronDown className="h-4 w-4 text-neutral-400" />
+                  <span className="hidden md:block text-sm font-medium">
+                    {userData?.name || t("companyShortName")}
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 rounded-2xl border-slate-100 dark:border-neutral-800">
-                <DropdownMenuLabel>{t("myAccount")}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <Link href="/profile">
-                  <DropdownMenuItem className="rounded-xl cursor-pointer">
-                    <User className="mr-2 h-4 w-4" />
-                    {t("profile")}
-                  </DropdownMenuItem>
-                </Link>
-                <Link href="/settings">
-                  <DropdownMenuItem className="rounded-xl cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    {t("settings")}
-                  </DropdownMenuItem>
-                </Link>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  className="rounded-xl text-crimson-600 focus:text-crimson-600 cursor-pointer"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  {t("signOut")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </header>
 
-        {/* Page content - Scrollable */}
-        <main className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-neutral-950">
-          <div className="p-8 h-full">
-            {children}
+                {isProfileOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-slate-200 dark:border-neutral-700 py-2 z-50">
+                    <Link
+                      href="/profile"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-700"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <User className="h-4 w-4" />
+                      <span>{t("profile")}</span>
+                </Link>
+                    <Link
+                      href="/settings"
+                      className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-700"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span>{t("settings")}</span>
+                </Link>
+                    <div className="border-t border-slate-200 dark:border-neutral-700 my-2" />
+                    <button
+                  onClick={handleLogout}
+                      className="flex w-full items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>{t("signOut")}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+          </div>
+
+        {/* Page content */}
+        <main className="flex-1 p-6">
+            {children}
         </main>
       </div>
     </div>

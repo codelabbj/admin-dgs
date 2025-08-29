@@ -6,7 +6,7 @@ import { useLanguage } from '@/contexts/language-context';
 
 export default function ApiKeysComponent() {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState('API Keys');
+  const [activeTab, setActiveTab] = useState('Clés API');
   const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>({});
   const [visibilityStates, setVisibilityStates] = useState({
     private: false,
@@ -43,7 +43,7 @@ export default function ApiKeysComponent() {
         setCopiedStates(prev => ({ ...prev, [key]: false }));
       }, 2000);
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error('Échec de la copie: ', err);
     }
   };
 
@@ -75,9 +75,9 @@ export default function ApiKeysComponent() {
             {[t("apiKeysTab"), t("webhookTab")].map((tab, idx) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(idx === 0 ? 'API Keys' : 'Webhook')}
+                onClick={() => setActiveTab(idx === 0 ? 'Clés API' : 'Webhook')}
                 className={`px-6 py-4 font-medium transition-colors ${
-                  (activeTab === 'API Keys' && idx === 0) || (activeTab === 'Webhook' && idx === 1)
+                  (activeTab === 'Clés API' && idx === 0) || (activeTab === 'Webhook' && idx === 1)
                     ? 'border-b-2 border-black text-black bg-gray-50 dark:text-white dark:bg-gray-700'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-white dark:hover:bg-gray-700'
                 }`}
@@ -87,10 +87,10 @@ export default function ApiKeysComponent() {
             ))}
           </div>
 
-          {/* API Keys Content */}
-          {activeTab === 'API Keys' && (
+          {/* Contenu des Clés API */}
+          {activeTab === 'Clés API' && (
             <div className="p-6 space-y-6">
-              {/* Public API Key */}
+              {/* Clé API Publique */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t("publicApiKey")}
@@ -112,7 +112,7 @@ export default function ApiKeysComponent() {
                 </div>
               </div>
 
-              {/* Secret */}
+              {/* Clé Secrète */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                   {t("secret")}
@@ -140,7 +140,7 @@ export default function ApiKeysComponent() {
                 </div>
               </div>
 
-              {/* Renew Button */}
+              {/* Bouton de Renouvellement */}
               <div className="pt-4">
                 <button
                   className="px-6 py-3 bg-black text-white rounded-lg hover:bg-grey-600 transition-colors flex items-center gap-2 font-medium"
@@ -154,7 +154,7 @@ export default function ApiKeysComponent() {
             </div>
           )}
 
-          {/* Webhook Content */}
+          {/* Contenu Webhook */}
           {activeTab === 'Webhook' && (
             <div className="p-6">
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -164,7 +164,7 @@ export default function ApiKeysComponent() {
           )}
         </div>
 
-        {/* Security Notice */}
+        {/* Avis de Sécurité */}
         <div className="mt-6 p-4 rounded-lg border-l-4 border-yellow-500 bg-yellow-50 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-200">
           <p className="text-sm">
             <strong>{t("securityNoticeTitle")}</strong> {t("securityNotice")}

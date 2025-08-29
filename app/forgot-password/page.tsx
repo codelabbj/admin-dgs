@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
+import { LanguageSwitcher } from "@/components/language-switcher"
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("")
@@ -123,22 +124,32 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Language switcher (optional, if needed) */}
-      {/* <div className="absolute top-6 right-6 z-10">
-        <LanguageSwitcher />
-      </div> */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Enhanced background decoration */}
+      <div className="absolute inset-0">
+        <div className="absolute top-20 left-20 w-96 h-96 bg-gradient-to-r from-crimson-600/20 to-pink-600/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-emerald-600/10 to-teal-600/10 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo and branding */}
+      {/* Top controls */}
+      <div className="absolute top-6 right-6 z-20 flex items-center space-x-4">
+        {/* Language switcher */}
+        <div className="z-20">
+          <LanguageSwitcher />
+        </div>
+      </div>
+
+      <div className="w-full max-w-lg relative z-10">
+        {/* Enhanced logo and branding */}
         <div className="text-center mb-8">
-          {/* <div className="inline-flex items-center justify-center w-16 h-16 bg-crimson-600 rounded-2xl mb-4 shadow-lg">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div> */}
-          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 dark:bg-neutral-800/20 backdrop-blur-sm rounded-2xl mb-6 shadow-xl border border-white/30 dark:border-neutral-700/30">
+            <Sparkles className="h-12 w-12 text-crimson-600" />
+          </div>
+          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-3">
             {t("resetPasswordTitle")}
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-400 mt-2">
+          <p className="text-neutral-600 dark:text-neutral-400 text-lg max-w-md mx-auto">
             {step === "email"
               ? t("enterEmailToReset")
               : step === "otp"
@@ -147,9 +158,15 @@ export default function ForgotPassword() {
           </p>
         </div>
 
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-100 dark:border-neutral-800 shadow-2xl rounded-3xl overflow-hidden">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-semibold text-center text-neutral-900 dark:text-white">
+        {/* Enhanced reset password card */}
+        <Card className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-2xl rounded-2xl overflow-hidden">
+          <CardHeader className="space-y-2 pb-6 pt-8 px-8">
+            <div className="flex items-center justify-center mb-4">
+              <div className="p-3 bg-gradient-to-r from-crimson-600 to-crimson-700 rounded-xl shadow-lg">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <CardTitle className="text-2xl font-bold text-center text-neutral-900 dark:text-white">
               {step === "email"
                 ? t("forgotPasswordTitle")
                 : step === "otp"
@@ -164,12 +181,23 @@ export default function ForgotPassword() {
                 : t("enterNewPassword") + " / " + t("confirmNewPassword")}
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {error && <div className="mb-4 text-center text-sm text-red-600 dark:text-red-400">{error}</div>}
-            {success && <div className="mb-4 text-center text-sm text-green-600 dark:text-green-400">{success}</div>}
+          
+          <CardContent className="px-8 pb-8">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-center text-sm text-red-600 dark:text-red-400">
+                {error}
+              </div>
+            )}
+            
+            {success && (
+              <div className="mb-6 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-center text-sm text-emerald-600 dark:text-emerald-400">
+                {success}
+              </div>
+            )}
+
             {step === "email" && (
               <form onSubmit={handleSendOtp} className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="email" className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                     {t("emailAddress")}
                   </Label>
@@ -181,14 +209,15 @@ export default function ForgotPassword() {
                       placeholder="john@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="pl-12 h-14 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base"
+                      className="pl-12 h-14 bg-slate-50/50 dark:bg-neutral-800/50 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base transition-all duration-200"
                       required
                     />
                   </div>
                 </div>
+                
                 <Button
                   type="submit"
-                  className="w-full h-14 bg-crimson-600 hover:bg-crimson-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl text-base"
+                  className="w-full h-14 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-700 hover:to-crimson-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl text-base group"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -197,7 +226,7 @@ export default function ForgotPassword() {
                       <span>{t("sending")}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center text-black dark:text-white space-x-3">
+                    <div className="flex items-center space-x-3">
                       <Send className="w-5 h-5" />
                       <span>{t("sendOtp")}</span>
                     </div>
@@ -205,11 +234,12 @@ export default function ForgotPassword() {
                 </Button>
               </form>
             )}
+
             {step === "otp" && (
               <form onSubmit={handleVerifyOtp} className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="otp" className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                    OTP Code
+                    {t("enterOtp")}
                   </Label>
                   <div className="relative">
                     <Input
@@ -218,14 +248,15 @@ export default function ForgotPassword() {
                       placeholder={t("enterOtp")}
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
-                      className="h-14 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4"
+                      className="h-14 bg-slate-50/50 dark:bg-neutral-800/50 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4 transition-all duration-200"
                       required
                     />
                   </div>
                 </div>
+                
                 <Button
                   type="submit"
-                  className="w-full h-14 bg-crimson-600 hover:bg-crimson-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl text-base"
+                  className="w-full h-14 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-700 hover:to-crimson-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl text-base group"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -234,21 +265,30 @@ export default function ForgotPassword() {
                       <span>{t("verifying")}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center text-black dark:text-white space-x-3">
+                    <div className="flex items-center space-x-3">
                       <span>{t("verifyOtp")}</span>
+                      <ArrowLeft className="w-5 h-5 rotate-180 group-hover:translate-x-1 transition-transform duration-200" />
                     </div>
                   )}
                 </Button>
+                
                 <div className="text-center">
-                  <Button type="button" variant="link" className="text-crimson-600 hover:text-crimson-700" onClick={handleResendOtp} disabled={isLoading}>
+                  <Button 
+                    type="button" 
+                    variant="link" 
+                    className="text-crimson-600 hover:text-crimson-700 transition-colors duration-200" 
+                    onClick={handleResendOtp} 
+                    disabled={isLoading}
+                  >
                     {t("resendOtp")}
                   </Button>
                 </div>
               </form>
             )}
+
             {step === "reset" && (
               <form onSubmit={handleResetPassword} className="space-y-6">
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <Label htmlFor="new-password" className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                     {t("enterNewPassword")}
                   </Label>
@@ -258,11 +298,12 @@ export default function ForgotPassword() {
                     placeholder={t("enterNewPassword")}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="h-14 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4"
+                    className="h-14 bg-slate-50/50 dark:bg-neutral-800/50 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4 transition-all duration-200"
                     required
                   />
                 </div>
-                <div className="space-y-2">
+                
+                <div className="space-y-3">
                   <Label htmlFor="confirm-password" className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                     {t("confirmNewPassword")}
                   </Label>
@@ -272,13 +313,14 @@ export default function ForgotPassword() {
                     placeholder={t("confirmNewPassword")}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="h-14 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4"
+                    className="h-14 bg-slate-50/50 dark:bg-neutral-800/50 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent text-base pl-4 transition-all duration-200"
                     required
                   />
                 </div>
+                
                 <Button
                   type="submit"
-                  className="w-full h-14 bg-crimson-600 hover:bg-crimson-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl text-base"
+                  className="w-full h-14 bg-gradient-to-r from-crimson-600 to-crimson-700 hover:from-crimson-700 hover:to-crimson-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl text-base group"
                   disabled={isLoading}
                 >
                   {isLoading ? (
@@ -287,26 +329,35 @@ export default function ForgotPassword() {
                       <span>{t("resetting")}</span>
                     </div>
                   ) : (
-                    <div className="flex items-center text-black dark:text-white space-x-3">
+                    <div className="flex items-center space-x-3">
                       <span>{t("resetPasswordTitle")}</span>
+                      <ArrowLeft className="w-5 h-5" />
                     </div>
                   )}
                 </Button>
               </form>
             )}
-            <div className="mt-6 text-center">
+
+            <div className="mt-8 text-center">
               <Link
                 href="/login"
-                className="inline-flex items-center space-x-2 text-sm text-crimson-600 hover:text-crimson-700 font-medium"
+                className="inline-flex items-center space-x-2 text-sm text-crimson-600 hover:text-crimson-700 font-semibold transition-colors duration-200 group"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-200" />
                 <span>{t("backToSignIn")}</span>
               </Link>
             </div>
           </CardContent>
         </Card>
-        <div className="text-center mt-8 text-sm text-neutral-500">
-          {/* <p>© 2024 pay. All rights reserved.</p> */}
+
+        {/* Enhanced footer */}
+        <div className="text-center mt-8">
+          <div className="flex items-center justify-center space-x-6 text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center space-x-2">
+              <Sparkles className="h-4 w-4 text-crimson-600" />
+              <span>Secure Reset</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

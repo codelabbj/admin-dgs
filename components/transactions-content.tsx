@@ -47,7 +47,7 @@ export function TransactionsContent() {
       const minutesSinceLastMessage = (now - wsHealth.current.lastMessageTime) / (1000 * 60)
       
       if (wsHealth.current.lastMessageTime > 0 && minutesSinceLastMessage > 5) {
-        console.warn('No WebSocket messages received in 5 minutes, reconnecting...')
+        console.warn('Aucun message WebSocket reçu depuis 5 minutes, reconnexion...')
         setupWebSocket() // Force reconnection
       }
     }, 60000) // Check every minute
@@ -101,15 +101,15 @@ export function TransactionsContent() {
           
           setTransactions(data.results)
         } else {
-          console.log('API response structure:', data)
+          console.log('Structure de réponse API:', data)
           setTransactions([])
         }
       } else {
-        setError(`Failed to fetch transactions: ${res.status}`)
+        setError(`Échec de la récupération des transactions: ${res.status}`)
       }
     } catch (error) {
-      console.error('Error fetching transactions:', error)
-      setError('Failed to fetch transactions')
+      console.error('Erreur lors de la récupération des transactions:', error)
+              setError('Échec de la récupération des transactions')
     } finally {
       setLoading(false)
     }
@@ -119,7 +119,7 @@ export function TransactionsContent() {
   const getTransactionKey = (transaction: any) => {
     const id = transaction.id || transaction.reference || transaction.transaction_id
     if (!id) {
-      console.error('Could not extract ID from transaction:', transaction)
+      console.error('Impossible d\'extraire l\'ID de la transaction:', transaction)
       return `unknown-${Math.random().toString(36).substring(2, 11)}`
     }
     return id.toString()
@@ -129,7 +129,7 @@ export function TransactionsContent() {
   const setupWebSocket = () => {
     const token = getAccessToken()
     if (!token) {
-      console.log('No access token available for WebSocket connection')
+      console.log('Aucun token d\'accès disponible pour la connexion WebSocket')
       return
     }
 
@@ -139,20 +139,20 @@ export function TransactionsContent() {
     try {
       // Replace with your actual WebSocket URL when API is available
       const wsUrl = `${baseUrl?.replace('http', 'ws')}/ws/transactions?token=${encodeURIComponent(token)}`
-      console.log('Attempting to connect to WebSocket:', wsUrl)
+      console.log('Tentative de connexion au WebSocket:', wsUrl)
       
       webSocketRef.current = new WebSocket(wsUrl)
 
       // Set connection timeout
       const connectionTimeout = setTimeout(() => {
         if (webSocketRef.current?.readyState !== WebSocket.OPEN) {
-          handleConnectionFailure('Connection timeout')
+          handleConnectionFailure('Délai de connexion dépassé')
         }
       }, 5000)
 
       webSocketRef.current.onopen = () => {
         clearTimeout(connectionTimeout)
-        console.log('WebSocket connected successfully')
+        console.log('WebSocket connecté avec succès')
         webSocketReconnectAttempts.current = 0
         startPingInterval()
       }
@@ -163,15 +163,15 @@ export function TransactionsContent() {
       }
 
       webSocketRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error)
-        handleConnectionFailure('Connection failed')
+        console.error('Erreur WebSocket:', error)
+        handleConnectionFailure('Échec de la connexion')
       }
 
       webSocketRef.current.onmessage = handleWebSocketMessage
 
     } catch (error) {
-      console.error('WebSocket setup failed:', error)
-      handleConnectionFailure('Failed to initialize WebSocket')
+      console.error('Échec de la configuration WebSocket:', error)
+              handleConnectionFailure('Échec de l\'initialisation du WebSocket')
     }
   }
 
@@ -191,7 +191,7 @@ export function TransactionsContent() {
         try {
           webSocketRef.current.send(JSON.stringify({ type: 'ping' }))
         } catch (error) {
-          console.error('Failed to send ping:', error)
+          console.error('Échec de l\'envoi du ping:', error)
           cleanupWebSocket()
           setupWebSocket()
         }
@@ -207,7 +207,7 @@ export function TransactionsContent() {
   }
 
   const handleConnectionFailure = (message: string) => {
-    console.error(message)
+            console.error('Message d\'erreur:', message)
     
     // Implement exponential backoff
     const backoffDelay = Math.min(1000 * Math.pow(2, webSocketReconnectAttempts.current), 30000)
@@ -226,7 +226,7 @@ export function TransactionsContent() {
         messageCount: wsHealth.current.messageCount + 1
       }
 
-      console.log('WebSocket message received:', data)
+              console.log('Message WebSocket reçu:', data)
 
       switch (data.type) {
         case 'transaction_update':
@@ -236,10 +236,10 @@ export function TransactionsContent() {
           handleNewTransaction(data.transaction)
           break
         case 'pong':
-          console.log('Received pong from server')
+          console.log('Pong reçu du serveur')
           break
         case 'error':
-          console.error('Server error:', data.message)
+          console.error('Erreur du serveur:', data.message)
           break
         default:
           if (data.transaction) {
@@ -253,7 +253,7 @@ export function TransactionsContent() {
       }
 
     } catch (error) {
-      console.error('Error processing WebSocket message:', error)
+      console.error('Erreur lors du traitement du message WebSocket:', error)
     }
   }
 
@@ -261,7 +261,7 @@ export function TransactionsContent() {
     cleanupWebSocket()
     
     const reason = getCloseReason(event.code)
-    console.log(`WebSocket closed: ${reason}`)
+          console.log(`WebSocket fermé: ${reason}`)
 
     if (event.code !== 1000) {
       handleConnectionFailure(reason)
@@ -270,21 +270,21 @@ export function TransactionsContent() {
 
   const getCloseReason = (code: number): string => {
     const closeReasons: Record<number, string> = {
-      1000: 'Normal closure',
-      1001: 'Going away',
-      1002: 'Protocol error',
-      1003: 'Unsupported data',
-      1005: 'No status received',
-      1006: 'Abnormal closure',
-      1007: 'Invalid frame payload data',
-      1008: 'Policy violation',
-      1009: 'Message too big',
-      1010: 'Mandatory extension',
-      1011: 'Internal server error',
-      1012: 'Service restart',
-      1013: 'Try again later',
-      1014: 'Bad gateway',
-      1015: 'TLS handshake'
+          1000: 'Fermeture normale',
+    1001: 'Départ',
+    1002: 'Erreur de protocole',
+    1003: 'Données non supportées',
+    1005: 'Aucun statut reçu',
+    1006: 'Fermeture anormale',
+    1007: 'Données de trame invalides',
+    1008: 'Violation de politique',
+    1009: 'Message trop volumineux',
+    1010: 'Extension obligatoire',
+    1011: 'Erreur interne du serveur',
+    1012: 'Redémarrage du service',
+    1013: 'Réessayer plus tard',
+    1014: 'Passerelle défaillante',
+    1015: 'Poignée de main TLS'
     }
 
     return closeReasons[code] || `Unknown reason (${code})`
@@ -301,7 +301,7 @@ export function TransactionsContent() {
       
       // Add to state (at the beginning)
       setTransactions(prev => [transaction, ...prev])
-      console.log('New transaction added via WebSocket:', transaction)
+              console.log('Nouvelle transaction ajoutée via WebSocket:', transaction)
     }
   }
   
@@ -309,7 +309,7 @@ export function TransactionsContent() {
   const handleTransactionUpdate = (updatedTransaction: any) => {
     const key = getTransactionKey(updatedTransaction)
     
-    console.log('Received update for transaction:', key, updatedTransaction)
+            console.log('Mise à jour reçue pour la transaction:', key, updatedTransaction)
     
     // Update the transaction in our state
     setTransactions(prev => 
@@ -331,7 +331,7 @@ export function TransactionsContent() {
       }
     }
     
-    console.log('Transaction updated via WebSocket:', updatedTransaction)
+            console.log('Transaction mise à jour via WebSocket:', updatedTransaction)
   }
 
   const handleCheckStatus = async (reference: string) => {
@@ -341,13 +341,13 @@ export function TransactionsContent() {
       
       if (res.ok) {
         const data = await res.json()
-        setStatusMap((prev) => ({ ...prev, [reference]: data.status || 'Unknown' }))
+        setStatusMap((prev) => ({ ...prev, [reference]: data.status || 'Inconnu' }))
       } else {
-        setStatusMap((prev) => ({ ...prev, [reference]: 'Error checking status' }))
+                  setStatusMap((prev) => ({ ...prev, [reference]: 'Erreur lors de la vérification du statut' }))
       }
     } catch (error) {
-      console.error('Error checking status:', error)
-      setStatusMap((prev) => ({ ...prev, [reference]: 'Failed to check status' }))
+      console.error('Erreur lors de la vérification du statut:', error)
+              setStatusMap((prev) => ({ ...prev, [reference]: 'Échec de la vérification du statut' }))
     } finally {
       setStatusLoading((prev) => ({ ...prev, [reference]: false }))
     }
@@ -436,10 +436,10 @@ export function TransactionsContent() {
             }`}></div>
             <span className="text-xs text-slate-600 dark:text-slate-400">
               {webSocketRef.current?.readyState === WebSocket.OPEN 
-                ? 'Live' 
+                ? 'En Direct' 
                 : webSocketRef.current?.readyState === WebSocket.CONNECTING 
-                ? 'Connecting' 
-                : 'Offline'
+                ? 'Connexion...' 
+                : 'Hors Ligne'
               }
             </span>
           </div>
