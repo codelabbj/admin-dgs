@@ -177,7 +177,7 @@ export default function Login() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
+              {/* <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <Checkbox
                     id="remember"
@@ -195,7 +195,7 @@ export default function Login() {
                 >
                   {t("forgotPassword")}
                 </Link>
-              </div>
+              </div> */}
 
               <Button
                 type="submit"
