@@ -20,7 +20,7 @@ export default function ApiKeysComponent() {
 
   const handleRenewKeys = async () => {
     try {
-      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/generate-api-key`, {
+      const res = await authenticatedFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/generate-api-key`, {
         method: "POST",
         body: JSON.stringify({}),
       });

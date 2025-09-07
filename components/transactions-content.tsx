@@ -62,7 +62,7 @@ export function TransactionsContent() {
   const fetchTransactions = async () => {
     setLoading(true)
     try {
-      const res = await smartFetch(`${baseUrl}/api/v1/transaction`)
+      const res = await smartFetch(`${baseUrl}/prod/v1/api/transaction`)
       
       if (res.ok) {
         const data = await res.json()
@@ -337,7 +337,7 @@ export function TransactionsContent() {
   const handleCheckStatus = async (reference: string) => {
     setStatusLoading((prev) => ({ ...prev, [reference]: true }))
     try {
-      const res = await smartFetch(`${baseUrl}/api/v1/transaction-status?reference=${reference}`)
+      const res = await smartFetch(`${baseUrl}/prod/v1/api/transaction-status?reference=${reference}`)
       
       if (res.ok) {
         const data = await res.json()

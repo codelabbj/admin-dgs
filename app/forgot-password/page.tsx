@@ -33,7 +33,7 @@ export default function ForgotPassword() {
     setError("")
     setSuccess("")
     try {
-      const res = await fetch(`${baseUrl}/api/v1/send-otp`, {
+      const res = await fetch(`${baseUrl}/v1/api/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -56,7 +56,7 @@ export default function ForgotPassword() {
     setError("")
     setSuccess("")
     try {
-      const res = await fetch(`${baseUrl}/api/v1/send-otp`, {
+      const res = await fetch(`${baseUrl}/v1/api/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -100,7 +100,7 @@ export default function ForgotPassword() {
       return
     }
     try {
-      const res = await fetch(`${baseUrl}/api/v1/resetpassword`, {
+      const res = await fetch(`${baseUrl}/v1/api/resetpassword`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

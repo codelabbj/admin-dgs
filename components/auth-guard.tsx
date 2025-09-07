@@ -119,8 +119,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
       } else {
         // User is on protected route and authenticated, start background refresh
         console.log('User authenticated on protected route, allowing access')
-        // Temporarily disable background refresh to test
-        // startBackgroundTokenRefresh()
+        startBackgroundTokenRefresh()
       }
     } else {
       // User is not authenticated - double-check before redirecting

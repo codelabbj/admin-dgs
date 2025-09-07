@@ -34,7 +34,7 @@ export default function Login() {
     setIsLoading(true)
     setApiError("")
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/login`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +63,9 @@ export default function Login() {
           router.push("/")
         }, 500)
       } else {
-        setApiError(data.details || data.message || "Login failed.")
+        // Essayer de récupérer le message d'erreur du backend
+        const errorMessage = data.detail || data.details || data.message || data.error || "Login failed."
+        setApiError(errorMessage)
       }
     } catch (err) {
       setApiError("Login failed.")

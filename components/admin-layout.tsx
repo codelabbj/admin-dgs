@@ -81,7 +81,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       }
 
       try {
-        const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/user-details`)
+        const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/user-details`)
         
         if (response.ok) {
           const data = await response.json()

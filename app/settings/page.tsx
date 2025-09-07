@@ -1,3 +1,5 @@
+"use client"
+
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -6,9 +8,110 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Shield, Bell, Globe, Database, CreditCard, User, Lock, Eye, EyeOff, Save, RefreshCw, Download, Upload, Trash2, Key, Smartphone, Building } from "lucide-react"
+import { Shield, Bell, Globe, Database, CreditCard, User, Lock, Eye, EyeOff, Save, RefreshCw, Download, Upload, Trash2, Key, Smartphone, Building, Loader2 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useToast } from "@/hooks/use-toast"
+
+interface PaymentSettings {
+  id?: number
+  minimum_payin: number
+  minimum_payout: number
+  max_payin: number
+  max_payout: number
+  payin_fee: string
+  payout_fee: string
+}
 
 export default function Settings() {
+  const { toast } = useToast()
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
+    minimum_payin: 50,
+    minimum_payout: 50,
+    max_payin: 50,
+    max_payout: 50,
+    payin_fee: "1.75",
+    payout_fee: "1.00"
+  })
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Fetch settings on component mount
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`)
+      if (response.ok) {
+        const data = await response.json()
+        setPaymentSettings(data)
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les paramètres",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur de connexion lors du chargement des paramètres",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const saveSettings = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          minimum_payin: paymentSettings.minimum_payin,
+          minimum_payout: paymentSettings.minimum_payout,
+          max_payin: paymentSettings.max_payin,
+          max_payout: paymentSettings.max_payout,
+          payin_fee: paymentSettings.payin_fee,
+          payout_fee: paymentSettings.payout_fee
+        })
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Succès",
+          description: "Paramètres sauvegardés avec succès"
+        })
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de sauvegarder les paramètres",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Erreur de connexion lors de la sauvegarde",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleInputChange = (field: keyof PaymentSettings, value: string | number) => {
+    setPaymentSettings(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -19,12 +122,29 @@ export default function Settings() {
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Configurez votre compte et vos préférences système</p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Réinitialiser aux Défauts
+            <Button 
+              variant="outline" 
+              className="rounded-xl border-slate-200 dark:border-neutral-700"
+              onClick={fetchSettings}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4 mr-2" />
+              )}
+              Actualiser
             </Button>
-            <Button className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl">
-              <Save className="h-4 w-4 mr-2" />
+            <Button 
+              className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
+              onClick={saveSettings}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
               Enregistrer les Modifications
             </Button>
           </div>
@@ -172,55 +292,124 @@ export default function Settings() {
             {/* Paramètres de Paiement */}
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                                  <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                    <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
-                    Paramètres de Paiement
-                  </CardTitle>
-                  <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Configurez les méthodes de paiement et préférences de facturation
-                  </CardDescription>
+                <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                  <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
+                  Paramètres de Paiement
+                </CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  Configurez les limites et frais de paiement
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label htmlFor="defaultCurrency">Devise par Défaut</Label>
-                      <Input
-                        id="defaultCurrency"
-                        defaultValue="FCFA"
-                        className="rounded-xl border-slate-200 dark:border-neutral-700"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="taxRate">Taux de Taxe (%)</Label>
-                      <Input
-                        id="taxRate"
-                        type="number"
-                        defaultValue="18"
-                        className="rounded-xl border-slate-200 dark:border-neutral-700"
-                      />
+                  {/* Limites de Paiement */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Limites de Paiement</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="minimum_payin">Minimum Payin (FCFA)</Label>
+                        <Input
+                          id="minimum_payin"
+                          type="number"
+                          value={paymentSettings.minimum_payin}
+                          onChange={(e) => handleInputChange('minimum_payin', parseInt(e.target.value) || 0)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="minimum_payout">Minimum Payout (FCFA)</Label>
+                        <Input
+                          id="minimum_payout"
+                          type="number"
+                          value={paymentSettings.minimum_payout}
+                          onChange={(e) => handleInputChange('minimum_payout', parseInt(e.target.value) || 0)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max_payin">Maximum Payin (FCFA)</Label>
+                        <Input
+                          id="max_payin"
+                          type="number"
+                          value={paymentSettings.max_payin}
+                          onChange={(e) => handleInputChange('max_payin', parseInt(e.target.value) || 0)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max_payout">Maximum Payout (FCFA)</Label>
+                        <Input
+                          id="max_payout"
+                          type="number"
+                          value={paymentSettings.max_payout}
+                          onChange={(e) => handleInputChange('max_payout', parseInt(e.target.value) || 0)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Frais de Paiement */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                      <div className="flex items-center space-x-3">
-                        <Smartphone className="h-5 w-5 text-crimson-600" />
-                        <div>
-                          <Label className="text-base font-medium">Mobile Money</Label>
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">Accepter les paiements mobile money</p>
-                        </div>
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Frais de Paiement</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="payin_fee">Frais Payin (%)</Label>
+                        <Input
+                          id="payin_fee"
+                          type="text"
+                          value={paymentSettings.payin_fee}
+                          onChange={(e) => handleInputChange('payin_fee', e.target.value)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                          placeholder="1.75"
+                        />
                       </div>
-                      <Switch defaultChecked />
+                      <div className="space-y-2">
+                        <Label htmlFor="payout_fee">Frais Payout (%)</Label>
+                        <Input
+                          id="payout_fee"
+                          type="text"
+                          value={paymentSettings.payout_fee}
+                          onChange={(e) => handleInputChange('payout_fee', e.target.value)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoading}
+                          placeholder="1.00"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                      <div className="flex items-center space-x-3">
-                        <Building className="h-5 w-5 text-crimson-600" />
-                        <div>
-                          <Label className="text-base font-medium">Virements Bancaires</Label>
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">Accepter les paiements par virement bancaire</p>
+                  </div>
+
+                  {/* Méthodes de Paiement */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Méthodes de Paiement</h4>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                        <div className="flex items-center space-x-3">
+                          <Smartphone className="h-5 w-5 text-crimson-600" />
+                          <div>
+                            <Label className="text-base font-medium">Mobile Money</Label>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Accepter les paiements mobile money</p>
+                          </div>
                         </div>
+                        <Switch defaultChecked />
                       </div>
-                      <Switch defaultChecked />
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                        <div className="flex items-center space-x-3">
+                          <Building className="h-5 w-5 text-crimson-600" />
+                          <div>
+                            <Label className="text-base font-medium">Virements Bancaires</Label>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">Accepter les paiements par virement bancaire</p>
+                          </div>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
                     </div>
                   </div>
                 </div>

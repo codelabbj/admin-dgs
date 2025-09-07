@@ -122,7 +122,7 @@ export function ProfileContent() {
         website: formData.get('website'),
       }
 
-      const res = await smartFetch(`${baseUrl}/api/user-details`, {
+      const res = await smartFetch(`${baseUrl}/v1/api/user-details`, {
         method: 'PUT',
         body: JSON.stringify(payload),
       })

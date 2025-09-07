@@ -18,7 +18,7 @@ export default function Developers() {
   const recentApiCalls = [
     { 
       id: 1, 
-      endpoint: "/api/v1/payment", 
+      endpoint: "/v1/api/payment", 
       method: "POST", 
       status: "Succès", 
       time: "Il y a 2 min", 
@@ -27,7 +27,7 @@ export default function Developers() {
     },
     { 
       id: 2, 
-      endpoint: "/api/v1/transaction", 
+      endpoint: "/v1/api/transaction", 
       method: "GET", 
       status: "Succès", 
       time: "Il y a 5 min", 
@@ -36,7 +36,7 @@ export default function Developers() {
     },
     { 
       id: 3, 
-      endpoint: "/api/v1/user", 
+      endpoint: "/v1/api/user", 
       method: "PUT", 
       status: "Erreur", 
       time: "Il y a 8 min", 
@@ -45,7 +45,7 @@ export default function Developers() {
     },
     { 
       id: 4, 
-      endpoint: "/api/v1/webhook", 
+      endpoint: "/v1/api/webhook", 
       method: "POST", 
       status: "Succès", 
       time: "Il y a 12 min", 
@@ -55,11 +55,11 @@ export default function Developers() {
   ]
 
   const apiEndpoints = [
-    { endpoint: "/api/v1/payment", method: "POST", status: "Active", calls: 456789, avgResponse: "180ms" },
-    { endpoint: "/api/v1/transaction", method: "GET", status: "Active", calls: 234567, avgResponse: "120ms" },
-    { endpoint: "/api/v1/user", method: "PUT", status: "Active", calls: 123456, avgResponse: "200ms" },
-    { endpoint: "/api/v1/webhook", method: "POST", status: "Active", calls: 98765, avgResponse: "150ms" },
-    { endpoint: "/api/v1/analytics", method: "GET", status: "Maintenance", calls: 54321, avgResponse: "300ms" },
+    { endpoint: "/v1/api/payment", method: "POST", status: "Active", calls: 456789, avgResponse: "180ms" },
+    { endpoint: "/v1/api/transaction", method: "GET", status: "Active", calls: 234567, avgResponse: "120ms" },
+    { endpoint: "/v1/api/user", method: "PUT", status: "Active", calls: 123456, avgResponse: "200ms" },
+    { endpoint: "/v1/api/webhook", method: "POST", status: "Active", calls: 98765, avgResponse: "150ms" },
+    { endpoint: "/v1/api/analytics", method: "GET", status: "Maintenance", calls: 54321, avgResponse: "300ms" },
   ]
 
   const systemMetrics = [
