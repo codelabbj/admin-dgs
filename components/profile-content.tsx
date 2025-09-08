@@ -49,6 +49,14 @@ interface UserProfile {
   availavailable_fund: number
 }
 
+// Utility function to normalize logo field
+const normalizeLogo = (logo: any): string | null => {
+  if (!logo) return null
+  if (typeof logo === 'string') return logo
+  if (typeof logo === 'object' && logo.file) return logo.file
+  return null
+}
+
 export function ProfileContent() {
   const [userProfile, setUserProfile] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -61,6 +69,8 @@ export function ProfileContent() {
     // Charger le profil utilisateur depuis localStorage en premier
     const userData = getUserData()
     if (userData) {
+      // Normalize logo field to ensure it's always a string URL or null
+      userData.logo = normalizeLogo(userData.logo)
       setUserProfile(userData)
     }
   }, [])
@@ -89,8 +99,25 @@ export function ProfileContent() {
         const data = await res.json()
         setSuccess('Fichier téléchargé avec succès!')
         // Mettre à jour le profil utilisateur avec le nouveau logo
-        if (data.logo) {
-          setUserProfile((prev: any) => ({ ...prev, logo: data.logo }))
+        console.log('Upload response data:', data)
+        console.log('Upload response logo:', data.logo)
+        
+        // Extract the URL from the response object
+        let logoUrl = null
+        if (data.logo && typeof data.logo === 'object' && data.logo.file) {
+          logoUrl = data.logo.file
+        } else if (typeof data.logo === 'string') {
+          logoUrl = data.logo
+        }
+        
+        console.log('Extracted logo URL:', logoUrl)
+        
+        if (logoUrl) {
+          setUserProfile((prev: any) => {
+            const updated = { ...prev, logo: logoUrl }
+            console.log('Updated profile with logo:', updated.logo)
+            return updated
+          })
         }
       } else {
         const errorData = await res.json()
@@ -112,6 +139,21 @@ export function ProfileContent() {
 
     try {
       const formData = new FormData(e.currentTarget)
+      
+      // Debug: Check what we're about to send
+      console.log('User profile logo:', userProfile.logo)
+      console.log('Logo type:', typeof userProfile.logo)
+      
+      // Extract logo URL properly
+      let logoUrl = null
+      if (userProfile.logo) {
+        if (typeof userProfile.logo === 'object' && userProfile.logo.file) {
+          logoUrl = userProfile.logo.file
+        } else if (typeof userProfile.logo === 'string') {
+          logoUrl = userProfile.logo
+        }
+      }
+      
       const payload = {
         first_name: formData.get('first_name'),
         last_name: formData.get('last_name'),
@@ -120,22 +162,39 @@ export function ProfileContent() {
         country: formData.get('country'),
         entreprise_name: formData.get('entreprise_name'),
         website: formData.get('website'),
+        logo: logoUrl, // Always a string URL or null
+      }
+      
+      console.log('Extracted logo URL:', logoUrl)
+      console.log('Payload being sent:', payload)
+      console.log('Payload logo:', payload.logo, 'Type:', typeof payload.logo)
+      
+      // Safety check: ensure logo is never an object
+      if (payload.logo && typeof payload.logo === 'object') {
+        console.error('Logo is still an object! Removing it from payload.')
+        delete payload.logo
       }
 
       const res = await smartFetch(`${baseUrl}/v1/api/user-details`, {
         method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(payload),
       })
 
       if (res.ok) {
         const data = await res.json()
+        // Normalize logo field before storing
+        data.logo = normalizeLogo(data.logo)
         setUserProfile(data)
         setSuccess('Profil mis à jour avec succès!')
         // Mettre à jour localStorage
         localStorage.setItem('user', JSON.stringify(data))
       } else {
         const errorData = await res.json()
-        setError(errorData.detail || 'Échec de la mise à jour du profil')
+        console.error('Profile update error:', errorData)
+        setError(errorData.detail || errorData.message || 'Échec de la mise à jour du profil')
       }
     } catch (error) {
       console.error('Erreur de mise à jour du profil:', error)

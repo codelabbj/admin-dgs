@@ -102,7 +102,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
     // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },
-    { name: t("developers"), href: "/developers", icon: Code, current: pathname === "/developers" },
+    // { name: t("developers"), href: "/developers", icon: Code, current: pathname === "/developers" },
     // { name: t("settings"), href: "/settings", icon: Settings, current: pathname === "/settings" },
     { name: t("profile"), href: "/profile", icon: User, current: pathname === "/profile" },
   ]
@@ -234,7 +234,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
 
               {/* Balance display */}
-              <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-4 py-2">
+              {/* <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-4 py-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("availableBalance")}:</span>
                   <span className="font-semibold text-neutral-900 dark:text-white">
@@ -249,33 +249,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     {isBalanceVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
-              </div>
+              </div> */}
           </div>
 
             {/* Right side */}
           <div className="flex items-center space-x-4">
-              {/* Language switcher */}
-              <div className="relative">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-                  onClick={() => setLanguage(language === "en" ? "fr" : "en")}
-                >
-                  <Globe className="h-4 w-4 mr-2" />
-                  {language === "en" ? "EN" : "FR"}
-                </Button>
-            </div>
-
-              {/* Theme toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-                className="text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            >
-                {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </Button>
 
             {/* Notifications */}
               {/* <Button
@@ -319,7 +297,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       <span>{t("profile")}</span>
                 </Link>
                     <Link
-                      href="/settings"
+                      href="/profile"
                       className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-700"
                       onClick={() => setIsProfileOpen(false)}
                     >

@@ -401,7 +401,7 @@ export function DashboardContent() {
         </div>
 
         {/* Recent Transactions */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+        {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
             <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
               <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -447,7 +447,7 @@ export function DashboardContent() {
               ))}
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
     </div>
   )

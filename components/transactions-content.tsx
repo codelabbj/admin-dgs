@@ -7,11 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Download, Eye } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Search, Download, Eye, Settings } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
 import { smartFetch, getAccessToken } from "@/utils/auth"
+
+// Transaction status constants
+const TRANSACTION_STATUS = [
+  { value: "success", label: "Success" },
+  { value: "pending", label: "Pending" },
+  { value: "failed", label: "Failed" },
+  { value: "expired", label: "Expired" },
+  { value: "canceled", label: "Canceled" },
+  { value: "refund", label: "Refund" }
+]
 
 export function TransactionsContent() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -22,6 +33,10 @@ export function TransactionsContent() {
   const [methodFilter, setMethodFilter] = useState("all")
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
   const [statusLoading, setStatusLoading] = useState<Record<string, boolean>>({})
+  const [changeStatusModalOpen, setChangeStatusModalOpen] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
+  const [selectedStatus, setSelectedStatus] = useState("")
+  const [changeStatusLoading, setChangeStatusLoading] = useState(false)
   const { t } = useLanguage()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
@@ -353,6 +368,54 @@ export function TransactionsContent() {
     }
   }
 
+  const handleChangeStatus = async () => {
+    if (!selectedTransaction || !selectedStatus) return
+    
+    setChangeStatusLoading(true)
+    try {
+      const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: selectedStatus,
+          id: selectedTransaction.id
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        // Update the transaction in the local state
+        setTransactions(prev => 
+          prev.map(tx => 
+            tx.id === selectedTransaction.id 
+              ? { ...tx, status: selectedStatus, ...data }
+              : tx
+          )
+        )
+        setChangeStatusModalOpen(false)
+        setSelectedTransaction(null)
+        setSelectedStatus("")
+        // You could add a toast notification here for success
+      } else {
+        console.error('Failed to change transaction status:', res.status)
+        // You could add a toast notification here for error
+      }
+    } catch (error) {
+      console.error('Error changing transaction status:', error)
+      // You could add a toast notification here for error
+    } finally {
+      setChangeStatusLoading(false)
+    }
+  }
+
+  const openChangeStatusModal = (transaction: any) => {
+    setSelectedTransaction(transaction)
+    setSelectedStatus(transaction.status || "")
+    setChangeStatusModalOpen(true)
+  }
+
   const handleExportPDF = () => {
     const doc = new jsPDF()
     const tableColumn = [
@@ -402,14 +465,21 @@ export function TransactionsContent() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">{t("completed")}</Badge>
+      case "success":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">{t("completed")}</Badge>
       case "pending":
       case "pening":
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">{t("pending")}</Badge>
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">{t("pending")}</Badge>
       case "failed":
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{t("failed")}</Badge>
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">{t("failed")}</Badge>
+      case "expired":
+        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200">Expired</Badge>
+      case "canceled":
+        return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200">Canceled</Badge>
+      case "refund":
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Refund</Badge>
       default:
-        return <Badge variant="secondary">{status}</Badge>
+        return <Badge variant="secondary" className="bg-slate-100 text-slate-800 hover:bg-slate-100 border-slate-200">{status}</Badge>
     }
   }
 
@@ -576,17 +646,28 @@ export function TransactionsContent() {
                       <TableCell>{transaction.network || transaction.type_trans || "-"}</TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCheckStatus(transaction.reference)}
-                          disabled={statusLoading[transaction.reference]}
-                        >
-                          {statusLoading[transaction.reference] ? t("checking") : t("checkStatus")}
-                        </Button>
-                        {statusMap[transaction.reference] && (
-                          <div className="mt-2 text-xs text-blue-600">{t("status")}: {statusMap[transaction.reference]}</div>
-                        )}
+                        <div className="flex flex-col space-y-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCheckStatus(transaction.reference)}
+                            disabled={statusLoading[transaction.reference]}
+                          >
+                            {statusLoading[transaction.reference] ? t("checking") : t("checkStatus")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openChangeStatusModal(transaction)}
+                            className="flex items-center space-x-1"
+                          >
+                            <Settings className="h-3 w-3" />
+                            <span>Change Status</span>
+                          </Button>
+                          {statusMap[transaction.reference] && (
+                            <div className="text-xs text-blue-600">{t("status")}: {statusMap[transaction.reference]}</div>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -596,6 +677,54 @@ export function TransactionsContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Change Status Modal */}
+      <Dialog open={changeStatusModalOpen} onOpenChange={setChangeStatusModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Change Transaction Status</DialogTitle>
+            <DialogDescription>
+              Select a new status for transaction {selectedTransaction?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <label htmlFor="status" className="text-right">
+                Status
+              </label>
+              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TRANSACTION_STATUS.map((status) => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setChangeStatusModalOpen(false)}
+              disabled={changeStatusLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleChangeStatus}
+              disabled={changeStatusLoading || !selectedStatus}
+            >
+              {changeStatusLoading ? "Changing..." : "Change Status"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

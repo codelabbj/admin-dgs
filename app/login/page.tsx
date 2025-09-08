@@ -46,6 +46,16 @@ export default function Login() {
       const data = await res.json()
       if (res.ok) {
         console.log('Login successful, storing auth data:', data)
+        
+        // Check if user is staff
+        if (data.is_staff === false) {
+          // Show backend error when user is not staff
+          const errorMessage = data.detail || data.details || data.message || data.error || "Access denied. Staff privileges required."
+          setApiError(errorMessage)
+          return
+        }
+        
+        // Proceed with normal login flow when is_staff is true
         // Store authentication data using the utility function
         storeAuthData(data)
         

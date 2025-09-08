@@ -68,7 +68,7 @@ export default function Customers() {
         throw new Error("Base URL not configured")
       }
 
-      const url = `${baseUrl}/v1/api/users${encodeURIComponent(query)}`
+      const url = query ? `${baseUrl}/v1/api/users?q=${encodeURIComponent(query)}` : `${baseUrl}/v1/api/users`
       const response = await smartFetch(url)
       
       if (!response.ok) {
@@ -386,10 +386,10 @@ export default function Customers() {
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Gérez et analysez votre base de clients</p>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
+            {/* <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <Filter className="h-4 w-4 mr-2" />
               Filtres
-            </Button>
+            </Button> */}
             <Button className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl">
               <Plus className="h-4 w-4 mr-2" />
               Ajouter un Client
@@ -653,7 +653,7 @@ export default function Customers() {
             </Card>
 
             {/* Actions Rapides */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>
@@ -666,12 +666,12 @@ export default function Customers() {
                   <TrendingUp className="h-4 w-4 mr-2" />
                   Voir les Analyses
                 </Button>
-                {/* <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
+                <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
                   <UserCheck className="h-4 w-4 mr-2" />
                   Support Client
-                </Button> */}
+                </Button>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
       </div>
