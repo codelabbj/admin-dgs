@@ -23,6 +23,8 @@ interface PaymentSettings {
   max_payout: number
   payin_fee: string
   payout_fee: string
+  defaul_success_url: string
+  default_cancel_url: string
 }
 
 export default function Profile() {
@@ -74,7 +76,9 @@ export default function Profile() {
     max_payin: 50,
     max_payout: 50,
     payin_fee: "1.75",
-    payout_fee: "1.00"
+    payout_fee: "1.00",
+    defaul_success_url: "",
+    default_cancel_url: ""
   })
   const [isLoadingSettings, setIsLoadingSettings] = useState(false)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
@@ -241,7 +245,9 @@ export default function Profile() {
           max_payin: paymentSettings.max_payin,
           max_payout: paymentSettings.max_payout,
           payin_fee: paymentSettings.payin_fee,
-          payout_fee: paymentSettings.payout_fee
+          payout_fee: paymentSettings.payout_fee,
+          defaul_success_url: paymentSettings.defaul_success_url,
+          default_cancel_url: paymentSettings.default_cancel_url
         })
       })
 
@@ -479,7 +485,9 @@ export default function Profile() {
           max_payin: paymentSettings.max_payin,
           max_payout: paymentSettings.max_payout,
           payin_fee: paymentSettings.payin_fee,
-          payout_fee: paymentSettings.payout_fee
+          payout_fee: paymentSettings.payout_fee,
+          defaul_success_url: paymentSettings.defaul_success_url,
+          default_cancel_url: paymentSettings.default_cancel_url
         })
       })
 
@@ -1099,6 +1107,39 @@ export default function Profile() {
                           className="rounded-xl border-slate-200 dark:border-neutral-700"
                           disabled={isLoadingSettings}
                           placeholder="1.00"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* URLs par Défaut */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">URLs par Défaut</h4>
+                    <div className="grid grid-cols-1 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="default_success_url">URL de Succès par Défaut</Label>
+                        <Input
+                          id="default_success_url"
+                          type="url"
+                          value={paymentSettings.defaul_success_url}
+                          onChange={(e) => handleSettingsInputChange('defaul_success_url', e.target.value)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoadingSettings}
+                          placeholder="https://example.com/success"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="default_cancel_url">URL d'Annulation par Défaut</Label>
+                        <Input
+                          id="default_cancel_url"
+                          type="url"
+                          value={paymentSettings.default_cancel_url}
+                          onChange={(e) => handleSettingsInputChange('default_cancel_url', e.target.value)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoadingSettings}
+                          placeholder="https://example.com/cancel"
                         />
                       </div>
                     </div>

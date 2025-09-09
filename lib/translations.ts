@@ -87,6 +87,7 @@ export const translations = {
     actions: "Actions",
     export: "Export",
     noTransactionsFound: "No transactions found matching your criteria.",
+    success: "Success",
 
     // General
     search: "Search",
@@ -359,6 +360,7 @@ export const translations = {
     actions: "Actions",
     export: "Exporter",
     noTransactionsFound: "Aucune transaction trouvée correspondant à vos critères.",
+    success: "Succès",
 
     // General
     search: "Rechercher",

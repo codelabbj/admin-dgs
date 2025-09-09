@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield } from "lucide-react"
+import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 
 // Interface pour les données utilisateur de l'API
 interface User {
@@ -42,6 +43,8 @@ interface User {
 }
 
 export default function Customers() {
+  const router = useRouter()
+  
   // États pour la gestion des données
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,15 +53,19 @@ export default function Customers() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [verifying, setVerifying] = useState(false)
   const [verificationMessage, setVerificationMessage] = useState("")
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [modalUser, setModalUser] = useState<User | null>(null)
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
   const [verificationUser, setVerificationUser] = useState<User | null>(null)
   const [verificationStatus, setVerificationStatus] = useState<"approved" | "rejected">("approved")
   const [verificationReason, setVerificationReason] = useState("")
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalUsers, setTotalUsers] = useState(0)
 
   // Fonction pour récupérer les utilisateurs depuis l'API
-  const fetchUsers = async (query: string = "") => {
+  const fetchUsers = async (query: string = "", page: number = 1) => {
     try {
       setLoading(true)
       setError(null)
@@ -68,7 +75,15 @@ export default function Customers() {
         throw new Error("Base URL not configured")
       }
 
-      const url = query ? `${baseUrl}/v1/api/users?q=${encodeURIComponent(query)}` : `${baseUrl}/v1/api/users`
+      // Construire l'URL avec les paramètres de pagination et de recherche
+      const params = new URLSearchParams()
+      if (query) {
+        params.append('q', query)
+      }
+      params.append('page', page.toString())
+      params.append('page_size', pageSize.toString())
+      
+      const url = `${baseUrl}/v1/api/users?${params.toString()}`
       const response = await smartFetch(url)
       
       if (!response.ok) {
@@ -84,7 +99,25 @@ export default function Customers() {
       }
 
       const data = await response.json()
-      setUsers(data)
+      
+      // Gérer différentes structures de réponse
+      if (Array.isArray(data)) {
+        setUsers(data)
+        setTotalUsers(data.length)
+        setTotalPages(Math.ceil(data.length / pageSize))
+      } else if (data && Array.isArray(data.data)) {
+        setUsers(data.data)
+        setTotalUsers(data.total || data.data.length)
+        setTotalPages(data.total_pages || Math.ceil((data.total || data.data.length) / pageSize))
+      } else if (data && Array.isArray(data.results)) {
+        setUsers(data.results)
+        setTotalUsers(data.count || data.results.length)
+        setTotalPages(Math.ceil((data.count || data.results.length) / pageSize))
+      } else {
+        setUsers([])
+        setTotalUsers(0)
+        setTotalPages(0)
+      }
     } catch (err) {
       console.error("Error fetching users:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des utilisateurs"
@@ -151,7 +184,7 @@ export default function Customers() {
       setVerificationMessage(result.message || "Vérification effectuée avec succès")
       
       // Rafraîchir la liste des utilisateurs
-      await fetchUsers(searchQuery)
+      await fetchUsers(searchQuery, currentPage)
       
     } catch (err) {
       console.error("Error verifying account:", err)
@@ -162,11 +195,6 @@ export default function Customers() {
     }
   }
 
-  // Fonction pour ouvrir le modal avec les détails d'un utilisateur
-  const openUserDetailsModal = (user: User) => {
-    setModalUser(user)
-    setIsModalOpen(true)
-  }
 
   // Fonction pour ouvrir le modal de vérification
   const openVerificationModal = (user: User) => {
@@ -213,7 +241,7 @@ export default function Customers() {
       
       // Fermer le modal et rafraîchir la liste
       setIsVerificationModalOpen(false)
-      await fetchUsers(searchQuery)
+      await fetchUsers(searchQuery, currentPage)
       
     } catch (err) {
       console.error("Error verifying account:", err)
@@ -226,8 +254,13 @@ export default function Customers() {
 
   // Charger les utilisateurs au montage du composant
   useEffect(() => {
-    fetchUsers()
+    fetchUsers("", 1)
   }, [])
+
+  // Charger les utilisateurs quand la page change
+  useEffect(() => {
+    fetchUsers(searchQuery, currentPage)
+  }, [currentPage])
 
   // Fonction pour gérer la recherche avec debounce
   const debouncedSearch = useCallback(
@@ -236,7 +269,7 @@ export default function Customers() {
       return (query: string) => {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-          fetchUsers(query)
+          fetchUsers(query, 1) // Reset to first page when searching
         }, 300) // Attendre 300ms après la dernière frappe
       }
     })(),
@@ -245,7 +278,90 @@ export default function Customers() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
+    setCurrentPage(1) // Reset to first page when searching
     debouncedSearch(query)
+  }
+
+  // Fonctions de pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  // Composant de pagination
+  const PaginationComponent = () => {
+    if (totalPages <= 1) return null
+
+    const getPageNumbers = () => {
+      const pages = []
+      const maxVisiblePages = 5
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1)
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i)
+      }
+      return pages
+    }
+
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <span>
+            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalUsers)} sur {totalUsers} utilisateurs
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          {getPageNumbers().map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(page)}
+              className="h-8 w-8 p-0"
+            >
+              {page}
+            </Button>
+          ))}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   // Calculer les statistiques à partir des données réelles
@@ -466,10 +582,10 @@ export default function Customers() {
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              {/* <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtres Avancés
-              </Button>
+              </Button> */}
             </div>
           </CardContent>
         </Card>
@@ -501,7 +617,7 @@ export default function Customers() {
                         <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
                       </div>
                       <Button 
-                        onClick={() => fetchUsers(searchQuery)} 
+                        onClick={() => fetchUsers(searchQuery, currentPage)} 
                         className="bg-crimson-600 hover:bg-crimson-700 text-white"
                       >
                         🔄 Réessayer
@@ -598,7 +714,7 @@ export default function Customers() {
                             variant="ghost" 
                             size="sm" 
                             className="rounded-lg text-crimson-600 hover:text-crimson-700"
-                            onClick={() => openUserDetailsModal(customer.user)}
+                            onClick={() => router.push(`/customers/${customer.user.id}`)}
                           >
                             Voir les Détails
                           </Button>
@@ -608,6 +724,7 @@ export default function Customers() {
                   ))}
                   </div>
                 )}
+                <PaginationComponent />
               </CardContent>
             </Card>
           </div>
@@ -676,176 +793,6 @@ export default function Customers() {
         </div>
       </div>
 
-      {/* Modal pour les détails utilisateur */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white">
-              Détails du Client
-            </DialogTitle>
-            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
-              Informations complètes du profil client
-            </DialogDescription>
-          </DialogHeader>
-          
-          {modalUser && (
-            <div className="space-y-6">
-              {/* En-tête du profil */}
-              <div className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={modalUser.logo || undefined} />
-                  <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300 text-lg">
-                    {modalUser.fullname.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
-                    {modalUser.fullname}
-                  </h3>
-                  <p className="text-neutral-600 dark:text-neutral-400">{modalUser.email}</p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Badge 
-                      className={`text-xs ${
-                        modalUser.account_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
-                        modalUser.account_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {modalUser.account_status}
-                    </Badge>
-                    {modalUser.is_partner && (
-                      <Badge variant="outline" className="text-xs border-amber-200 text-amber-700">
-                        Partenaire
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Informations personnelles */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-crimson-600" />
-                      Informations Personnelles
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Prénom</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.first_name || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Nom</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.last_name || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Téléphone</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.phone || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Pays</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.country || 'Non spécifié'}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center">
-                      <Building className="h-4 w-4 mr-2 text-crimson-600" />
-                      Informations Entreprise
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Nom de l'entreprise</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.entreprise_name || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Site web</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">
-                        {modalUser.website ? (
-                          <a href={modalUser.website} target="_blank" rel="noopener noreferrer" className="text-crimson-600 hover:text-crimson-700">
-                            {modalUser.website}
-                          </a>
-                        ) : 'Non spécifié'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Numéro d'entreprise</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.entreprise_number || 'Non spécifié'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Frais client</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">
-                        {modalUser.customer_pay_fee ? 'Oui' : 'Non'}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Informations système */}
-              <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-white flex items-center">
-                    <Globe className="h-4 w-4 mr-2 text-crimson-600" />
-                    Informations Système
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">ID Utilisateur</label>
-                      <p className="text-sm text-neutral-900 dark:text-white font-mono">{modalUser.id}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Statut du compte</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.account_status}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Compte actif</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">{modalUser.is_active ? 'Oui' : 'Non'}</p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Date de création</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">
-                        {new Date(modalUser.created_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Dernière mise à jour</label>
-                      <p className="text-sm text-neutral-900 dark:text-white">
-                        {new Date(modalUser.updated_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                    {modalUser.reason_for_rejection && (
-                      <div className="md:col-span-2">
-                        <label className="text-xs font-medium text-neutral-500 dark:text-neutral-400">Raison du rejet</label>
-                        <p className="text-sm text-red-600 dark:text-red-400">{modalUser.reason_for_rejection}</p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Modal de vérification */}
       <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>

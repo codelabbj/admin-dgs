@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Download, Eye, Settings } from "lucide-react"
+import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
@@ -16,12 +16,11 @@ import { smartFetch, getAccessToken } from "@/utils/auth"
 
 // Transaction status constants
 const TRANSACTION_STATUS = [
-  { value: "success", label: "Success" },
-  { value: "pending", label: "Pending" },
-  { value: "failed", label: "Failed" },
-  { value: "expired", label: "Expired" },
-  { value: "canceled", label: "Canceled" },
-  { value: "refund", label: "Refund" }
+  { value: "success", label: "Succès" },
+  { value: "pening", label: "En Attente" },
+  { value: "failed", label: "Échec" },
+  { value: "expired", label: "Expiré" },
+  { value: "refund", label: "Remboursement" }
 ]
 
 export function TransactionsContent() {
@@ -37,6 +36,13 @@ export function TransactionsContent() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [selectedStatus, setSelectedStatus] = useState("")
   const [changeStatusLoading, setChangeStatusLoading] = useState(false)
+  
+  // États pour la pagination
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pageSize] = useState(10)
+  const [totalPages, setTotalPages] = useState(0)
+  const [totalTransactions, setTotalTransactions] = useState(0)
+  
   const { t } = useLanguage()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
@@ -51,7 +57,7 @@ export function TransactionsContent() {
   })
 
   useEffect(() => {
-    fetchTransactions()
+    fetchTransactions({}, 1)
     
     // Setup WebSocket connection
     setupWebSocket()
@@ -77,17 +83,44 @@ export function TransactionsContent() {
   // Refetch data when filters change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
+      setCurrentPage(1) // Reset to first page when filtering
       fetchTransactions({
         search: searchTerm,
         status: statusFilter,
         method: methodFilter
-      })
+      }, 1)
     }, 500) // Debounce search by 500ms
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, statusFilter, methodFilter])
 
-  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string }) => {
+  // Refetch data when page changes
+  useEffect(() => {
+    fetchTransactions({
+      search: searchTerm,
+      status: statusFilter,
+      method: methodFilter
+    }, currentPage)
+  }, [currentPage])
+
+  // Fonctions de pagination
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+  }
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1)
+    }
+  }
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1)
+    }
+  }
+
+  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string }, page: number = 1) => {
     setLoading(true)
     try {
       // Build query parameters
@@ -103,10 +136,14 @@ export function TransactionsContent() {
         queryParams.append('method', filters.method)
       }
       
-      const queryString = queryParams.toString()
-      const url = `${baseUrl}/prod/v1/api/transaction${queryString ? `?${queryString}` : ''}`
+      // Add pagination parameters
+      queryParams.append('page', page.toString())
+      queryParams.append('page_size', pageSize.toString())
       
-      console.log('Fetching transactions with filters:', { filters, url })
+      const queryString = queryParams.toString()
+      const url = `${baseUrl}/prod/v1/api/transaction?${queryString}`
+      
+      console.log('Fetching transactions with filters and pagination:', { filters, page, url })
       
       const res = await smartFetch(url)
       
@@ -115,7 +152,9 @@ export function TransactionsContent() {
         // Ensure data is an array, handle different response structures
         if (Array.isArray(data)) {
           // Reset the transactions map for first page
-          transactionsMapRef.current.clear()
+          if (page === 1) {
+            transactionsMapRef.current.clear()
+          }
           
           // Add each transaction to the map
           data.forEach((tx: any) => {
@@ -124,9 +163,13 @@ export function TransactionsContent() {
           })
           
           setTransactions(data)
+          setTotalTransactions(data.length)
+          setTotalPages(Math.ceil(data.length / pageSize))
         } else if (data && Array.isArray(data.data)) {
           // Reset the transactions map for first page
-          transactionsMapRef.current.clear()
+          if (page === 1) {
+            transactionsMapRef.current.clear()
+          }
           
           // Add each transaction to the map
           data.data.forEach((tx: any) => {
@@ -135,9 +178,13 @@ export function TransactionsContent() {
           })
           
           setTransactions(data.data)
+          setTotalTransactions(data.total || data.data.length)
+          setTotalPages(data.total_pages || Math.ceil((data.total || data.data.length) / pageSize))
         } else if (data && Array.isArray(data.results)) {
           // Reset the transactions map for first page
-          transactionsMapRef.current.clear()
+          if (page === 1) {
+            transactionsMapRef.current.clear()
+          }
           
           // Add each transaction to the map
           data.results.forEach((tx: any) => {
@@ -146,9 +193,13 @@ export function TransactionsContent() {
           })
           
           setTransactions(data.results)
+          setTotalTransactions(data.count || data.results.length)
+          setTotalPages(Math.ceil((data.count || data.results.length) / pageSize))
         } else {
           console.log('Structure de réponse API:', data)
           setTransactions([])
+          setTotalTransactions(0)
+          setTotalPages(0)
         }
       } else {
         setError(`Échec de la récupération des transactions: ${res.status}`)
@@ -441,6 +492,28 @@ export function TransactionsContent() {
     }
   }
 
+  // Get allowed status transitions based on current status
+  const getAllowedStatusTransitions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "success":
+        return [{ value: "refund", label: "Remboursement" }]
+      case "pening":
+        return [
+          { value: "failed", label: "Échec" },
+          { value: "expired", label: "Expiré" },
+          { value: "success", label: "Succès" }
+        ]
+      case "failed":
+        return [{ value: "success", label: "Succès" }]
+      case "expired":
+        return [] // No transitions allowed from expired
+      case "refund":
+        return [] // No transitions allowed from refund
+      default:
+        return [] // No transitions for unknown statuses
+    }
+  }
+
   const openChangeStatusModal = (transaction: any) => {
     setSelectedTransaction(transaction)
     setSelectedStatus(transaction.status || "")
@@ -486,6 +559,71 @@ export function TransactionsContent() {
 
   // Since we're now filtering on the API side, we can use transactions directly
   const filteredTransactions = Array.isArray(transactions) ? transactions : []
+
+  // Composant de pagination
+  const PaginationComponent = () => {
+    if (totalPages <= 1) return null
+
+    const getPageNumbers = () => {
+      const pages = []
+      const maxVisiblePages = 5
+      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2))
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1)
+
+      if (endPage - startPage + 1 < maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1)
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i)
+      }
+      return pages
+    }
+
+    return (
+      <div className="flex items-center justify-between px-2 py-4">
+        <div className="flex items-center text-sm text-muted-foreground">
+          <span>
+            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalTransactions)} sur {totalTransactions} transactions
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePreviousPage}
+            disabled={currentPage === 1}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          {getPageNumbers().map((page) => (
+            <Button
+              key={page}
+              variant={currentPage === page ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePageChange(page)}
+              className="h-8 w-8 p-0"
+            >
+              {page}
+            </Button>
+          ))}
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className="h-8 w-8 p-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -610,8 +748,8 @@ export function TransactionsContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("allStatus")}</SelectItem>
-                <SelectItem value="completed">{t("completed")}</SelectItem>
-                <SelectItem value="pending">{t("pending")}</SelectItem>
+                <SelectItem value="success">{t("success")}</SelectItem>
+                <SelectItem value="pening">{t("pending")}</SelectItem>
                 <SelectItem value="failed">{t("failed")}</SelectItem>
               </SelectContent>
             </Select>
@@ -700,6 +838,7 @@ export function TransactionsContent() {
               </TableBody>
             </Table>
           </div>
+          <PaginationComponent />
         </CardContent>
       </Card>
 
@@ -707,29 +846,49 @@ export function TransactionsContent() {
       <Dialog open={changeStatusModalOpen} onOpenChange={setChangeStatusModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Change Transaction Status</DialogTitle>
+            <DialogTitle>Modifier le Statut de la Transaction</DialogTitle>
             <DialogDescription>
-              Select a new status for transaction {selectedTransaction?.id}
+              Sélectionnez un nouveau statut pour la transaction {selectedTransaction?.id}
+              <br />
+              <span className="text-sm text-muted-foreground">
+                Statut actuel : <strong>{selectedTransaction?.status}</strong>
+              </span>
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="status" className="text-right">
-                Status
-              </label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TRANSACTION_STATUS.map((status) => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {(() => {
+              const allowedTransitions = getAllowedStatusTransitions(selectedTransaction?.status || "")
+              
+              if (allowedTransitions.length === 0) {
+                return (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground">
+                      Aucun changement de statut n'est autorisé pour les transactions avec le statut : <strong>{selectedTransaction?.status}</strong>
+                    </p>
+                  </div>
+                )
+              }
+              
+              return (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <label htmlFor="status" className="text-right">
+                    Nouveau Statut
+                  </label>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Sélectionner un nouveau statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allowedTransitions.map((status) => (
+                        <SelectItem key={status.value} value={status.value}>
+                          {status.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            })()}
           </div>
           <DialogFooter>
             <Button
@@ -738,15 +897,17 @@ export function TransactionsContent() {
               onClick={() => setChangeStatusModalOpen(false)}
               disabled={changeStatusLoading}
             >
-              Cancel
+              Annuler
             </Button>
-            <Button
-              type="button"
-              onClick={handleChangeStatus}
-              disabled={changeStatusLoading || !selectedStatus}
-            >
-              {changeStatusLoading ? "Changing..." : "Change Status"}
-            </Button>
+            {getAllowedStatusTransitions(selectedTransaction?.status || "").length > 0 && (
+              <Button
+                type="button"
+                onClick={handleChangeStatus}
+                disabled={changeStatusLoading || !selectedStatus || selectedStatus === selectedTransaction?.status}
+              >
+                {changeStatusLoading ? "Modification..." : "Modifier le Statut"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
