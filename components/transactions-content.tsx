@@ -74,10 +74,41 @@ export function TransactionsContent() {
     }
   }, [])
 
-  const fetchTransactions = async () => {
+  // Refetch data when filters change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchTransactions({
+        search: searchTerm,
+        status: statusFilter,
+        method: methodFilter
+      })
+    }, 500) // Debounce search by 500ms
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, statusFilter, methodFilter])
+
+  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string }) => {
     setLoading(true)
     try {
-      const res = await smartFetch(`${baseUrl}/prod/v1/api/transaction`)
+      // Build query parameters
+      const queryParams = new URLSearchParams()
+      
+      if (filters?.search) {
+        queryParams.append('q', filters.search)
+      }
+      if (filters?.status && filters.status !== 'all') {
+        queryParams.append('status', filters.status)
+      }
+      if (filters?.method && filters.method !== 'all') {
+        queryParams.append('method', filters.method)
+      }
+      
+      const queryString = queryParams.toString()
+      const url = `${baseUrl}/prod/v1/api/transaction${queryString ? `?${queryString}` : ''}`
+      
+      console.log('Fetching transactions with filters:', { filters, url })
+      
+      const res = await smartFetch(url)
       
       if (res.ok) {
         const data = await res.json()
@@ -453,14 +484,8 @@ export function TransactionsContent() {
     doc.save("transactions.pdf")
   }
 
-  const filteredTransactions = (Array.isArray(transactions) ? transactions : []).filter((transaction) => {
-    const customerName = transaction.customer?.username || transaction.customer?.email || ""
-    const matchesSearch =
-      customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (transaction.reference || "").toLowerCase().includes(searchTerm.toLowerCase())
-    // Status and method filters can be expanded if needed
-    return matchesSearch
-  })
+  // Since we're now filtering on the API side, we can use transactions directly
+  const filteredTransactions = Array.isArray(transactions) ? transactions : []
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -590,7 +615,7 @@ export function TransactionsContent() {
                 <SelectItem value="failed">{t("failed")}</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={methodFilter} onValueChange={setMethodFilter}>
+            {/* <Select value={methodFilter} onValueChange={setMethodFilter}>
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue placeholder={t("method")} />
               </SelectTrigger>
@@ -600,7 +625,7 @@ export function TransactionsContent() {
                 <SelectItem value="Credit Card">{t("creditCard")}</SelectItem>
                 <SelectItem value="Bank Account">{t("bankAccount")}</SelectItem>
               </SelectContent>
-            </Select>
+            </Select> */}
           </div>
 
           {/* Transactions Table */}

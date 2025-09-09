@@ -564,7 +564,7 @@ export default function Customers() {
                         <div className="flex items-center space-x-2">
                           {customer.status === 'En Attente' && (
                             <>
-                              <Button 
+                              {/* <Button 
                                 size="sm" 
                                 className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
                                 onClick={() => verifyAccount(customer.user.id, "approved")}
@@ -582,7 +582,7 @@ export default function Customers() {
                               >
                                 {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
                                 Rejeter
-                              </Button>
+                              </Button> */}
                               <Button 
                                 size="sm" 
                                 className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
@@ -927,18 +927,18 @@ export default function Customers() {
               </div>
 
               {/* Payload preview */}
-              <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
+              {/* <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
                 <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   Payload à envoyer:
                 </h4>
                 <pre className="text-xs text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 p-3 rounded-lg overflow-x-auto">
-{JSON.stringify({
-  status: verificationStatus,
-  customer_id: verificationUser.id,
-  reason_for_block: verificationReason || (verificationStatus === "rejected" ? "BLOCK" : undefined)
-}, null, 2)}
+                  {JSON.stringify({
+                    status: verificationStatus,
+                    customer_id: verificationUser.id,
+                    reason_for_block: verificationReason || (verificationStatus === "rejected" ? "BLOCK" : undefined)
+                  }, null, 2)}
                 </pre>
-              </div>
+              </div> */}
 
               {/* Actions */}
               <div className="flex justify-end space-x-3">
