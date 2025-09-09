@@ -10,8 +10,8 @@ import { DynamicLayout } from "@/components/dynamic-layout"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "DGS Merchant Dashboard",
-  description: "Professional merchant dashboard for payment management",
+  title: "DGS Admin Dashboard",
+  description: "Admin dashboard for management of the DGS platform",
     // generator: 'v0.dev'
 }
 
