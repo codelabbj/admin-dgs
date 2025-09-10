@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
@@ -20,7 +20,16 @@ const TRANSACTION_STATUS = [
   { value: "pening", label: "En Attente" },
   { value: "failed", label: "Échec" },
   { value: "expired", label: "Expiré" },
-  { value: "refund", label: "Remboursement" }
+  { value: "refund", label: "Remboursement" },
+  { value: "accept", label: "Accepté" },
+  { value: "reject", label: "Rejeté" }
+]
+
+// Transaction type constants
+const TRANSACTION_TYPES = [
+  { value: "payment", label: "Paiement" },
+  { value: "withdrawal", label: "Retrait" },
+  { value: "payout", label: "Paiement Sortant" }
 ]
 
 export function TransactionsContent() {
@@ -36,6 +45,9 @@ export function TransactionsContent() {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [selectedStatus, setSelectedStatus] = useState("")
   const [changeStatusLoading, setChangeStatusLoading] = useState(false)
+  const [transactionDetailsModalOpen, setTransactionDetailsModalOpen] = useState(false)
+  const [selectedTransactionDetails, setSelectedTransactionDetails] = useState<any>(null)
+  const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({})
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -492,8 +504,45 @@ export function TransactionsContent() {
     }
   }
 
-  // Get allowed status transitions based on current status
-  const getAllowedStatusTransitions = (currentStatus: string) => {
+  // Get allowed status transitions based on current status and transaction type
+  const getAllowedStatusTransitions = (currentStatus: string, transactionType?: string) => {
+    // Special handling for withdrawal transactions
+    if (transactionType === "withdrawal") {
+      switch (currentStatus) {
+        case "pening":
+          return [
+            { value: "accept", label: "Accepté" },
+            { value: "reject", label: "Rejeté" }
+          ]
+        case "accept":
+          return [] // No transitions allowed from accept
+        case "reject":
+          return [] // No transitions allowed from reject
+        default:
+          return [] // No transitions for unknown statuses
+      }
+    }
+    
+    // Special handling for payout transactions
+    if (transactionType === "payout") {
+      switch (currentStatus) {
+        case "pening":
+          return [
+            { value: "success", label: "Succès" },
+            { value: "failed", label: "Échec" }
+          ]
+        case "success":
+          return [{ value: "refund", label: "Remboursement" }]
+        case "failed":
+          return [{ value: "success", label: "Succès" }]
+        case "refund":
+          return [] // No transitions allowed from refund
+        default:
+          return [] // No transitions for unknown statuses
+      }
+    }
+    
+    // Regular transaction status transitions
     switch (currentStatus) {
       case "success":
         return [{ value: "refund", label: "Remboursement" }]
@@ -509,6 +558,10 @@ export function TransactionsContent() {
         return [] // No transitions allowed from expired
       case "refund":
         return [] // No transitions allowed from refund
+      case "accept":
+        return [] // No transitions allowed from accept
+      case "reject":
+        return [] // No transitions allowed from reject
       default:
         return [] // No transitions for unknown statuses
     }
@@ -518,6 +571,23 @@ export function TransactionsContent() {
     setSelectedTransaction(transaction)
     setSelectedStatus(transaction.status || "")
     setChangeStatusModalOpen(true)
+  }
+
+  const openTransactionDetailsModal = (transaction: any) => {
+    setSelectedTransactionDetails(transaction)
+    setTransactionDetailsModalOpen(true)
+  }
+
+  const copyToClipboard = async (text: string, fieldName: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedFields(prev => ({ ...prev, [fieldName]: true }))
+      setTimeout(() => {
+        setCopiedFields(prev => ({ ...prev, [fieldName]: false }))
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to copy text: ', error)
+    }
   }
 
   const handleExportPDF = () => {
@@ -641,6 +711,10 @@ export function TransactionsContent() {
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200">Canceled</Badge>
       case "refund":
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Refund</Badge>
+      case "accept":
+        return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Accepté</Badge>
+      case "reject":
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Rejeté</Badge>
       default:
         return <Badge variant="secondary" className="bg-slate-100 text-slate-800 hover:bg-slate-100 border-slate-200">{status}</Badge>
     }
@@ -751,6 +825,8 @@ export function TransactionsContent() {
                 <SelectItem value="success">{t("success")}</SelectItem>
                 <SelectItem value="pening">{t("pending")}</SelectItem>
                 <SelectItem value="failed">{t("failed")}</SelectItem>
+                <SelectItem value="accept">Accepté</SelectItem>
+                <SelectItem value="reject">Rejeté</SelectItem>
               </SelectContent>
             </Select>
             {/* <Select value={methodFilter} onValueChange={setMethodFilter}>
@@ -813,6 +889,15 @@ export function TransactionsContent() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => openTransactionDetailsModal(transaction)}
+                            className="flex items-center space-x-1"
+                          >
+                            <Eye className="h-3 w-3" />
+                            <span>View Details</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleCheckStatus(transaction.reference)}
                             disabled={statusLoading[transaction.reference]}
                           >
@@ -857,13 +942,21 @@ export function TransactionsContent() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {(() => {
-              const allowedTransitions = getAllowedStatusTransitions(selectedTransaction?.status || "")
+              const allowedTransitions = getAllowedStatusTransitions(
+                selectedTransaction?.status || "", 
+                selectedTransaction?.type_trans
+              )
               
               if (allowedTransitions.length === 0) {
                 return (
                   <div className="text-center py-4">
                     <p className="text-muted-foreground">
                       Aucun changement de statut n'est autorisé pour les transactions avec le statut : <strong>{selectedTransaction?.status}</strong>
+                      {selectedTransaction?.type_trans === "withdrawal" && (
+                        <span className="block mt-2 text-sm">
+                          Type de transaction : <strong>Retrait</strong>
+                        </span>
+                      )}
                     </p>
                   </div>
                 )
@@ -886,6 +979,13 @@ export function TransactionsContent() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {(selectedTransaction?.type_trans === "withdrawal" || selectedTransaction?.type_trans === "payout") && (
+                    <div className="col-span-4 text-sm text-muted-foreground">
+                      Type de transaction : <strong>
+                        {TRANSACTION_TYPES.find(t => t.value === selectedTransaction?.type_trans)?.label || selectedTransaction?.type_trans}
+                      </strong>
+                    </div>
+                  )}
                 </div>
               )
             })()}
@@ -899,7 +999,7 @@ export function TransactionsContent() {
             >
               Annuler
             </Button>
-            {getAllowedStatusTransitions(selectedTransaction?.status || "").length > 0 && (
+            {getAllowedStatusTransitions(selectedTransaction?.status || "", selectedTransaction?.type_trans).length > 0 && (
               <Button
                 type="button"
                 onClick={handleChangeStatus}
@@ -908,6 +1008,263 @@ export function TransactionsContent() {
                 {changeStatusLoading ? "Modification..." : "Modifier le Statut"}
               </Button>
             )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Transaction Details Modal */}
+      <Dialog open={transactionDetailsModalOpen} onOpenChange={setTransactionDetailsModalOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Détails de la Transaction</DialogTitle>
+            <DialogDescription>
+              Informations complètes de la transaction {selectedTransactionDetails?.id}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {selectedTransactionDetails && (
+              <div className="space-y-6">
+                {/* Basic Information */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">ID de Transaction</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.id || "-"}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(selectedTransactionDetails.id, 'transactionId')}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedFields['transactionId'] ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Référence</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.reference || "-"}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(selectedTransactionDetails.reference, 'reference')}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedFields['reference'] ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transaction Reference */}
+                {selectedTransactionDetails.transac_reference && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Référence de Transaction</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.transac_reference}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(selectedTransactionDetails.transac_reference, 'transacReference')}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedFields['transacReference'] ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Amount, Status, and Type */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Montant</label>
+                    <p className="text-lg font-semibold text-green-600">
+                      {selectedTransactionDetails.amount?.toLocaleString?.() || selectedTransactionDetails.amount || "-"} 
+                      {selectedTransactionDetails.currency ? ` ${selectedTransactionDetails.currency}` : " FCFA"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Statut</label>
+                    <div className="mt-1">{getStatusBadge(selectedTransactionDetails.status)}</div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-sm font-medium">
+                      {TRANSACTION_TYPES.find(t => t.value === selectedTransactionDetails.type_trans)?.label || selectedTransactionDetails.type_trans || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Network and Phone */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Réseau</label>
+                    <p className="text-sm font-medium">{selectedTransactionDetails.network || "-"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
+                    <p className="text-sm font-mono">{selectedTransactionDetails.phone || "-"}</p>
+                  </div>
+                </div>
+
+                {/* Customer ID */}
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">ID Client</label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.customer_id || "-"}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyToClipboard(selectedTransactionDetails.customer_id, 'customerId')}
+                      className="h-8 w-8 p-0"
+                    >
+                      {copiedFields['customerId'] ? (
+                        <Check className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Beneficiary Information */}
+                {selectedTransactionDetails.beneficiary && (
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-3">Informations Bénéficiaire</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Nom</label>
+                        <p className="text-sm font-medium">{selectedTransactionDetails.beneficiary.name || "-"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Email</label>
+                        <p className="text-sm">{selectedTransactionDetails.beneficiary.email || "-"}</p>
+                      </div>
+                    </div>
+                    {selectedTransactionDetails.beneficiary.account_number && (
+                      <div className="mt-2">
+                        <label className="text-sm font-medium text-muted-foreground">Numéro de Compte</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{selectedTransactionDetails.beneficiary.account_number}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* URLs Section */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">URLs de Configuration</h4>
+                  <div className="space-y-3">
+                    {selectedTransactionDetails.success_url && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">URL de Succès</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">{selectedTransactionDetails.success_url}</p>
+                      </div>
+                    )}
+                    {selectedTransactionDetails.cancel_url && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">URL d'Annulation</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">{selectedTransactionDetails.cancel_url}</p>
+                      </div>
+                    )}
+                    {selectedTransactionDetails.callback_url && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">URL de Callback</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">{selectedTransactionDetails.callback_url}</p>
+                      </div>
+                    )}
+                    {selectedTransactionDetails.wave_launch_url && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">URL de Lancement Wave</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">{selectedTransactionDetails.wave_launch_url}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Détails Supplémentaires</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Code Pays</label>
+                      <p className="text-sm">{selectedTransactionDetails.country_code || "-"}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Montant des Frais</label>
+                      <p className="text-sm">{selectedTransactionDetails.fee_amount ? `${selectedTransactionDetails.fee_amount} FCFA` : "-"}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Pour Compte Client</label>
+                      <p className="text-sm">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          selectedTransactionDetails.for_customer_account 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {selectedTransactionDetails.for_customer_account ? 'Oui' : 'Non'}
+                        </span>
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Code Marchand</label>
+                      <p className="text-sm font-mono">{selectedTransactionDetails.code || "-"}</p>
+                    </div>
+                  </div>
+                  {selectedTransactionDetails.description && (
+                    <div className="mt-4">
+                      <label className="text-sm font-medium text-muted-foreground">Description</label>
+                      <p className="text-sm bg-slate-100 dark:bg-slate-800 p-2 rounded">{selectedTransactionDetails.description}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dates */}
+                <div className="border-t pt-4">
+                  <h4 className="text-sm font-medium mb-3">Dates</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
+                      <p className="text-sm">
+                        {selectedTransactionDetails.created_at 
+                          ? new Date(selectedTransactionDetails.created_at).toLocaleString() 
+                          : "-"
+                        }
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Date de Mise à Jour</label>
+                      <p className="text-sm">
+                        {selectedTransactionDetails.updated_at 
+                          ? new Date(selectedTransactionDetails.updated_at).toLocaleString() 
+                          : "-"
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setTransactionDetailsModalOpen(false)}
+            >
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
