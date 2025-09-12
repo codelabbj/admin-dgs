@@ -424,6 +424,75 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
   return response
 }
 
+// Check if user has staff privileges
+export function isStaff(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+  
+  // First check direct is_staff field in localStorage
+  const directStaffStatus = localStorage.getItem("is_staff")
+  if (directStaffStatus !== null) {
+    const isStaffDirect = directStaffStatus === 'true'
+    console.log('isStaff check (direct):', { 
+      directStaffStatus, 
+      isStaffDirect 
+    })
+    return isStaffDirect
+  }
+  
+  // Fallback to user data
+  const userData = getUserData()
+  if (!userData) {
+    console.log('isStaff: No user data found')
+    return false
+  }
+  
+  const hasStaffPrivileges = userData.is_staff === true
+  console.log('isStaff check (userData):', { 
+    userData: userData, 
+    is_staff: userData.is_staff, 
+    hasStaffPrivileges 
+  })
+  
+  return hasStaffPrivileges
+}
+
+// Check if user is authenticated AND has staff privileges
+export function isAuthenticatedStaff(): boolean {
+  const isAuth = isAuthenticated()
+  const isStaffUser = isStaff()
+  
+  console.log('isAuthenticatedStaff check:', { 
+    isAuth, 
+    isStaffUser, 
+    result: isAuth && isStaffUser 
+  })
+  
+  return isAuth && isStaffUser
+}
+
+// Debug function to check all auth-related data
+export function debugAuthState(): void {
+  if (typeof window === 'undefined') {
+    console.log('debugAuthState: Not in browser environment')
+    return
+  }
+  
+  const authData = {
+    access: localStorage.getItem("access"),
+    refresh: localStorage.getItem("refresh"),
+    exp: localStorage.getItem("exp"),
+    user: localStorage.getItem("user"),
+    is_staff: localStorage.getItem("is_staff"),
+    isAuthenticated: isAuthenticated(),
+    isStaff: isStaff(),
+    isAuthenticatedStaff: isAuthenticatedStaff()
+  }
+  
+  console.log('Current auth state:', authData)
+}
+
 // Legacy function for backward compatibility
 export async function authenticatedFetch(url: string, options: RequestInit = {}): Promise<Response> {
   return smartFetch(url, options)

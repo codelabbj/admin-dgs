@@ -271,6 +271,7 @@ export const translations = {
     checking: "Checking...",
     error: "Error",
     entrepriseName: "Entreprise Name",
+    accessDeniedStaff: "Access denied. Staff privileges required.",
 
   },
   fr: {
@@ -545,6 +546,7 @@ export const translations = {
     checking: "Vérification...",
     error: "Erreur",
     entrepriseName: "Nom de l'entreprise",
+    accessDeniedStaff: "Accès refusé. Privilèges d'administrateur requis.",
   },
 }
 

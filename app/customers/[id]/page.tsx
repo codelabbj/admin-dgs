@@ -390,12 +390,15 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                 <div className="flex items-center space-x-2 mt-2">
                   <Badge 
                     className={`text-sm ${
-                      user.account_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                      user.account_status === 'verify' ? 'bg-emerald-100 text-emerald-800' :
+                      user.account_status === 'active' ? 'bg-blue-100 text-blue-800' :
                       user.account_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                       'bg-red-100 text-red-800'
                     }`}
                   >
-                    {user.account_status}
+                    {user.account_status === 'verify' ? 'Vérifié' : 
+                     user.account_status === 'active' ? 'Actif' : 
+                     user.account_status}
                   </Badge>
                   {user.is_partner && (
                     <Badge variant="outline" className="text-sm border-amber-200 text-amber-700">
@@ -625,12 +628,15 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                    <div className="flex items-center space-x-2 mt-1">
                      <Badge 
                        className={`text-xs ${
-                         user.account_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                         user.account_status === 'verify' ? 'bg-emerald-100 text-emerald-800' :
+                         user.account_status === 'active' ? 'bg-blue-100 text-blue-800' :
                          user.account_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                          'bg-red-100 text-red-800'
                        }`}
                      >
-                       {user.account_status}
+                       {user.account_status === 'verify' ? 'Vérifié' : 
+                        user.account_status === 'active' ? 'Actif' : 
+                        user.account_status}
                      </Badge>
                      {user.is_staff && (
                        <Badge variant="outline" className="text-xs border-blue-200 text-blue-700">

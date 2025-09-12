@@ -55,7 +55,7 @@ export default function Customers() {
   const [verificationMessage, setVerificationMessage] = useState("")
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
   const [verificationUser, setVerificationUser] = useState<User | null>(null)
-  const [verificationStatus, setVerificationStatus] = useState<"approved" | "rejected">("approved")
+  const [verificationStatus, setVerificationStatus] = useState<"verify" | "rejected">("verify")
   const [verificationReason, setVerificationReason] = useState("")
   
   // États pour la pagination
@@ -153,7 +153,7 @@ export default function Customers() {
   }
 
   // Fonction pour vérifier un compte utilisateur
-  const verifyAccount = async (userId: string, status: "approved" | "rejected", reason?: string) => {
+  const verifyAccount = async (userId: string, status: "verify" | "rejected", reason?: string) => {
     try {
       setVerifying(true)
       setVerificationMessage("")
@@ -199,7 +199,7 @@ export default function Customers() {
   // Fonction pour ouvrir le modal de vérification
   const openVerificationModal = (user: User) => {
     setVerificationUser(user)
-    setVerificationStatus("approved")
+    setVerificationStatus("verify")
     setVerificationReason("")
     setIsVerificationModalOpen(true)
   }
@@ -419,12 +419,13 @@ export default function Customers() {
     { label: "Partenaires", value: stats.partners.toLocaleString(), change: "+15%", icon: Building, color: "amber" },
   ]
 
-  // Clients récents (les 4 plus récents)
-  const recentCustomers = users
+  // Tous les clients (les utilisateurs sont déjà paginés par l'API)
+  // Le state 'users' contient déjà les résultats de la page courante
+  const allCustomers = users
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 4)
     .map(user => {
       const status = user.account_status === 'active' ? 'Actif' : 
+                    user.account_status === 'verify' ? 'Vérifié' :
                     user.account_status === 'pending' ? 'En Attente' : 
                     user.account_status === 'rejected' ? 'Rejeté' : 'Inactif'
       
@@ -591,16 +592,16 @@ export default function Customers() {
         </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Clients Récents */}
+          {/* Tous les Clients */}
           <div className="lg:col-span-2">
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Users className="h-5 w-5 mr-2 text-crimson-600" />
-                    Clients Récents
+                    Tous les Clients
                   </CardTitle>
                   <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Dernières inscriptions et activités des clients
+                    Liste complète de tous les clients ({totalUsers} au total)
                   </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
@@ -624,7 +625,7 @@ export default function Customers() {
                       </Button>
                     </div>
                   </div>
-                ) : recentCustomers.length === 0 ? (
+                ) : allCustomers.length === 0 ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="text-center">
                       <Users className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
@@ -633,7 +634,7 @@ export default function Customers() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {recentCustomers.map((customer) => (
+                    {allCustomers.map((customer) => (
                     <div key={customer.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                       <div className="flex items-center space-x-4">
                         <Avatar className="h-12 w-12">
@@ -656,7 +657,8 @@ export default function Customers() {
                             </Badge>
                             <Badge 
                               className={`text-xs ${
-                                customer.status === 'Actif' ? 'bg-emerald-100 text-emerald-800' :
+                                customer.status === 'Vérifié' ? 'bg-emerald-100 text-emerald-800' :
+                                customer.status === 'Actif' ? 'bg-blue-100 text-blue-800' :
                                 customer.status === 'En Attente' ? 'bg-yellow-100 text-yellow-800' :
                                 customer.status === 'Rejeté' ? 'bg-red-100 text-red-800' :
                                 'bg-gray-100 text-gray-800'
@@ -839,9 +841,9 @@ export default function Customers() {
                       <input
                         type="radio"
                         name="status"
-                        value="approved"
-                        checked={verificationStatus === "approved"}
-                        onChange={(e) => setVerificationStatus(e.target.value as "approved" | "rejected")}
+                        value="verify"
+                        checked={verificationStatus === "verify"}
+                        onChange={(e) => setVerificationStatus(e.target.value as "verify" | "rejected")}
                         className="text-green-600 focus:ring-green-500"
                       />
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">Approuver</span>
@@ -852,7 +854,7 @@ export default function Customers() {
                         name="status"
                         value="rejected"
                         checked={verificationStatus === "rejected"}
-                        onChange={(e) => setVerificationStatus(e.target.value as "approved" | "rejected")}
+                        onChange={(e) => setVerificationStatus(e.target.value as "verify" | "rejected")}
                         className="text-red-600 focus:ring-red-500"
                       />
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">Rejeter</span>
@@ -901,7 +903,7 @@ export default function Customers() {
                   onClick={submitVerificationFromModal}
                   disabled={verifying}
                   className={`rounded-xl ${
-                    verificationStatus === "approved" 
+                    verificationStatus === "verify" 
                       ? "bg-green-600 hover:bg-green-700" 
                       : "bg-red-600 hover:bg-red-700"
                   } text-white`}
@@ -914,7 +916,7 @@ export default function Customers() {
                   ) : (
                     <>
                       <Shield className="h-4 w-4 mr-2" />
-                      {verificationStatus === "approved" ? "Approuver" : "Rejeter"}
+                      {verificationStatus === "verify" ? "Approuver" : "Rejeter"}
                     </>
                   )}
                 </Button>

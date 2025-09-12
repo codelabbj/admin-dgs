@@ -6,7 +6,9 @@ import { useRouter, usePathname } from "next/navigation"
 import { useLanguage } from "@/contexts/language-context"
 import { 
   startBackgroundTokenRefresh, 
-  stopBackgroundTokenRefresh
+  stopBackgroundTokenRefresh,
+  isAuthenticatedStaff,
+  isStaff
 } from "@/utils/auth"
 
 interface AuthGuardProps {
@@ -31,25 +33,30 @@ function ClientOnly({ children }: { children: React.ReactNode }) {
 export function AuthGuard({ children }: AuthGuardProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isStaffUser, setIsStaffUser] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { t } = useLanguage()
 
-  // Simple authentication check
+  // Enhanced authentication check with staff privileges
   const checkAuth = () => {
     const accessToken = localStorage.getItem("access")
     const refreshToken = localStorage.getItem("refresh")
     const hasTokens = !!(accessToken && refreshToken)
+    const staffStatus = isStaff()
     
     console.log('AuthGuard checkAuth:', {
       pathname,
       hasTokens,
       accessToken: !!accessToken,
       refreshToken: !!refreshToken,
-      isAuthenticated
+      isAuthenticated,
+      staffStatus,
+      isStaffUser
     })
     
     setIsAuthenticated(hasTokens)
+    setIsStaffUser(staffStatus)
     setIsLoading(false)
   }
 
@@ -67,7 +74,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       // Only handle changes to auth-related keys
-      if (e.key === 'access' || e.key === 'refresh' || e.key === 'exp') {
+      if (e.key === 'access' || e.key === 'refresh' || e.key === 'exp' || e.key === 'is_staff' || e.key === 'user') {
         console.log('Storage change detected for auth key:', e.key, 'newValue:', !!e.newValue, 'oldValue:', !!e.oldValue)
         
         // Only recheck if we're adding tokens, not removing them
@@ -95,7 +102,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [])
 
-  // Handle redirects based on authentication state
+  // Handle redirects based on authentication state and staff privileges
   useEffect(() => {
     if (isLoading) return
 
@@ -106,19 +113,27 @@ export function AuthGuard({ children }: AuthGuardProps) {
       pathname,
       isPublicRoute,
       isAuthenticated,
+      isStaffUser,
       isLoading
     })
 
     if (isAuthenticated) {
-      // User is authenticated
+      // User is authenticated - check staff privileges
+      if (!isStaffUser) {
+        // User is authenticated but not staff - redirect to login with error
+        console.log('User authenticated but not staff, redirecting to login')
+        router.push("/login")
+        return
+      }
+      
       if (isPublicRoute) {
-        // User is on public route but authenticated, redirect to dashboard
-        console.log('Redirecting authenticated user from public route to dashboard')
+        // User is authenticated staff on public route, redirect to dashboard
+        console.log('Redirecting authenticated staff user from public route to dashboard')
         router.push("/")
         return
       } else {
-        // User is on protected route and authenticated, start background refresh
-        console.log('User authenticated on protected route, allowing access')
+        // User is authenticated staff on protected route, allow access
+        console.log('Authenticated staff user on protected route, allowing access')
         startBackgroundTokenRefresh()
       }
     } else {
@@ -133,6 +148,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         // Tokens exist but state is wrong, update state
         console.log('Tokens exist but state is wrong, updating state')
         setIsAuthenticated(true)
+        setIsStaffUser(isStaff())
         return
       }
       
@@ -146,7 +162,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
         console.log('User not authenticated on public route, allowing access')
       }
     }
-  }, [isAuthenticated, isLoading, pathname, router])
+  }, [isAuthenticated, isStaffUser, isLoading, pathname, router])
 
   // Show loading state while checking authentication
   if (isLoading) {
@@ -164,8 +180,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
   const publicRoutes = ["/login", "/register", "/forgot-password"]
   const isPublicRoute = publicRoutes.includes(pathname)
   
-  if (!isPublicRoute && !isAuthenticated) {
-    console.log('Blocking access to protected route, user not authenticated')
+  if (!isPublicRoute && (!isAuthenticated || !isStaffUser)) {
+    console.log('Blocking access to protected route:', { 
+      isAuthenticated, 
+      isStaffUser, 
+      pathname, 
+      isPublicRoute 
+    })
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="flex items-center space-x-2">
@@ -176,6 +197,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     )
   }
 
-  console.log('AuthGuard rendering children, final state:', { isAuthenticated, pathname, isPublicRoute })
+  console.log('AuthGuard rendering children, final state:', { 
+    isAuthenticated, 
+    isStaffUser, 
+    pathname, 
+    isPublicRoute 
+  })
   return <ClientOnly>{children}</ClientOnly>
 }
