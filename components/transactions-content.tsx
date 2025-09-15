@@ -29,7 +29,13 @@ const TRANSACTION_STATUS = [
 const TRANSACTION_TYPES = [
   { value: "payment", label: "Paiement" },
   { value: "withdrawal", label: "Retrait" },
-  { value: "payout", label: "Paiement Sortant" }
+  { value: "payout", label: "Paiement Sortant" },
+  { value: "deposit", label: "Dépôt" },
+  { value: "transfer", label: "Transfert" },
+  { value: "refund", label: "Remboursement" },
+  { value: "mobile_money", label: "Mobile Money" },
+  { value: "bank_transfer", label: "Virement Bancaire" },
+  { value: "card_payment", label: "Paiement par Carte" }
 ]
 
 export function TransactionsContent() {
@@ -600,6 +606,7 @@ export function TransactionsContent() {
       t("email"),
       t("amount"),
       t("method"),
+      "Type de Transaction",
       t("status"),
       t("reference"),
     ]
@@ -612,7 +619,8 @@ export function TransactionsContent() {
         transaction.customer?.username || transaction.customer?.email || "-",
         transaction.customer?.email || "-",
         transaction.amount?.toLocaleString?.() || transaction.amount || "-",
-        transaction.network || transaction.type_trans || "-",
+        transaction.network || "-",
+        TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-",
         transaction.status || "-",
         transaction.reference || "-",
       ]
@@ -852,6 +860,7 @@ export function TransactionsContent() {
                   <TableHead>{t("customer")}</TableHead>
                   <TableHead>{t("amount")}</TableHead>
                   <TableHead>{t("method")}</TableHead>
+                  <TableHead>Type de Transaction</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{t("actions")}</TableHead>
                 </TableRow>
@@ -859,11 +868,11 @@ export function TransactionsContent() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center">{t("loading")}</TableCell>
+                    <TableCell colSpan={8} className="text-center">{t("loading")}</TableCell>
                   </TableRow>
                 ) : filteredTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center">{t("noTransactionsFound")}</TableCell>
+                    <TableCell colSpan={8} className="text-center">{t("noTransactionsFound")}</TableCell>
                   </TableRow>
                 ) : (
                   filteredTransactions.map((transaction) => (
@@ -882,7 +891,12 @@ export function TransactionsContent() {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{transaction.amount?.toLocaleString?.() || transaction.amount || "-"} {transaction.currency || ""}</TableCell>
-                      <TableCell>{transaction.network || transaction.type_trans || "-"}</TableCell>
+                      <TableCell>{transaction.network || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-"}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
                         <div className="flex flex-col space-y-2">
