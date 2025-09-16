@@ -76,8 +76,30 @@ export function DashboardContent() {
   //   )
   // }
 
+  // Interface pour les statistiques API
+  interface StatsData {
+    total_fee: number
+    payin_fee: number
+    payout_fee: number
+    all_operation_amount: number
+    total_success_transaction: number
+    failled_transaction: number[]
+    payment_methode: { [key: string]: number }
+    country_payment: { [key: string]: number }
+    total_customers: number
+    total_verified: number
+    total_verification_pending: number
+    total_blocked: number
+    total_with_custom_fee: number
+    total_customer_pay_fee: number
+    payin_fee_sum: number
+    payin_fee_avg: number
+    payout_fee_sum: number
+    payout_fee_avg: number
+  }
+
   // État pour les données API
-  const [stats, setStats] = useState<any>(null)
+  const [stats, setStats] = useState<StatsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
@@ -149,7 +171,37 @@ export function DashboardContent() {
     { id: 4, type: "Retrait", amount: "100,000 FCFA", status: "En Cours", time: "il y a 3 heures", method: "Virement Bancaire" },
   ]
 
-  const quickStats = [
+  // Calculer les statistiques rapides basées sur les données API
+  const quickStats = stats ? [
+    { 
+      label: "Total Clients", 
+      value: stats.total_customers.toLocaleString(), 
+      change: "+12%", 
+      icon: Users, 
+      color: "blue" 
+    },
+    { 
+      label: "Transactions Réussies", 
+      value: stats.total_success_transaction.toLocaleString(), 
+      change: "+5%", 
+      icon: Activity, 
+      color: "green" 
+    },
+    { 
+      label: "Total Frais", 
+      value: `${stats.total_fee.toLocaleString()} FCFA`, 
+      change: "+23%", 
+      icon: DollarSign, 
+      color: "purple" 
+    },
+    { 
+      label: "Clients Vérifiés", 
+      value: stats.total_verified.toLocaleString(), 
+      change: "Stable", 
+      icon: Shield, 
+      color: "emerald" 
+    },
+  ] : [
     { label: "Total Utilisateurs", value: "2,847", change: "+12%", icon: Users, color: "blue" },
     { label: "Sessions Actives", value: "156", change: "+5%", icon: Activity, color: "green" },
     { label: "Appels API", value: "1.2M", change: "+23%", icon: Zap, color: "purple" },
@@ -263,7 +315,7 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
-                {formatCurrency(stats?.availavailable_fund)}
+                {formatCurrency(stats?.all_operation_amount)}
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">-2.1%</Badge>
@@ -272,6 +324,556 @@ export function DashboardContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Fee Statistics Section */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 mt-4">
+                  Frais d'Entrée
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                  {formatCurrency(stats.payin_fee)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
+                    Moy: {stats.payin_fee_avg.toFixed(2)} FCFA
+                  </Badge>
+                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full text-xs">
+                    Somme: {stats.payin_fee_sum.toLocaleString()} FCFA
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 backdrop-blur-xl border-green-200 dark:border-green-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-green-600 rounded-xl shadow-lg">
+                    <TrendingDown className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowDownRight className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 mt-4">
+                  Frais de Sortie
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-2">
+                  {formatCurrency(stats.payout_fee)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
+                    Moy: {stats.payout_fee_avg.toFixed(2)} FCFA
+                  </Badge>
+                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 rounded-full text-xs">
+                    Somme: {stats.payout_fee_sum.toLocaleString()} FCFA
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300 mt-4">
+                  Total Frais
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-900 dark:text-orange-100 mb-2">
+                  {formatCurrency(stats.total_fee)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-200 rounded-full">
+                    Total
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 mt-4">
+                  Frais Personnalisés
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+                  {stats.total_with_custom_fee}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">
+                    Clients
+                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 rounded-full text-xs">
+                    Payant: {stats.total_customer_pay_fee}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Customer Statistics Section */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_customers}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Clients</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 rounded-full text-xs">
+                    Total
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-green-600 rounded-xl shadow-lg">
+                    <Shield className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_verified}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Vérifiés</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 rounded-full text-xs">
+                    {((stats.total_verified / stats.total_customers) * 100).toFixed(1)}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-yellow-600 rounded-xl shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_verification_pending}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">En Attente</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 rounded-full text-xs">
+                    {((stats.total_verification_pending / stats.total_customers) * 100).toFixed(1)}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-red-600 rounded-xl shadow-lg">
+                    <Shield className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_blocked}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Bloqués</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-red-100 text-red-800 hover:bg-red-100 rounded-full text-xs">
+                    {stats.total_blocked > 0 ? ((stats.total_blocked / stats.total_customers) * 100).toFixed(1) : 0}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Additional Fee Analytics */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-indigo-600 rounded-xl shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_customer_pay_fee}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Clients Payant Frais</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 rounded-full text-xs">
+                    {((stats.total_customer_pay_fee / stats.total_customers) * 100).toFixed(1)}%
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-teal-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.payin_fee_sum.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 rounded-full text-xs">
+                    Moy: {stats.payin_fee_avg.toFixed(2)} FCFA
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-rose-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.payout_fee_sum.toLocaleString()}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie</p>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 rounded-full text-xs">
+                    Moy: {stats.payout_fee_avg.toFixed(2)} FCFA
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Fee Distribution Chart */}
+        {stats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-crimson-600" />
+                Répartition des Frais
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Distribution des frais d'entrée et de sortie
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Frais d'Entrée", value: stats.payin_fee, color: "#3b82f6" },
+                        { name: "Frais de Sortie", value: stats.payout_fee, color: "#10b981" }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {[
+                        { name: "Frais d'Entrée", value: stats.payin_fee, color: "#3b82f6" },
+                        { name: "Frais de Sortie", value: stats.payout_fee, color: "#10b981" }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => `${value.toLocaleString()} FCFA`}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Frais d'Entrée</p>
+                    <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                      {stats.payin_fee.toLocaleString()} FCFA
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Frais de Sortie</p>
+                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
+                      {stats.payout_fee.toLocaleString()} FCFA
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Transaction Success/Failure Chart */}
+        {stats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Statistiques des Transactions
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Réussites vs Échecs
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={[
+                    { name: "Réussies", value: stats.total_success_transaction, color: "#10b981" },
+                    { name: "Échecs", value: stats.failled_transaction[0] || 0, color: "#ef4444" }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(value) => [value.toLocaleString(), "Transactions"]}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Transactions Réussies</p>
+                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
+                      {stats.total_success_transaction.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Transactions Échouées</p>
+                    <p className="text-lg font-bold text-red-900 dark:text-red-100">
+                      {(stats.failled_transaction[0] || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Customer Status Distribution Chart */}
+        {stats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <Users className="h-5 w-5 mr-2 text-crimson-600" />
+                Distribution des Statuts Clients
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Répartition des clients par statut de vérification
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Vérifiés", value: stats.total_verified, color: "#10b981" },
+                        { name: "En Attente", value: stats.total_verification_pending, color: "#f59e0b" },
+                        { name: "Bloqués", value: stats.total_blocked, color: "#ef4444" },
+                        { name: "Autres", value: stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked, color: "#6b7280" }
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={120}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {[
+                        { name: "Vérifiés", value: stats.total_verified, color: "#10b981" },
+                        { name: "En Attente", value: stats.total_verification_pending, color: "#f59e0b" },
+                        { name: "Bloqués", value: stats.total_blocked, color: "#ef4444" },
+                        { name: "Autres", value: stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked, color: "#6b7280" }
+                      ].map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      formatter={(value) => [value, "Clients"]}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Vérifiés</p>
+                    <p className="text-lg font-bold text-green-900 dark:text-green-100">{stats.total_verified}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">En Attente</p>
+                    <p className="text-lg font-bold text-yellow-900 dark:text-yellow-100">{stats.total_verification_pending}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Bloqués</p>
+                    <p className="text-lg font-bold text-red-900 dark:text-red-100">{stats.total_blocked}</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Autres</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                      {stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Fee Analytics Comparison Chart */}
+        {stats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Analyse Comparative des Frais
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Comparaison des frais d'entrée et de sortie avec leurs moyennes
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={[
+                    { name: "Frais Entrée", total: stats.payin_fee, sum: stats.payin_fee_sum, avg: stats.payin_fee_avg },
+                    { name: "Frais Sortie", total: stats.payout_fee, sum: stats.payout_fee_sum, avg: stats.payout_fee_avg }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        `${value.toLocaleString()} FCFA`,
+                        name === "total" ? "Total" : name === "sum" ? "Somme" : "Moyenne"
+                      ]}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Bar dataKey="total" fill="#3b82f6" name="Total" />
+                    <Bar dataKey="sum" fill="#10b981" name="Somme" />
+                    <Bar dataKey="avg" fill="#f59e0b" name="Moyenne" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">Frais d'Entrée</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
+                      <span className="font-medium">{stats.payin_fee.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
+                      <span className="font-medium">{stats.payin_fee_sum.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
+                      <span className="font-medium">{stats.payin_fee_avg.toFixed(2)} FCFA</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-green-900 dark:text-green-100">Frais de Sortie</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
+                      <span className="font-medium">{stats.payout_fee.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
+                      <span className="font-medium">{stats.payout_fee_sum.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
+                      <span className="font-medium">{stats.payout_fee_avg.toFixed(2)} FCFA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Enhanced Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -288,29 +890,63 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent className="p-6">
               {customerLocationData.length > 0 ? (
-                <div className="space-y-6">
-                  {customerLocationData.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-slate-100 dark:bg-neutral-800 rounded-xl">
-                          <MapPin className="h-4 w-4 text-crimson-600" />
+                <>
+                  <div className="flex items-center justify-center mb-6">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie
+                          data={customerLocationData.map((item, index) => ({
+                            name: item.country,
+                            value: item.percentage,
+                            color: index === 0 ? "#dc2626" : "#f59e0b"
+                          }))}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {customerLocationData.map((item, index) => (
+                            <Cell key={`cell-${index}`} fill={index === 0 ? "#dc2626" : "#f59e0b"} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value) => `${value}%`}
+                          contentStyle={{
+                            backgroundColor: "white",
+                            border: "1px solid #e2e8f0",
+                            borderRadius: "12px",
+                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                          }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="space-y-3">
+                    {customerLocationData.map((item, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 bg-slate-100/50 dark:bg-neutral-800/50 rounded-xl border border-slate-200 dark:border-neutral-600"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="p-2 bg-white dark:bg-neutral-700 rounded-xl shadow-sm">
+                            <MapPin className="h-4 w-4 text-crimson-600" />
+                          </div>
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                            {item.country.toUpperCase()}
+                          </span>
                         </div>
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{item.country}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-24 bg-slate-200 dark:bg-neutral-700 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-crimson-500 to-crimson-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${item.percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300 w-8">
+                        <Badge
+                          variant="secondary"
+                          className="bg-crimson-100 text-crimson-800 hover:bg-crimson-100 rounded-full font-bold"
+                        >
                           {typeof item.percentage === "number" ? item.percentage : 0}%
-                        </span>
+                        </Badge>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
                   {t("noDataAvailable")}
@@ -399,6 +1035,160 @@ export function DashboardContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Complete API Data Summary */}
+        {stats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Résumé Complet des Données API
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Toutes les données de l'API de statistiques
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Financial Data */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 border-b border-blue-200 pb-2">Données Financières</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Frais:</span>
+                      <span className="font-medium">{stats.total_fee.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Entrée:</span>
+                      <span className="font-medium">{stats.payin_fee.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Sortie:</span>
+                      <span className="font-medium">{stats.payout_fee.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant Opérations:</span>
+                      <span className="font-medium">{stats.all_operation_amount.toLocaleString()} FCFA</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transaction Data */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-green-900 dark:text-green-100 border-b border-green-200 pb-2">Données Transactions</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Réussies:</span>
+                      <span className="font-medium">{stats.total_success_transaction.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Échouées:</span>
+                      <span className="font-medium">{(stats.failled_transaction[0] || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Taux de Réussite:</span>
+                      <span className="font-medium">
+                        {((stats.total_success_transaction / (stats.total_success_transaction + (stats.failled_transaction[0] || 0))) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Data */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 border-b border-purple-200 pb-2">Données Clients</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Clients:</span>
+                      <span className="font-medium">{stats.total_customers}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Clients Vérifiés:</span>
+                      <span className="font-medium">{stats.total_verified}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">En Attente:</span>
+                      <span className="font-medium">{stats.total_verification_pending}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Bloqués:</span>
+                      <span className="font-medium">{stats.total_blocked}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fee Analytics */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 border-b border-orange-200 pb-2">Analyses Frais</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée:</span>
+                      <span className="font-medium">{stats.payin_fee_sum.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Entrée:</span>
+                      <span className="font-medium">{stats.payin_fee_avg.toFixed(2)} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie:</span>
+                      <span className="font-medium">{stats.payout_fee_sum.toLocaleString()} FCFA</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Sortie:</span>
+                      <span className="font-medium">{stats.payout_fee_avg.toFixed(2)} FCFA</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Fee Configuration */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 border-b border-indigo-200 pb-2">Configuration Frais</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Avec Frais Personnalisés:</span>
+                      <span className="font-medium">{stats.total_with_custom_fee}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Clients Payant Frais:</span>
+                      <span className="font-medium">{stats.total_customer_pay_fee}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">% Clients Payant:</span>
+                      <span className="font-medium">
+                        {((stats.total_customer_pay_fee / stats.total_customers) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Payment Methods & Countries */}
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-teal-900 dark:text-teal-100 border-b border-teal-200 pb-2">Méthodes & Pays</h4>
+                  <div className="space-y-2">
+                    <div className="space-y-1">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Méthodes de Paiement:</span>
+                      {Object.entries(stats.payment_methode).map(([method, value]) => (
+                        <div key={method} className="flex justify-between ml-2">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-500">{method}:</span>
+                          <span className="text-xs font-medium">{value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Pays:</span>
+                      {Object.entries(stats.country_payment).map(([country, value]) => (
+                        <div key={country} className="flex justify-between ml-2">
+                          <span className="text-xs text-neutral-500 dark:text-neutral-500">{country.toUpperCase()}:</span>
+                          <span className="text-xs font-medium">{value}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Transactions */}
         {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">

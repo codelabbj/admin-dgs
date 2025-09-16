@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ArrowLeft, Users, TrendingUp, DollarSign, CreditCard, MapPin, Building, Globe, Phone, Mail, Calendar, Loader2, FileText, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ArrowLeft, Users, TrendingUp, DollarSign, CreditCard, MapPin, Building, Globe, Phone, Mail, Calendar, Loader2, FileText, ExternalLink, ChevronLeft, ChevronRight, Percent, Edit, Save, X } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
@@ -41,6 +43,13 @@ interface User {
   gerant_doc: string | null
   entreprise_number: string | null
   is_staff: boolean
+  payin_fee: number | null
+  payout_fee: number | null
+  payin_fee_fixed: number | null
+  payout_fee_fixed: number | null
+  payout_fee_limite: number | null
+  payin_fee_limite: number | null
+  custome_fee: boolean
 }
 
 // Interface pour les statistiques utilisateur
@@ -64,6 +73,7 @@ interface Transaction {
   created_at: string
   reference: string
   network: string
+  type_trans: string
   customer: {
     email: string
     username: string
@@ -87,6 +97,20 @@ export default function UserDetail({ params }: { params: { id: string } }) {
   const [totalPages, setTotalPages] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [transactionsLoading, setTransactionsLoading] = useState(false)
+  
+  // États pour la mise à jour des frais
+  const [isEditingFees, setIsEditingFees] = useState(false)
+  const [feeFormData, setFeeFormData] = useState({
+    payin_fee: '',
+    payout_fee: '',
+    payin_fee_fixed: '',
+    payout_fee_fixed: '',
+    payout_fee_limite: '',
+    payin_fee_limite: ''
+  })
+  const [feeUpdateLoading, setFeeUpdateLoading] = useState(false)
+  const [feeUpdateError, setFeeUpdateError] = useState<string | null>(null)
+  const [feeUpdateSuccess, setFeeUpdateSuccess] = useState(false)
 
   // Fonction pour récupérer les détails de l'utilisateur
   const fetchUserDetails = async () => {
@@ -201,6 +225,13 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     }
   }, [currentPage, userId])
 
+  // Initialiser le formulaire de frais quand les données utilisateur sont chargées
+  useEffect(() => {
+    if (user) {
+      initializeFeeForm()
+    }
+  }, [user])
+
   // Fonctions de pagination
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -238,9 +269,120 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     }
   }
 
+  // Fonction pour obtenir le badge de type de transaction
+  const getTransactionTypeBadge = (type: string) => {
+    switch (type) {
+      case "payin":
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Entrée</Badge>
+      case "payout":
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Sortie</Badge>
+      case "withdrawal":
+        return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 border-orange-200">Retrait</Badge>
+      default:
+        return <Badge variant="outline" className="capitalize">{type || "-"}</Badge>
+    }
+  }
+
   // Fonction pour ouvrir un document dans un nouvel onglet
   const openDocument = (url: string, title: string) => {
     window.open(url, '_blank', 'noopener,noreferrer')
+  }
+
+  // Fonction pour initialiser le formulaire de frais avec les données actuelles
+  const initializeFeeForm = () => {
+    if (user) {
+      setFeeFormData({
+        payin_fee: user.payin_fee?.toString() || '',
+        payout_fee: user.payout_fee?.toString() || '',
+        payin_fee_fixed: user.payin_fee_fixed?.toString() || '',
+        payout_fee_fixed: user.payout_fee_fixed?.toString() || '',
+        payout_fee_limite: user.payout_fee_limite?.toString() || '',
+        payin_fee_limite: user.payin_fee_limite?.toString() || ''
+      })
+    }
+  }
+
+  // Fonction pour mettre à jour les frais du client
+  const updateCustomerFees = async () => {
+    try {
+      setFeeUpdateLoading(true)
+      setFeeUpdateError(null)
+      setFeeUpdateSuccess(false)
+
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      // Préparer les données du payload
+      const payload: any = {
+        id: userId
+      }
+
+      // Convertir les valeurs vides en null et les autres en nombres
+      const feeFields = ['payin_fee', 'payout_fee', 'payin_fee_fixed', 'payout_fee_fixed', 'payout_fee_limite', 'payin_fee_limite']
+      
+      feeFields.forEach(field => {
+        const value = feeFormData[field as keyof typeof feeFormData]
+        payload[field] = value === '' ? null : parseFloat(value)
+      })
+
+      // Déterminer si custome_fee doit être true ou false
+      const hasAnyFeeValue = feeFields.some(field => {
+        const value = feeFormData[field as keyof typeof feeFormData]
+        return value !== '' && value !== null
+      })
+      
+      payload.custome_fee = hasAnyFeeValue
+
+      const response = await smartFetch(`${baseUrl}/v1/api/define-customer-fee`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      // Mettre à jour les données utilisateur localement
+      if (user) {
+        setUser({
+          ...user,
+          payin_fee: payload.payin_fee,
+          payout_fee: payload.payout_fee,
+          payin_fee_fixed: payload.payin_fee_fixed,
+          payout_fee_fixed: payload.payout_fee_fixed,
+          payout_fee_limite: payload.payout_fee_limite,
+          payin_fee_limite: payload.payin_fee_limite,
+          custome_fee: payload.custome_fee
+        })
+      }
+
+      setFeeUpdateSuccess(true)
+      setIsEditingFees(false)
+      
+      // Masquer le message de succès après 3 secondes
+      setTimeout(() => {
+        setFeeUpdateSuccess(false)
+      }, 3000)
+
+    } catch (err) {
+      console.error("Error updating customer fees:", err)
+      setFeeUpdateError(err instanceof Error ? err.message : "Erreur lors de la mise à jour des frais")
+    } finally {
+      setFeeUpdateLoading(false)
+    }
+  }
+
+  // Fonction pour annuler l'édition des frais
+  const cancelFeeEdit = () => {
+    setIsEditingFees(false)
+    setFeeUpdateError(null)
+    setFeeUpdateSuccess(false)
+    initializeFeeForm()
   }
 
   // Composant de pagination
@@ -467,6 +609,302 @@ export default function UserDetail({ params }: { params: { id: string } }) {
            </div>
          )}
 
+        {/* Informations sur les frais */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Percent className="h-5 w-5" />
+                <span className="text-lg font-bold">Informations sur les Frais</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {feeUpdateSuccess && (
+                  <Badge className="bg-green-100 text-green-800 border-green-200">
+                    Frais mis à jour avec succès
+                  </Badge>
+                )}
+                {!isEditingFees ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditingFees(true)}
+                    className="flex items-center space-x-1"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Modifier</span>
+                  </Button>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={cancelFeeEdit}
+                      className="flex items-center space-x-1"
+                    >
+                      <X className="h-4 w-4" />
+                      <span>Annuler</span>
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={updateCustomerFees}
+                      disabled={feeUpdateLoading}
+                      className="flex items-center space-x-1"
+                    >
+                      {feeUpdateLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      <span>Sauvegarder</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+            <CardDescription>
+              Configuration des frais pour cet utilisateur
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {feeUpdateError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-red-800 text-sm">{feeUpdateError}</p>
+                </div>
+              )}
+
+              {isEditingFees ? (
+                // Formulaire d'édition des frais
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="payin_fee" className="text-sm font-medium">
+                        Frais d'Entrée (%)
+                      </Label>
+                      <Input
+                        id="payin_fee"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 1.5"
+                        value={feeFormData.payin_fee}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payin_fee: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payout_fee" className="text-sm font-medium">
+                        Frais de Sortie (%)
+                      </Label>
+                      <Input
+                        id="payout_fee"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 2.0"
+                        value={feeFormData.payout_fee}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payout_fee: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payin_fee_fixed" className="text-sm font-medium">
+                        Frais Fixe Entrée (FCFA)
+                      </Label>
+                      <Input
+                        id="payin_fee_fixed"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 100"
+                        value={feeFormData.payin_fee_fixed}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payin_fee_fixed: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payout_fee_fixed" className="text-sm font-medium">
+                        Frais Fixe Sortie (FCFA)
+                      </Label>
+                      <Input
+                        id="payout_fee_fixed"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 150"
+                        value={feeFormData.payout_fee_fixed}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payout_fee_fixed: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payin_fee_limite" className="text-sm font-medium">
+                        Limite Frais Entrée (FCFA)
+                      </Label>
+                      <Input
+                        id="payin_fee_limite"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 1000"
+                        value={feeFormData.payin_fee_limite}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payin_fee_limite: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="payout_fee_limite" className="text-sm font-medium">
+                        Limite Frais Sortie (FCFA)
+                      </Label>
+                      <Input
+                        id="payout_fee_limite"
+                        type="number"
+                        step="0.01"
+                        placeholder="Ex: 2000"
+                        value={feeFormData.payout_fee_limite}
+                        onChange={(e) => setFeeFormData(prev => ({ ...prev, payout_fee_limite: e.target.value }))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-blue-800 text-sm">
+                      <strong>Note:</strong> Laissez les champs vides pour définir la valeur à null. 
+                      Si au moins un champ est rempli, les frais personnalisés seront activés.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                // Affichage des frais actuels
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      className={`${
+                        user.custome_fee 
+                          ? 'bg-blue-100 text-blue-800 border-blue-200' 
+                          : 'bg-green-100 text-green-800 border-green-200'
+                      }`}
+                    >
+                      {user.custome_fee ? 'Frais Personnalisés' : 'Frais Standard'}
+                    </Badge>
+                  </div>
+                  
+                  {user.custome_fee ? (
+                    // Afficher seulement payin_fee et payout_fee quand custome_fee est true
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {user.payin_fee !== null && (
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                          </div>
+                          <span className="font-bold text-blue-900">
+                            {user.payin_fee}%
+                          </span>
+                        </div>
+                      )}
+                      {user.payout_fee !== null && (
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-green-900">Frais de Sortie</span>
+                          </div>
+                          <span className="font-bold text-green-900">
+                            {user.payout_fee}%
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Afficher tous les frais non-null quand custome_fee est false
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {user.payin_fee !== null && (
+                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                          </div>
+                          <span className="font-bold text-blue-900">
+                            {user.payin_fee}%
+                          </span>
+                        </div>
+                      )}
+                      {user.payout_fee !== null && (
+                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <TrendingUp className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-green-900">Frais de Sortie</span>
+                          </div>
+                          <span className="font-bold text-green-900">
+                            {user.payout_fee}%
+                          </span>
+                        </div>
+                      )}
+                      {user.payin_fee_fixed !== null && (
+                        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="h-4 w-4 text-purple-600" />
+                            <span className="font-medium text-purple-900">Frais Fixe Entrée</span>
+                          </div>
+                          <span className="font-bold text-purple-900">
+                            {user.payin_fee_fixed} FCFA
+                          </span>
+                        </div>
+                      )}
+                      {user.payout_fee_fixed !== null && (
+                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <DollarSign className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium text-orange-900">Frais Fixe Sortie</span>
+                          </div>
+                          <span className="font-bold text-orange-900">
+                            {user.payout_fee_fixed} FCFA
+                          </span>
+                        </div>
+                      )}
+                      {user.payin_fee_limite !== null && (
+                        <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="h-4 w-4 text-indigo-600" />
+                            <span className="font-medium text-indigo-900">Limite Frais Entrée</span>
+                          </div>
+                          <span className="font-bold text-indigo-900">
+                            {user.payin_fee_limite} FCFA
+                          </span>
+                        </div>
+                      )}
+                      {user.payout_fee_limite !== null && (
+                        <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
+                          <div className="flex items-center space-x-2">
+                            <CreditCard className="h-4 w-4 text-pink-600" />
+                            <span className="font-medium text-pink-900">Limite Frais Sortie</span>
+                          </div>
+                          <span className="font-bold text-pink-900">
+                            {user.payout_fee_limite} FCFA
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {(!user.custome_fee && 
+                    user.payin_fee === null && 
+                    user.payout_fee === null && 
+                    user.payin_fee_fixed === null && 
+                    user.payout_fee_fixed === null && 
+                    user.payin_fee_limite === null && 
+                    user.payout_fee_limite === null) && (
+                    <div className="text-center py-4">
+                      <p className="text-muted-foreground">Aucun frais configuré</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Détails complets */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card>
@@ -622,6 +1060,54 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                  </div>
                </div>
                <div className="flex items-center space-x-3">
+                 <Calendar className="h-5 w-5 text-muted-foreground" />
+                 <div>
+                   <p className="text-sm font-medium">Dernière mise à jour</p>
+                   <p className="text-sm text-muted-foreground">
+                     {new Date(user.updated_at).toLocaleDateString('fr-FR')}
+                   </p>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <Users className="h-5 w-5 text-muted-foreground" />
+                 <div>
+                   <p className="text-sm font-medium">Nom complet</p>
+                   <p className="text-sm text-muted-foreground">
+                     {user.first_name} {user.last_name}
+                   </p>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <Users className="h-5 w-5 text-muted-foreground" />
+                 <div>
+                   <p className="text-sm font-medium">Statut d'activité</p>
+                   <div className="flex items-center space-x-2 mt-1">
+                     <Badge 
+                       className={`text-xs ${
+                         user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                       }`}
+                     >
+                       {user.is_active ? 'Actif' : 'Inactif'}
+                     </Badge>
+                   </div>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <DollarSign className="h-5 w-5 text-muted-foreground" />
+                 <div>
+                   <p className="text-sm font-medium">Client paye les frais</p>
+                   <div className="flex items-center space-x-2 mt-1">
+                     <Badge 
+                       className={`text-xs ${
+                         user.customer_pay_fee ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+                       }`}
+                     >
+                       {user.customer_pay_fee ? 'Oui' : 'Non'}
+                     </Badge>
+                   </div>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
                  <Users className="h-5 w-5 text-muted-foreground" />
                  <div>
                    <p className="text-sm font-medium">Statut du Compte</p>
@@ -652,6 +1138,20 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                    <div>
                      <p className="text-sm font-medium text-red-600">Raison du Rejet</p>
                      <p className="text-sm text-red-500">{user.reason_for_rejection}</p>
+                   </div>
+                 </div>
+               )}
+               {user.otp && (
+                 <div className="flex items-center space-x-3">
+                   <div className="h-5 w-5 text-blue-500">🔐</div>
+                   <div>
+                     <p className="text-sm font-medium text-blue-600">Code OTP</p>
+                     <p className="text-sm text-blue-500 font-mono">{user.otp}</p>
+                     {user.otp_created_at && (
+                       <p className="text-xs text-gray-500">
+                         Créé le: {new Date(user.otp_created_at).toLocaleString('fr-FR')}
+                       </p>
+                     )}
                    </div>
                  </div>
                )}
@@ -686,9 +1186,11 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                          <TableHead>ID Transaction</TableHead>
                          <TableHead>Date</TableHead>
                          <TableHead>Montant</TableHead>
+                         <TableHead>Type</TableHead>
                          <TableHead>Méthode</TableHead>
                          <TableHead>Statut</TableHead>
                          <TableHead>Référence</TableHead>
+                         <TableHead>Client</TableHead>
                        </TableRow>
                      </TableHeader>
                      <TableBody>
@@ -708,9 +1210,18 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                            <TableCell className="font-medium">
                              {transaction.amount?.toLocaleString?.() || transaction.amount || "-"} {transaction.currency || ""}
                            </TableCell>
+                           <TableCell>
+                             {getTransactionTypeBadge(transaction.type_trans)}
+                           </TableCell>
                            <TableCell>{transaction.network || "-"}</TableCell>
                            <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                            <TableCell className="font-mono text-sm">{transaction.reference || "-"}</TableCell>
+                           <TableCell>
+                             <div className="space-y-1">
+                               <div className="text-sm font-medium">{transaction.customer.email}</div>
+                               <div className="text-xs text-muted-foreground">{transaction.customer.username}</div>
+                             </div>
+                           </TableCell>
                          </TableRow>
                        ))}
                      </TableBody>
@@ -719,6 +1230,248 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                  <PaginationComponent />
                </>
              )}
+           </CardContent>
+         </Card>
+
+         {/* Complete API Data Summary */}
+         <Card>
+           <CardHeader>
+             <CardTitle className="flex items-center space-x-2">
+               <FileText className="h-5 w-5" />
+               <span>Résumé Complet des Données API</span>
+             </CardTitle>
+             <CardDescription>
+               Toutes les données récupérées des APIs pour cet utilisateur
+             </CardDescription>
+           </CardHeader>
+           <CardContent>
+             <div className="space-y-6">
+               {/* User Details API Data */}
+               <div className="space-y-4">
+                 <h4 className="font-semibold text-blue-900 dark:text-blue-100 border-b border-blue-200 pb-2">
+                   Données Utilisateur (user-details API)
+                 </h4>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Informations de Base</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">ID:</span>
+                         <span className="font-mono">{user.id}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Email:</span>
+                         <span className="font-medium">{user.email}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Prénom:</span>
+                         <span className="font-medium">{user.first_name}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Nom:</span>
+                         <span className="font-medium">{user.last_name}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Nom complet:</span>
+                         <span className="font-medium">{user.fullname}</span>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Contact & Localisation</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Téléphone:</span>
+                         <span className="font-medium">{user.phone || "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Pays:</span>
+                         <span className="font-medium">{user.country || "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Site web:</span>
+                         <span className="font-medium">{user.website || "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Adresse IP:</span>
+                         <span className="font-mono">{user.ip_adress || "Non renseigné"}</span>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Statuts & Permissions</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Statut compte:</span>
+                         <Badge className="text-xs">{user.account_status}</Badge>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Actif:</span>
+                         <Badge className={`text-xs ${user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                           {user.is_active ? 'Oui' : 'Non'}
+                         </Badge>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Partenaire:</span>
+                         <Badge className={`text-xs ${user.is_partner ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                           {user.is_partner ? 'Oui' : 'Non'}
+                         </Badge>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Staff:</span>
+                         <Badge className={`text-xs ${user.is_staff ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                           {user.is_staff ? 'Oui' : 'Non'}
+                         </Badge>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Entreprise</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Nom entreprise:</span>
+                         <span className="font-medium">{user.entreprise_name || "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Numéro entreprise:</span>
+                         <span className="font-medium">{user.entreprise_number || "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Document commerce:</span>
+                         <span className="font-medium">{user.trade_commerce ? "Disponible" : "Non renseigné"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Document gérant:</span>
+                         <span className="font-medium">{user.gerant_doc ? "Disponible" : "Non renseigné"}</span>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">URLs & Callbacks</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">URL succès:</span>
+                         <span className="font-medium">{user.success_url ? "Définie" : "Non définie"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">URL annulation:</span>
+                         <span className="font-medium">{user.cancel_url ? "Définie" : "Non définie"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">URL callback:</span>
+                         <span className="font-medium">{user.callback_url ? "Définie" : "Non définie"}</span>
+                       </div>
+                     </div>
+                   </div>
+
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Frais & Configuration</h5>
+                     <div className="space-y-1 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Client paye frais:</span>
+                         <Badge className={`text-xs ${user.customer_pay_fee ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
+                           {user.customer_pay_fee ? 'Oui' : 'Non'}
+                         </Badge>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Frais personnalisés:</span>
+                         <Badge className={`text-xs ${user.custome_fee ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                           {user.custome_fee ? 'Oui' : 'Non'}
+                         </Badge>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Frais entrée:</span>
+                         <span className="font-medium">{user.payin_fee ? `${user.payin_fee}%` : "Non défini"}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Frais sortie:</span>
+                         <span className="font-medium">{user.payout_fee ? `${user.payout_fee}%` : "Non défini"}</span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* User Stats API Data */}
+               {userStats && (
+                 <div className="space-y-4">
+                   <h4 className="font-semibold text-green-900 dark:text-green-100 border-b border-green-200 pb-2">
+                     Statistiques Utilisateur (statistic API)
+                   </h4>
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                       <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Données Financières</h5>
+                       <div className="space-y-1 text-xs">
+                         <div className="flex justify-between">
+                           <span className="text-gray-600 dark:text-gray-400">Fonds disponibles:</span>
+                           <span className="font-medium">{(userStats.availavailable_fund || 0).toLocaleString()} FCFA</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-gray-600 dark:text-gray-400">Montant opérations:</span>
+                           <span className="font-medium">{(userStats.all_operation_amount || 0).toLocaleString()} FCFA</span>
+                         </div>
+                       </div>
+                     </div>
+                     <div className="space-y-2">
+                       <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Méthodes de Paiement</h5>
+                       <div className="space-y-1 text-xs">
+                         {Object.entries(userStats.payment_methode || {}).map(([method, amount]) => (
+                           <div key={method} className="flex justify-between">
+                             <span className="text-gray-600 dark:text-gray-400">{method}:</span>
+                             <span className="font-medium">{(amount || 0).toLocaleString()} FCFA</span>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                     <div className="space-y-2">
+                       <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Paiements par Pays</h5>
+                       <div className="space-y-1 text-xs">
+                         {Object.entries(userStats.country_payment || {}).map(([country, amount]) => (
+                           <div key={country} className="flex justify-between">
+                             <span className="text-gray-600 dark:text-gray-400">{country}:</span>
+                             <span className="font-medium">{(amount || 0).toLocaleString()} FCFA</span>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
+               {/* Transaction API Data */}
+               {transactions.length > 0 && (
+                 <div className="space-y-4">
+                   <h4 className="font-semibold text-purple-900 dark:text-purple-100 border-b border-purple-200 pb-2">
+                     Données Transactions (transaction API)
+                   </h4>
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Résumé des Transactions</h5>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Total transactions:</span>
+                         <span className="font-medium">{transactions.length}</span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Montant total:</span>
+                         <span className="font-medium">
+                           {transactions.reduce((sum, t) => sum + (t.amount || 0), 0).toLocaleString()} FCFA
+                         </span>
+                       </div>
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Types uniques:</span>
+                         <span className="font-medium">
+                           {[...new Set(transactions.map(t => t.type_trans))].length}
+                         </span>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+             </div>
            </CardContent>
          </Card>
       </div>
