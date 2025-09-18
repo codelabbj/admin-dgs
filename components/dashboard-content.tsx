@@ -81,7 +81,8 @@ export function DashboardContent() {
     total_fee: number
     payin_fee: number
     payout_fee: number
-    all_operation_amount: number
+    availavailable_fund: number
+    // all_operation_amount: number
     total_success_transaction: number
     failled_transaction: number[]
     payment_methode: { [key: string]: number }
@@ -292,8 +293,8 @@ export function DashboardContent() {
           </div>
 
         {/* Enhanced Balance Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 backdrop-blur-xl border-emerald-200 dark:border-emerald-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+        <div className="grid grid-cols-1 gap-8">
+          {/* <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 backdrop-blur-xl border-emerald-200 dark:border-emerald-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
@@ -314,7 +315,7 @@ export function DashboardContent() {
                 <span className="text-sm text-emerald-700 dark:text-emerald-300">{t("fromLastWeek")}</span>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
             <CardHeader className="pb-3">
@@ -330,7 +331,7 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
-                {formatCurrency(stats?.all_operation_amount)}
+                {formatCurrency(stats?.availavailable_fund)}
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">-2.1%</Badge>
@@ -1081,10 +1082,10 @@ export function DashboardContent() {
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Sortie:</span>
                       <span className="font-medium">{(stats.payout_fee || 0).toLocaleString()} FCFA</span>
                     </div>
-                    <div className="flex justify-between">
+                    {/* <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant Opérations:</span>
                       <span className="font-medium">{(stats.all_operation_amount || 0).toLocaleString()} FCFA</span>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 

@@ -55,7 +55,7 @@ interface User {
 // Interface pour les statistiques utilisateur
 interface UserStats {
   availavailable_fund: number
-  all_operation_amount: number
+  // all_operation_amount: number
   payment_methode: {
     [key: string]: number
   }
@@ -629,7 +629,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                  </div>
                </CardContent>
              </Card>
-             <Card>
+             {/* <Card>
                <CardHeader className="pb-2">
                  <CardTitle className="text-sm font-medium">Montant Total des Opérations</CardTitle>
                </CardHeader>
@@ -638,7 +638,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                    {(userStats?.all_operation_amount || 0).toLocaleString()} FCFA
                  </div>
                </CardContent>
-             </Card>
+             </Card> */}
              <Card>
                <CardHeader className="pb-2">
                  <CardTitle className="text-sm font-medium">Méthodes de Paiement</CardTitle>
@@ -1485,10 +1485,10 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                            <span className="text-gray-600 dark:text-gray-400">Fonds disponibles:</span>
                            <span className="font-medium">{(userStats.availavailable_fund || 0).toLocaleString()} FCFA</span>
                          </div>
-                         <div className="flex justify-between">
+                         {/* <div className="flex justify-between">
                            <span className="text-gray-600 dark:text-gray-400">Montant opérations:</span>
                            <span className="font-medium">{(userStats.all_operation_amount || 0).toLocaleString()} FCFA</span>
-                         </div>
+                         </div> */}
                        </div>
                      </div>
                      <div className="space-y-2">
