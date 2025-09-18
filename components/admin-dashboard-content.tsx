@@ -103,8 +103,8 @@ export function AdminDashboardContent() {
         
         if (res.status === 401) {
           setError("Invalid or expired authentication token")
-        } else {
-          setError(`Failed to fetch stats: ${res.status}`)
+      } else {
+        setError(`Failed to fetch stats: ${res.status}`)
         }
       }
     } catch (error) {

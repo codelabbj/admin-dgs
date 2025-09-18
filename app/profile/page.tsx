@@ -449,11 +449,13 @@ export default function Profile() {
   const fetchSettings = async () => {
     setIsLoadingSettings(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`)
+      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`)
       if (response.ok) {
         const data = await response.json()
         setPaymentSettings(data)
       } else {
+        const errorText = await response.text()
+        console.error(`Settings API error: ${response.status} - ${errorText}`)
         toast({
           title: "Erreur",
           description: "Impossible de charger les paramètres",
@@ -461,6 +463,7 @@ export default function Profile() {
         })
       }
     } catch (error) {
+      console.error("Error fetching settings:", error)
       toast({
         title: "Erreur",
         description: "Erreur de connexion lors du chargement des paramètres",
@@ -474,7 +477,7 @@ export default function Profile() {
   const saveSettings = async () => {
     setIsSavingSettings(true)
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`, {
+      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -497,6 +500,8 @@ export default function Profile() {
           description: "Paramètres sauvegardés avec succès"
         })
       } else {
+        const errorText = await response.text()
+        console.error(`Save settings API error: ${response.status} - ${errorText}`)
         toast({
           title: "Erreur",
           description: "Impossible de sauvegarder les paramètres",
@@ -504,6 +509,7 @@ export default function Profile() {
         })
       }
     } catch (error) {
+      console.error("Error saving settings:", error)
       toast({
         title: "Erreur",
         description: "Erreur de connexion lors de la sauvegarde",

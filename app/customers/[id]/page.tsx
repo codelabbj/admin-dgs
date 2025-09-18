@@ -79,7 +79,7 @@ interface Transaction {
   reference: string
   network: string
   type_trans: string
-  customer: {
+  customer?: {
     email: string
     username: string
   }
@@ -1293,8 +1293,8 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                            <TableCell className="font-mono text-sm">{transaction.reference || "-"}</TableCell>
                            <TableCell>
                              <div className="space-y-1">
-                               <div className="text-sm font-medium">{transaction.customer.email}</div>
-                               <div className="text-xs text-muted-foreground">{transaction.customer.username}</div>
+                               <div className="text-sm font-medium">{transaction.customer?.email || "-"}</div>
+                               <div className="text-xs text-muted-foreground">{transaction.customer?.username || "-"}</div>
                              </div>
                            </TableCell>
                          </TableRow>

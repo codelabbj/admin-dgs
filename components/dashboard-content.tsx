@@ -138,8 +138,8 @@ export function DashboardContent() {
         
         if (res.status === 401) {
           setError("Token d'authentification invalide ou expiré")
-        } else {
-          setError(`Échec de récupération des statistiques: ${res.status}`)
+      } else {
+        setError(`Échec de récupération des statistiques: ${res.status}`)
         }
       }
     } catch (error) {
