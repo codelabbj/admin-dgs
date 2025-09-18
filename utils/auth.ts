@@ -29,15 +29,27 @@ export function storeAuthData(response: any): void {
   localStorage.setItem("access", response.access)
   localStorage.setItem("refresh", response.refresh)
   localStorage.setItem("exp", response.exp)
+  
   if (response.data) {
     localStorage.setItem("user", JSON.stringify(response.data))
+    
+    // Store is_staff separately for quick access
+    if (response.data.is_staff !== undefined) {
+      localStorage.setItem("is_staff", response.data.is_staff.toString())
+    }
+  }
+  
+  // Also check if is_staff is directly in the response
+  if (response.is_staff !== undefined) {
+    localStorage.setItem("is_staff", response.is_staff.toString())
   }
   
   console.log('Auth data stored in localStorage:', {
     access: localStorage.getItem("access"),
     refresh: localStorage.getItem("refresh"),
     exp: localStorage.getItem("exp"),
-    user: localStorage.getItem("user")
+    user: localStorage.getItem("user"),
+    is_staff: localStorage.getItem("is_staff")
   })
   
   // Dispatch custom event to notify components of auth state change
@@ -57,6 +69,7 @@ export function clearAuthData(): void {
   localStorage.removeItem("refresh")
   localStorage.removeItem("exp")
   localStorage.removeItem("user")
+  localStorage.removeItem("is_staff")
   
   // Dispatch custom event to notify components of auth state change
   if (typeof window !== 'undefined') {
@@ -153,8 +166,22 @@ export function isValidTokenFormat(token: string): boolean {
   try {
     parts.forEach((part, index) => {
       if (part) {
-        atob(part)
-        console.log(`isValidTokenFormat: Part ${index} decoded successfully`)
+        // Use a more robust base64 decoding approach
+        try {
+          // Try standard base64 decoding
+          atob(part)
+          console.log(`isValidTokenFormat: Part ${index} decoded successfully`)
+        } catch (base64Error) {
+          // If standard base64 fails, try with padding
+          try {
+            const paddedPart = part + '='.repeat((4 - part.length % 4) % 4)
+            atob(paddedPart)
+            console.log(`isValidTokenFormat: Part ${index} decoded successfully with padding`)
+          } catch (paddingError) {
+            console.error(`isValidTokenFormat: Part ${index} failed both standard and padded decoding:`, paddingError)
+            throw paddingError
+          }
+        }
       }
     })
     console.log('isValidTokenFormat: Token format is valid')
@@ -173,9 +200,11 @@ export function isAuthenticated(): boolean {
   }
 
   const accessToken = getAccessToken()
+  const refreshToken = getRefreshToken()
   
   console.log('isAuthenticated check:', {
-    hasAccessToken: !!accessToken
+    hasAccessToken: !!accessToken,
+    hasRefreshToken: !!refreshToken
   })
   
   if (!accessToken) {
@@ -183,17 +212,33 @@ export function isAuthenticated(): boolean {
     return false
   }
   
-  // Validate token format
+  // For initial login, be more lenient with token validation
+  // Check if we have both tokens (indicating recent login)
+  const hasBothTokens = !!(accessToken && refreshToken)
+  
+  if (hasBothTokens) {
+    // During login process, be more lenient
+    console.log('isAuthenticated: Both tokens present, using lenient validation')
+    
+    // Basic format check - just ensure it has 3 parts
+    const parts = accessToken.split('.')
+    if (parts.length === 3) {
+      console.log('isAuthenticated: Token has correct structure, allowing access')
+      return true
+    }
+  }
+  
+  // Validate token format for existing sessions
   const accessValid = isValidTokenFormat(accessToken)
   
   console.log('isAuthenticated token validation:', {
-    accessValid
+    accessValid,
+    hasBothTokens
   })
   
   if (!accessValid) {
-    console.log('isAuthenticated: Invalid token format, clearing auth data')
-    // Clear invalid tokens
-    clearAuthData()
+    console.log('isAuthenticated: Invalid token format')
+    // Don't clear tokens immediately, let smartFetch handle it
     return false
   }
   
@@ -378,6 +423,13 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
     throw new Error("No access token available")
   }
 
+  // Validate token format before making request
+  if (!isValidTokenFormat(accessToken)) {
+    console.error('smartFetch: Invalid token format', { url })
+    clearAuthData()
+    throw new Error("Invalid token format")
+  }
+
   // Make request with access token
   const headers = {
     "Content-Type": "application/json",
@@ -390,6 +442,13 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
   const response = await fetch(url, {
     ...options,
     headers,
+  })
+
+  // Log response details for debugging
+  console.log('smartFetch: Response received', { 
+    url, 
+    status: response.status, 
+    statusText: response.statusText 
   })
 
   // If we get 401, try to refresh token and retry once
@@ -406,10 +465,18 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
         }
         
         console.log('smartFetch: Retrying request with new token')
-        return fetch(url, {
+        const retryResponse = await fetch(url, {
           ...options,
           headers: retryHeaders,
         })
+        
+        console.log('smartFetch: Retry response received', { 
+          url, 
+          status: retryResponse.status, 
+          statusText: retryResponse.statusText 
+        })
+        
+        return retryResponse
       }
     } else {
       // Refresh failed, redirect to login
@@ -479,18 +546,16 @@ export function debugAuthState(): void {
     return
   }
   
-  const authData = {
-    access: localStorage.getItem("access"),
-    refresh: localStorage.getItem("refresh"),
-    exp: localStorage.getItem("exp"),
-    user: localStorage.getItem("user"),
-    is_staff: localStorage.getItem("is_staff"),
-    isAuthenticated: isAuthenticated(),
-    isStaff: isStaff(),
-    isAuthenticatedStaff: isAuthenticatedStaff()
-  }
-  
-  console.log('Current auth state:', authData)
+  console.log('=== AUTH DEBUG STATE ===')
+  console.log('Access Token:', localStorage.getItem("access") ? 'Present' : 'Missing')
+  console.log('Refresh Token:', localStorage.getItem("refresh") ? 'Present' : 'Missing')
+  console.log('Expiration:', localStorage.getItem("exp"))
+  console.log('User Data:', localStorage.getItem("user"))
+  console.log('Is Staff:', localStorage.getItem("is_staff"))
+  console.log('isAuthenticated():', isAuthenticated())
+  console.log('isStaff():', isStaff())
+  console.log('isAuthenticatedStaff():', isAuthenticatedStaff())
+  console.log('========================')
 }
 
 // Legacy function for backward compatibility

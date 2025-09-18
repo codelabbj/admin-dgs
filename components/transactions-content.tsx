@@ -45,6 +45,8 @@ export function TransactionsContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [methodFilter, setMethodFilter] = useState("all")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
   const [statusLoading, setStatusLoading] = useState<Record<string, boolean>>({})
   const [changeStatusModalOpen, setChangeStatusModalOpen] = useState(false)
@@ -105,19 +107,23 @@ export function TransactionsContent() {
       fetchTransactions({
         search: searchTerm,
         status: statusFilter,
-        method: methodFilter
+        method: methodFilter,
+        start_date: startDate,
+        end_date: endDate
       }, 1)
     }, 500) // Debounce search by 500ms
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, methodFilter])
+  }, [searchTerm, statusFilter, methodFilter, startDate, endDate])
 
   // Refetch data when page changes
   useEffect(() => {
     fetchTransactions({
       search: searchTerm,
       status: statusFilter,
-      method: methodFilter
+      method: methodFilter,
+      start_date: startDate,
+      end_date: endDate
     }, currentPage)
   }, [currentPage])
 
@@ -138,7 +144,7 @@ export function TransactionsContent() {
     }
   }
 
-  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string }, page: number = 1) => {
+  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string; start_date?: string; end_date?: string }, page: number = 1) => {
     setLoading(true)
     try {
       // Build query parameters
@@ -152,6 +158,12 @@ export function TransactionsContent() {
       }
       if (filters?.method && filters.method !== 'all') {
         queryParams.append('method', filters.method)
+      }
+      if (filters?.start_date) {
+        queryParams.append('start_date', filters.start_date)
+      }
+      if (filters?.end_date) {
+        queryParams.append('end_date', filters.end_date)
       }
       
       // Add pagination parameters
@@ -837,6 +849,38 @@ export function TransactionsContent() {
                 <SelectItem value="reject">Rejeté</SelectItem>
               </SelectContent>
             </Select>
+            <div className="flex gap-2">
+              <Input
+                type="date"
+                placeholder="Date de début"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={endDate || undefined}
+                className="w-full md:w-40"
+              />
+              <Input
+                type="date"
+                placeholder="Date de fin"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || undefined}
+                className="w-full md:w-40"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setStartDate("")
+                  setEndDate("")
+                  setSearchTerm("")
+                  setStatusFilter("all")
+                  setMethodFilter("all")
+                }}
+                className="whitespace-nowrap"
+              >
+                Effacer les filtres
+              </Button>
+            </div>
             {/* <Select value={methodFilter} onValueChange={setMethodFilter}>
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue placeholder={t("method")} />

@@ -84,13 +84,28 @@ export function AdminDashboardContent() {
       setLoading(true)
       setError(null)
       
+      // Vérifier que nous avons un token valide avant de faire l'appel
+      const accessToken = localStorage.getItem("access")
+      if (!accessToken) {
+        console.warn("No access token available for statistics API")
+        setError("Authentication token missing")
+        return
+      }
+      
       const res = await smartFetch(`${baseUrl}/prod/v1/api/statistic`)
       
       if (res.ok) {
         const data = await res.json()
         setStats(data)
       } else {
-        setError(`Failed to fetch stats: ${res.status}`)
+        const errorText = await res.text()
+        console.error(`Statistics API error: ${res.status} - ${errorText}`)
+        
+        if (res.status === 401) {
+          setError("Invalid or expired authentication token")
+        } else {
+          setError(`Failed to fetch stats: ${res.status}`)
+        }
       }
     } catch (error) {
       console.error('Error fetching stats:', error)

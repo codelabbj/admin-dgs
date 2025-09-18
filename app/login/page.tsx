@@ -67,11 +67,11 @@ export default function Login() {
         })
         
         // Add a small delay to ensure auth data is processed
-        console.log('Waiting 500ms before redirect...')
+        console.log('Waiting 1000ms before redirect to ensure AuthGuard processes the state...')
         setTimeout(() => {
           console.log('Redirecting to dashboard using router...')
           router.push("/")
-        }, 500)
+        }, 1000)
       } else {
         // Essayer de récupérer le message d'erreur du backend
         const errorMessage = data.detail || data.details || data.message || data.error || "Login failed."

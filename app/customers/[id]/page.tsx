@@ -64,6 +64,11 @@ interface UserStats {
   }
 }
 
+// Interface pour les frais de transaction du client
+interface CustomerTransactionFee {
+  total_fee: number
+}
+
 // Interface pour les transactions
 interface Transaction {
   id: string
@@ -87,6 +92,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
   // États pour la gestion des données
   const [user, setUser] = useState<User | null>(null)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
+  const [customerTransactionFee, setCustomerTransactionFee] = useState<CustomerTransactionFee | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -142,9 +148,26 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         throw new Error("Base URL not configured")
       }
 
+      // Vérifier que nous avons un token valide avant de faire l'appel
+      const accessToken = localStorage.getItem("access")
+      if (!accessToken) {
+        console.warn("No access token available for statistics API")
+        return
+      }
+
       const response = await smartFetch(`${baseUrl}/prod/v1/api/statistic?user_id=${userId}`)
       
       if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Statistics API error: ${response.status} - ${errorText}`)
+        
+        // Si c'est une erreur de token, essayer de rafraîchir
+        if (response.status === 401) {
+          console.log("Token expired, attempting refresh...")
+          // Le smartFetch devrait déjà gérer le refresh automatiquement
+          return
+        }
+        
         throw new Error(`Erreur ${response.status}: ${response.statusText}`)
       }
 
@@ -153,6 +176,45 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error("Error fetching user stats:", err)
       // Ne pas définir d'erreur pour les stats car elles peuvent ne pas être disponibles
+    }
+  }
+
+  // Fonction pour récupérer les frais de transaction du client
+  const fetchCustomerTransactionFee = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      // Vérifier que nous avons un token valide avant de faire l'appel
+      const accessToken = localStorage.getItem("access")
+      if (!accessToken) {
+        console.warn("No access token available for customer transaction fee API")
+        return
+      }
+
+      const response = await smartFetch(`${baseUrl}/prod/v1/api/customer-transaction-fee?customer_id=${userId}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Customer transaction fee API error: ${response.status} - ${errorText}`)
+        
+        // Si c'est une erreur de token, essayer de rafraîchir
+        if (response.status === 401) {
+          console.log("Token expired, attempting refresh...")
+          // Le smartFetch devrait déjà gérer le refresh automatiquement
+          return
+        }
+        
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      setCustomerTransactionFee(data)
+    } catch (err) {
+      console.error("Error fetching customer transaction fee:", err)
+      // Ne pas définir d'erreur pour les frais car ils peuvent ne pas être disponibles
     }
   }
 
@@ -206,6 +268,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         await Promise.all([
           fetchUserDetails(),
           fetchUserStats(),
+          fetchCustomerTransactionFee(),
           fetchUserTransactions(1)
         ])
       } finally {
@@ -554,7 +617,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         </Card>
 
          {/* Statistiques utilisateur */}
-         {userStats && (
+         {(userStats || customerTransactionFee) && (
            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
              <Card>
                <CardHeader className="pb-2">
@@ -562,7 +625,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                </CardHeader>
                <CardContent>
                  <div className="text-2xl font-bold text-green-600">
-                   {(userStats.availavailable_fund || 0).toLocaleString()} FCFA
+                   {(userStats?.availavailable_fund || 0).toLocaleString()} FCFA
                  </div>
                </CardContent>
              </Card>
@@ -572,7 +635,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                </CardHeader>
                <CardContent>
                  <div className="text-2xl font-bold text-blue-600">
-                   {(userStats.all_operation_amount || 0).toLocaleString()} FCFA
+                   {(userStats?.all_operation_amount || 0).toLocaleString()} FCFA
                  </div>
                </CardContent>
              </Card>
@@ -582,7 +645,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                </CardHeader>
                <CardContent>
                  <div className="space-y-1">
-                   {Object.entries(userStats.payment_methode || {}).map(([method, amount]) => (
+                   {Object.entries(userStats?.payment_methode || {}).map(([method, amount]) => (
                      <div key={method} className="flex justify-between text-sm">
                        <span className="capitalize">{method}:</span>
                        <span className="font-medium">{amount.toLocaleString()} FCFA</span>
@@ -597,7 +660,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                </CardHeader>
                <CardContent>
                  <div className="space-y-1">
-                   {Object.entries(userStats.country_payment || {}).map(([country, amount]) => (
+                   {Object.entries(userStats?.country_payment || {}).map(([country, amount]) => (
                      <div key={country} className="flex justify-between text-sm">
                        <span>{country}:</span>
                        <span className="font-medium">{amount.toLocaleString()} FCFA</span>
@@ -606,6 +669,18 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                  </div>
                </CardContent>
              </Card>
+             {customerTransactionFee && (
+               <Card>
+                 <CardHeader className="pb-2">
+                   <CardTitle className="text-sm font-medium">Frais de Transaction Total</CardTitle>
+                 </CardHeader>
+                 <CardContent>
+                   <div className="text-2xl font-bold text-orange-600">
+                     {(customerTransactionFee.total_fee || 0).toLocaleString()} FCFA
+                   </div>
+                 </CardContent>
+               </Card>
+             )}
            </div>
          )}
 
@@ -1436,6 +1511,24 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                              <span className="font-medium">{(amount || 0).toLocaleString()} FCFA</span>
                            </div>
                          ))}
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               )}
+
+               {/* Customer Transaction Fee API Data */}
+               {customerTransactionFee && (
+                 <div className="space-y-4">
+                   <h4 className="font-semibold text-orange-900 dark:text-orange-100 border-b border-orange-200 pb-2">
+                     Frais de Transaction Client (customer-transaction-fee API)
+                   </h4>
+                   <div className="space-y-2">
+                     <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">Données des Frais</h5>
+                     <div className="grid grid-cols-1 md:grid-cols-1 gap-4 text-xs">
+                       <div className="flex justify-between">
+                         <span className="text-gray-600 dark:text-gray-400">Frais total:</span>
+                         <span className="font-medium">{(customerTransactionFee.total_fee || 0).toLocaleString()} FCFA</span>
                        </div>
                      </div>
                    </div>

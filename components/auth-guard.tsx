@@ -8,7 +8,8 @@ import {
   startBackgroundTokenRefresh, 
   stopBackgroundTokenRefresh,
   isAuthenticatedStaff,
-  isStaff
+  isStaff,
+  debugAuthState
 } from "@/utils/auth"
 
 interface AuthGuardProps {
@@ -52,8 +53,13 @@ export function AuthGuard({ children }: AuthGuardProps) {
       refreshToken: !!refreshToken,
       isAuthenticated,
       staffStatus,
-      isStaffUser
+      isStaffUser,
+      is_staff_storage: localStorage.getItem("is_staff"),
+      user_data: localStorage.getItem("user")
     })
+    
+    // Debug the full auth state
+    debugAuthState()
     
     setIsAuthenticated(hasTokens)
     setIsStaffUser(staffStatus)
