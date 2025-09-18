@@ -76,13 +76,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         if (user) {
           setUserData(user)
           // Fetch balance
-          const balanceResponse = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/balance`)
-          if (balanceResponse && balanceResponse.ok) {
-            const balanceData = await balanceResponse.json()
-            if (balanceData && balanceData.balance) {
-              setBalance(balanceData.balance)
-            }
-          }
+          // const balanceResponse = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/balance`)
+          // if (balanceResponse && balanceResponse.ok) {
+          //   const balanceData = await balanceResponse.json()
+          //   if (balanceData && balanceData.balance) {
+          //     setBalance(balanceData.balance)
+          //   }
+          // }
       }
     } catch (error) {
         console.error("Error fetching user data:", error)

@@ -190,28 +190,28 @@ export function DashboardContent() {
   const quickStats = stats ? [
     { 
       label: "Total Clients", 
-      value: stats.total_customers.toLocaleString(), 
+      value: (stats.total_customers || 0).toLocaleString(), 
       change: "+12%", 
       icon: Users, 
       color: "blue" 
     },
     { 
       label: "Transactions Réussies", 
-      value: stats.total_success_transaction.toLocaleString(), 
+      value: (stats.total_success_transaction || 0).toLocaleString(), 
       change: "+5%", 
       icon: Activity, 
       color: "green" 
     },
     { 
       label: "Total Frais", 
-      value: `${stats.total_fee.toLocaleString()} FCFA`, 
+      value: `${(stats.total_fee || 0).toLocaleString()} FCFA`, 
       change: "+23%", 
       icon: DollarSign, 
       color: "purple" 
     },
     { 
       label: "Clients Vérifiés", 
-      value: stats.total_verified.toLocaleString(), 
+      value: (stats.total_verified || 0).toLocaleString(), 
       change: "Stable", 
       icon: Shield, 
       color: "emerald" 
@@ -361,10 +361,10 @@ export function DashboardContent() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
-                    Moy: {stats.payin_fee_avg.toFixed(2)} FCFA
+                    Moy: {(stats.payin_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                   <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full text-xs">
-                    Somme: {stats.payin_fee_sum.toLocaleString()} FCFA
+                    Somme: {(stats.payin_fee_sum || 0).toLocaleString()} FCFA
                   </Badge>
                 </div>
               </CardContent>
@@ -388,10 +388,10 @@ export function DashboardContent() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
-                    Moy: {stats.payout_fee_avg.toFixed(2)} FCFA
+                    Moy: {(stats.payout_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 rounded-full text-xs">
-                    Somme: {stats.payout_fee_sum.toLocaleString()} FCFA
+                    Somme: {(stats.payout_fee_sum || 0).toLocaleString()} FCFA
                   </Badge>
                 </div>
               </CardContent>
@@ -485,7 +485,7 @@ export function DashboardContent() {
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-green-100 text-green-800 hover:bg-green-100 rounded-full text-xs">
-                    {((stats.total_verified / stats.total_customers) * 100).toFixed(1)}%
+                    {stats.total_customers ? ((stats.total_verified || 0) / stats.total_customers * 100).toFixed(1) : 0}%
                   </Badge>
                 </div>
               </CardContent>
@@ -504,7 +504,7 @@ export function DashboardContent() {
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 rounded-full text-xs">
-                    {((stats.total_verification_pending / stats.total_customers) * 100).toFixed(1)}%
+                    {stats.total_customers ? ((stats.total_verification_pending || 0) / stats.total_customers * 100).toFixed(1) : 0}%
                   </Badge>
                 </div>
               </CardContent>
@@ -523,7 +523,7 @@ export function DashboardContent() {
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-red-100 text-red-800 hover:bg-red-100 rounded-full text-xs">
-                    {stats.total_blocked > 0 ? ((stats.total_blocked / stats.total_customers) * 100).toFixed(1) : 0}%
+                    {stats.total_customers && stats.total_blocked > 0 ? ((stats.total_blocked || 0) / stats.total_customers * 100).toFixed(1) : 0}%
                   </Badge>
                 </div>
               </CardContent>
@@ -547,7 +547,7 @@ export function DashboardContent() {
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 rounded-full text-xs">
-                    {((stats.total_customer_pay_fee / stats.total_customers) * 100).toFixed(1)}%
+                    {stats.total_customers ? ((stats.total_customer_pay_fee || 0) / stats.total_customers * 100).toFixed(1) : 0}%
                   </Badge>
                 </div>
               </CardContent>
@@ -560,13 +560,13 @@ export function DashboardContent() {
                     <DollarSign className="h-6 w-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.payin_fee_sum.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(stats.payin_fee_sum || 0).toLocaleString()}</p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée</p>
                   </div>
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 rounded-full text-xs">
-                    Moy: {stats.payin_fee_avg.toFixed(2)} FCFA
+                    Moy: {(stats.payin_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                 </div>
               </CardContent>
@@ -579,13 +579,13 @@ export function DashboardContent() {
                     <DollarSign className="h-6 w-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.payout_fee_sum.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(stats.payout_fee_sum || 0).toLocaleString()}</p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie</p>
                   </div>
                 </div>
                 <div className="mt-4">
                   <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 rounded-full text-xs">
-                    Moy: {stats.payout_fee_avg.toFixed(2)} FCFA
+                    Moy: {(stats.payout_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                 </div>
               </CardContent>
@@ -646,7 +646,7 @@ export function DashboardContent() {
                   <div>
                     <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Frais d'Entrée</p>
                     <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                      {stats.payin_fee.toLocaleString()} FCFA
+                      {(stats.payin_fee || 0).toLocaleString()} FCFA
                     </p>
                   </div>
                 </div>
@@ -655,7 +655,7 @@ export function DashboardContent() {
                   <div>
                     <p className="text-sm font-medium text-green-900 dark:text-green-100">Frais de Sortie</p>
                     <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                      {stats.payout_fee.toLocaleString()} FCFA
+                      {(stats.payout_fee || 0).toLocaleString()} FCFA
                     </p>
                   </div>
                 </div>
@@ -681,7 +681,7 @@ export function DashboardContent() {
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={[
                     { name: "Réussies", value: stats.total_success_transaction, color: "#10b981" },
-                    { name: "Échecs", value: stats.failled_transaction[0] || 0, color: "#ef4444" }
+                    { name: "Échecs", value: (stats.failled_transaction?.[0] || 0) || 0, color: "#ef4444" }
                   ]}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
@@ -705,7 +705,7 @@ export function DashboardContent() {
                   <div>
                     <p className="text-sm font-medium text-green-900 dark:text-green-100">Transactions Réussies</p>
                     <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                      {stats.total_success_transaction.toLocaleString()}
+                      {(stats.total_success_transaction || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -714,7 +714,7 @@ export function DashboardContent() {
                   <div>
                     <p className="text-sm font-medium text-red-900 dark:text-red-100">Transactions Échouées</p>
                     <p className="text-lg font-bold text-red-900 dark:text-red-100">
-                      {(stats.failled_transaction[0] || 0).toLocaleString()}
+                      {((stats.failled_transaction?.[0] || 0) || 0).toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -856,15 +856,15 @@ export function DashboardContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
-                      <span className="font-medium">{stats.payin_fee.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
-                      <span className="font-medium">{stats.payin_fee_sum.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee_sum || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
-                      <span className="font-medium">{stats.payin_fee_avg.toFixed(2)} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee_avg || 0).toFixed(2)} FCFA</span>
                     </div>
                   </div>
                 </div>
@@ -873,15 +873,15 @@ export function DashboardContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
-                      <span className="font-medium">{stats.payout_fee.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
-                      <span className="font-medium">{stats.payout_fee_sum.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee_sum || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
-                      <span className="font-medium">{stats.payout_fee_avg.toFixed(2)} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee_avg || 0).toFixed(2)} FCFA</span>
                     </div>
                   </div>
                 </div>
@@ -1071,19 +1071,19 @@ export function DashboardContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Frais:</span>
-                      <span className="font-medium">{stats.total_fee.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.total_fee || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Entrée:</span>
-                      <span className="font-medium">{stats.payin_fee.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Sortie:</span>
-                      <span className="font-medium">{stats.payout_fee.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant Opérations:</span>
-                      <span className="font-medium">{stats.all_operation_amount.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.all_operation_amount || 0).toLocaleString()} FCFA</span>
                     </div>
                   </div>
                 </div>
@@ -1094,16 +1094,16 @@ export function DashboardContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Réussies:</span>
-                      <span className="font-medium">{stats.total_success_transaction.toLocaleString()}</span>
+                      <span className="font-medium">{(stats.total_success_transaction || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Échouées:</span>
-                      <span className="font-medium">{(stats.failled_transaction[0] || 0).toLocaleString()}</span>
+                      <span className="font-medium">{((stats.failled_transaction?.[0] || 0) || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Taux de Réussite:</span>
                       <span className="font-medium">
-                        {((stats.total_success_transaction / (stats.total_success_transaction + (stats.failled_transaction[0] || 0))) * 100).toFixed(1)}%
+                        {((stats.total_success_transaction || 0) + ((stats.failled_transaction?.[0] || 0))) > 0 ? (((stats.total_success_transaction || 0) / ((stats.total_success_transaction || 0) + ((stats.failled_transaction?.[0] || 0)))) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                   </div>
@@ -1138,19 +1138,19 @@ export function DashboardContent() {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée:</span>
-                      <span className="font-medium">{stats.payin_fee_sum.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee_sum || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Entrée:</span>
-                      <span className="font-medium">{stats.payin_fee_avg.toFixed(2)} FCFA</span>
+                      <span className="font-medium">{(stats.payin_fee_avg || 0).toFixed(2)} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie:</span>
-                      <span className="font-medium">{stats.payout_fee_sum.toLocaleString()} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee_sum || 0).toLocaleString()} FCFA</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Sortie:</span>
-                      <span className="font-medium">{stats.payout_fee_avg.toFixed(2)} FCFA</span>
+                      <span className="font-medium">{(stats.payout_fee_avg || 0).toFixed(2)} FCFA</span>
                     </div>
                   </div>
                 </div>
@@ -1170,7 +1170,7 @@ export function DashboardContent() {
                     <div className="flex justify-between">
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">% Clients Payant:</span>
                       <span className="font-medium">
-                        {((stats.total_customer_pay_fee / stats.total_customers) * 100).toFixed(1)}%
+                        {stats.total_customers ? ((stats.total_customer_pay_fee || 0) / stats.total_customers * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                   </div>
