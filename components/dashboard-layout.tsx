@@ -99,6 +99,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: t("dashboard"), href: "/", icon: Home, current: pathname === "/" },
     { name: t("customers"), href: "/customers", icon: Users, current: pathname === "/customers" },
     { name: t("transactions"), href: "/transactions", icon: CreditCard, current: pathname === "/transactions" },
+    { name: "Retrait", href: "/withdrawal", icon: Zap, current: pathname === "/withdrawal" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
     // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },
