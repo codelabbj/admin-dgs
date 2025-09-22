@@ -21,6 +21,7 @@ const TRANSACTION_STATUS = [
   { value: "failed", label: "Échec" },
   { value: "expired", label: "Expiré" },
   { value: "refund", label: "Remboursement" },
+  { value: "customer_refund", label: "Remboursement Client" },
   { value: "accept", label: "Accepté" },
   { value: "reject", label: "Rejeté" }
 ]
@@ -56,6 +57,8 @@ export function TransactionsContent() {
   const [transactionDetailsModalOpen, setTransactionDetailsModalOpen] = useState(false)
   const [selectedTransactionDetails, setSelectedTransactionDetails] = useState<any>(null)
   const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({})
+  const [refundModalOpen, setRefundModalOpen] = useState(false)
+  const [refundLoading, setRefundLoading] = useState(false)
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -483,6 +486,12 @@ export function TransactionsContent() {
   const handleChangeStatus = async () => {
     if (!selectedTransaction || !selectedStatus) return
     
+    // If customer_refund is selected, show confirmation modal
+    if (selectedStatus === "customer_refund") {
+      setRefundModalOpen(true)
+      return
+    }
+    
     setChangeStatusLoading(true)
     try {
       const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
@@ -568,14 +577,20 @@ export function TransactionsContent() {
         return [
           { value: "failed", label: "Échec" },
           { value: "expired", label: "Expiré" },
-          { value: "success", label: "Succès" }
+          { value: "success", label: "Succès" },
+          { value: "customer_refund", label: "Remboursement Client" }
         ]
       case "failed":
-        return [{ value: "success", label: "Succès" }]
+        return [
+          { value: "success", label: "Succès" },
+          { value: "customer_refund", label: "Remboursement Client" }
+        ]
       case "expired":
         return [] // No transitions allowed from expired
       case "refund":
         return [] // No transitions allowed from refund
+      case "customer_refund":
+        return [] // No transitions allowed from customer_refund
       case "accept":
         return [] // No transitions allowed from accept
       case "reject":
@@ -594,6 +609,49 @@ export function TransactionsContent() {
   const openTransactionDetailsModal = (transaction: any) => {
     setSelectedTransactionDetails(transaction)
     setTransactionDetailsModalOpen(true)
+  }
+
+  const handleRefundConfirmation = async () => {
+    if (!selectedTransaction) return
+    
+    setRefundLoading(true)
+    try {
+      const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: "customer_refund",
+          id: selectedTransaction.id
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        // Update the transaction in the local state
+        setTransactions(prev => 
+          prev.map(tx => 
+            tx.id === selectedTransaction.id 
+              ? { ...tx, status: "customer_refund", ...data }
+              : tx
+          )
+        )
+        setRefundModalOpen(false)
+        setChangeStatusModalOpen(false)
+        setSelectedTransaction(null)
+        setSelectedStatus("")
+        // You could add a toast notification here for success
+      } else {
+        console.error('Failed to process refund:', res.status)
+        // You could add a toast notification here for error
+      }
+    } catch (error) {
+      console.error('Error processing refund:', error)
+      // You could add a toast notification here for error
+    } finally {
+      setRefundLoading(false)
+    }
   }
 
   const copyToClipboard = async (text: string, fieldName: string) => {
@@ -731,6 +789,8 @@ export function TransactionsContent() {
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200">Canceled</Badge>
       case "refund":
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Refund</Badge>
+      case "customer_refund":
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200">Remboursement Client</Badge>
       case "accept":
         return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-emerald-200">Accepté</Badge>
       case "reject":
@@ -1322,6 +1382,66 @@ export function TransactionsContent() {
               onClick={() => setTransactionDetailsModalOpen(false)}
             >
               Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Refund Confirmation Modal */}
+      <Dialog open={refundModalOpen} onOpenChange={setRefundModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirmer le Remboursement</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir rembourser cette transaction ?
+              <br />
+              <span className="text-sm text-muted-foreground">
+                Transaction ID: <strong>{selectedTransaction?.id}</strong>
+              </span>
+              <br />
+              <span className="text-sm text-muted-foreground">
+                Montant: <strong>{selectedTransaction?.amount?.toLocaleString?.() || selectedTransaction?.amount || "-"} {selectedTransaction?.currency || "FCFA"}</strong>
+              </span>
+              <br />
+              <span className="text-sm font-medium text-red-600 mt-2 block">
+                ⚠️ Êtes-vous sûr de vouloir cela car cette action renverra l'argent à l'utilisateur
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-yellow-800">
+                    Attention
+                  </h3>
+                  <div className="mt-2 text-sm text-yellow-700">
+                    <p>Cette action changera le statut de la transaction vers "Remboursement Client" et ne peut pas être annulée.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setRefundModalOpen(false)}
+              disabled={refundLoading}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              onClick={handleRefundConfirmation}
+              disabled={refundLoading}
+            >
+              {refundLoading ? "Traitement..." : "Confirmer le Remboursement"}
             </Button>
           </DialogFooter>
         </DialogContent>
