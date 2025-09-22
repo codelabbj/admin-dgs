@@ -59,6 +59,8 @@ export function TransactionsContent() {
   const [copiedFields, setCopiedFields] = useState<Record<string, boolean>>({})
   const [refundModalOpen, setRefundModalOpen] = useState(false)
   const [refundLoading, setRefundLoading] = useState(false)
+  const [statusVerificationModalOpen, setStatusVerificationModalOpen] = useState(false)
+  const [statusVerificationData, setStatusVerificationData] = useState<any>(null)
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -471,13 +473,22 @@ export function TransactionsContent() {
       
       if (res.ok) {
         const data = await res.json()
-        setStatusMap((prev) => ({ ...prev, [reference]: data.status || 'Inconnu' }))
+        setStatusVerificationData(data)
+        setStatusVerificationModalOpen(true)
       } else {
-                  setStatusMap((prev) => ({ ...prev, [reference]: 'Erreur lors de la vérification du statut' }))
+        setStatusVerificationData({
+          error: 'Erreur lors de la vérification du statut',
+          reference: reference
+        })
+        setStatusVerificationModalOpen(true)
       }
     } catch (error) {
       console.error('Erreur lors de la vérification du statut:', error)
-              setStatusMap((prev) => ({ ...prev, [reference]: 'Échec de la vérification du statut' }))
+      setStatusVerificationData({
+        error: 'Échec de la vérification du statut',
+        reference: reference
+      })
+      setStatusVerificationModalOpen(true)
     } finally {
       setStatusLoading((prev) => ({ ...prev, [reference]: false }))
     }
@@ -959,7 +970,8 @@ export function TransactionsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("transactionId")}</TableHead>
+                  <TableHead>Référence</TableHead>
+                  {/* <TableHead>{t("transactionId")}</TableHead> */}
                   <TableHead>{t("dateAndTime")}</TableHead>
                   <TableHead>{t("customer")}</TableHead>
                   <TableHead>{t("amount")}</TableHead>
@@ -981,7 +993,26 @@ export function TransactionsContent() {
                 ) : (
                   filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
-                      <TableCell className="font-medium">{transaction.id}</TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{transaction.reference || "-"}</span>
+                          {transaction.reference && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(transaction.reference, `reference-${transaction.id}`)}
+                              className="h-6 w-6 p-0"
+                            >
+                              {copiedFields[`reference-${transaction.id}`] ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* <TableCell className="font-medium">{transaction.id}</TableCell> */}
                       <TableCell>
                         <div>
                           <div className="font-medium">{transaction.created_at ? new Date(transaction.created_at).toLocaleDateString() : "-"}</div>
@@ -1030,9 +1061,6 @@ export function TransactionsContent() {
                             <Settings className="h-3 w-3" />
                             <span>Change Status</span>
                           </Button>
-                          {statusMap[transaction.reference] && (
-                            <div className="text-xs text-blue-600">{t("status")}: {statusMap[transaction.reference]}</div>
-                          )}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -1442,6 +1470,124 @@ export function TransactionsContent() {
               disabled={refundLoading}
             >
               {refundLoading ? "Traitement..." : "Confirmer le Remboursement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Verification Modal */}
+      <Dialog open={statusVerificationModalOpen} onOpenChange={setStatusVerificationModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Vérification du Statut de Transaction</DialogTitle>
+            <DialogDescription>
+              Résultat de la vérification du statut pour la référence
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {statusVerificationData?.error ? (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      Erreur
+                    </h3>
+                    <div className="mt-2 text-sm text-red-700">
+                      <p>{statusVerificationData.error}</p>
+                      {statusVerificationData.reference && (
+                        <p className="mt-1">Référence: <strong>{statusVerificationData.reference}</strong></p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-green-800">
+                        Statut Vérifié avec Succès
+                      </h3>
+                    </div>
+                  </div>
+                </div> */}
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Référence</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{statusVerificationData?.reference || "-"}</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyToClipboard(statusVerificationData?.reference, 'statusRef')}
+                        className="h-8 w-8 p-0"
+                      >
+                        {copiedFields['statusRef'] ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Statut</label>
+                    <div className="mt-1">{getStatusBadge(statusVerificationData?.status)}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Montant</label>
+                    <p className="text-lg font-semibold text-green-600">
+                      {statusVerificationData?.amount?.toLocaleString?.() || statusVerificationData?.amount || "-"} FCFA
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Type</label>
+                    <p className="text-sm font-medium">
+                      {TRANSACTION_TYPES.find(t => t.value === statusVerificationData?.type_trans)?.label || statusVerificationData?.type_trans || "-"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
+                    <p className="text-sm font-mono">{statusVerificationData?.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
+                    <p className="text-sm">
+                      {statusVerificationData?.created_at 
+                        ? new Date(statusVerificationData.created_at).toLocaleString() 
+                        : "-"
+                      }
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStatusVerificationModalOpen(false)}
+            >
+              Fermer
             </Button>
           </DialogFooter>
         </DialogContent>
