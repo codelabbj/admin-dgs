@@ -282,7 +282,7 @@ export function DashboardContent() {
         <div className="flex items-center justify-between sticky top-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md z-10 py-6 -mx-6 px-6 border-b border-slate-200 dark:border-neutral-700">
           <div>
             <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("dashboard")}</h1>
-            <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("welcomeBack2")}</p>
+            {/* <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("welcomeBack2")}</p> */}
             {/* Date Range Display */}
             {(startDate || endDate) && (
               <div className="flex items-center space-x-2 mt-2">
