@@ -8,7 +8,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { useLanguage } from "@/contexts/language-context"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
 import {
   Eye,
   EyeOff,
@@ -29,6 +33,8 @@ import {
   Zap,
   Shield,
   BarChart3,
+  CalendarDays,
+  X,
 } from "lucide-react"
 import {
   XAxis,
@@ -52,6 +58,8 @@ export function DashboardContent() {
   // const { isLoading, requireAuth, checkAuth } = useAuth()
   const [showBalances, setShowBalances] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const { t } = useLanguage()
 
   // Désactiver temporairement la vérification d'authentification
@@ -128,7 +136,22 @@ export function DashboardContent() {
         return
       }
       
-      const res = await smartFetch(`${baseUrl}/prod/v1/api/statistic`)
+      // Construire l'URL avec les paramètres de date
+      let url = `${baseUrl}/prod/v1/api/statistic`
+      const params = new URLSearchParams()
+      
+      if (startDate) {
+        params.append('start_date', startDate.toISOString().split('T')[0])
+      }
+      if (endDate) {
+        params.append('end_date', endDate.toISOString().split('T')[0])
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+      
+      const res = await smartFetch(url)
       
       if (res.ok) {
         const data = await res.json()
@@ -156,6 +179,22 @@ export function DashboardContent() {
     await fetchStats()
     setIsRefreshing(false)
   }
+
+  const clearDateFilters = () => {
+    setStartDate(undefined)
+    setEndDate(undefined)
+  }
+
+  const applyDateFilters = () => {
+    fetchStats()
+  }
+
+  // Refetch data when date filters change
+  useEffect(() => {
+    if (startDate || endDate) {
+      fetchStats()
+    }
+  }, [startDate, endDate])
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return showBalances ? "0 FCFA" : "••••••"
@@ -244,17 +283,86 @@ export function DashboardContent() {
           <div>
             <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("dashboard")}</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("welcomeBack2")}</p>
+            {/* Date Range Display */}
+            {(startDate || endDate) && (
+              <div className="flex items-center space-x-2 mt-2">
+                <CalendarDays className="h-4 w-4 text-neutral-500" />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {startDate && endDate 
+                    ? `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
+                    : startDate 
+                    ? `À partir du ${format(startDate, 'dd/MM/yyyy', { locale: fr })}`
+                    : `Jusqu'au ${format(endDate!, 'dd/MM/yyyy', { locale: fr })}`
+                  }
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearDateFilters}
+                  className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-          <Button
-            variant="outline"
-            size="lg"
+            {/* Date Filter Controls */}
+            <div className="flex items-center space-x-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Date de début
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    disabled={(date) => date > new Date() || (endDate ? date > endDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Date de fin
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    disabled={(date) => date > new Date() || (startDate ? date < startDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <Button
+              variant="outline"
+              size="lg"
               className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
-            onClick={() => setShowBalances(!showBalances)}
-          >
-            {showBalances ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-            {showBalances ? t("hideBalances") : t("showBalances")}
-          </Button>
+              onClick={() => setShowBalances(!showBalances)}
+            >
+              {showBalances ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+              {showBalances ? t("hideBalances") : t("showBalances")}
+            </Button>
             <Button
               variant="outline"
               size="lg"
@@ -361,12 +469,12 @@ export function DashboardContent() {
                   {formatCurrency(stats.payin_fee)}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
+                  {/* <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
                     Moy: {(stats.payin_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                   <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full text-xs">
                     Somme: {(stats.payin_fee_sum || 0).toLocaleString()} FCFA
-                  </Badge>
+                  </Badge> */}
                 </div>
               </CardContent>
             </Card>
@@ -388,12 +496,12 @@ export function DashboardContent() {
                   {formatCurrency(stats.payout_fee)}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
+                  {/* <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
                     Moy: {(stats.payout_fee_avg || 0).toFixed(2)} FCFA
                   </Badge>
                   <Badge className="bg-green-100 text-green-700 hover:bg-green-100 rounded-full text-xs">
                     Somme: {(stats.payout_fee_sum || 0).toLocaleString()} FCFA
-                  </Badge>
+                  </Badge> */}
                 </div>
               </CardContent>
             </Card>
@@ -554,7 +662,7 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="p-3 bg-teal-600 rounded-xl shadow-lg">
@@ -571,9 +679,9 @@ export function DashboardContent() {
                   </Badge>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="p-3 bg-rose-600 rounded-xl shadow-lg">
@@ -590,7 +698,7 @@ export function DashboardContent() {
                   </Badge>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         )}
 
@@ -812,7 +920,7 @@ export function DashboardContent() {
         )}
 
         {/* Fee Analytics Comparison Chart */}
-        {stats && (
+        {/* {stats && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
@@ -889,10 +997,10 @@ export function DashboardContent() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Enhanced Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Customer Locations */}
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
@@ -972,7 +1080,7 @@ export function DashboardContent() {
           </Card>
 
           {/* Payment Methods */}
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1049,7 +1157,7 @@ export function DashboardContent() {
                 </div>
               )}
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Complete API Data Summary */}
@@ -1134,7 +1242,7 @@ export function DashboardContent() {
                 </div>
 
                 {/* Fee Analytics */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <h4 className="font-semibold text-orange-900 dark:text-orange-100 border-b border-orange-200 pb-2">Analyses Frais</h4>
                   <div className="space-y-2">
                     <div className="flex justify-between">
@@ -1154,7 +1262,7 @@ export function DashboardContent() {
                       <span className="font-medium">{(stats.payout_fee_avg || 0).toFixed(2)} FCFA</span>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Fee Configuration */}
                 <div className="space-y-4">

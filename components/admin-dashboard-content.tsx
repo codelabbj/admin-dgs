@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { DateFilter } from "@/components/ui/date-filter"
 import { useLanguage } from "@/contexts/language-context"
 import {
   Users,
@@ -62,6 +63,8 @@ import {
 export function AdminDashboardContent() {
   const [showSystemStats, setShowSystemStats] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   const { t } = useLanguage()
 
   // State for API data
@@ -92,7 +95,22 @@ export function AdminDashboardContent() {
         return
       }
       
-      const res = await smartFetch(`${baseUrl}/prod/v1/api/statistic`)
+      // Construire l'URL avec les paramètres de date
+      let url = `${baseUrl}/prod/v1/api/statistic`
+      const params = new URLSearchParams()
+      
+      if (startDate) {
+        params.append('start_date', startDate.toISOString().split('T')[0])
+      }
+      if (endDate) {
+        params.append('end_date', endDate.toISOString().split('T')[0])
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+      
+      const res = await smartFetch(url)
       
       if (res.ok) {
         const data = await res.json()
@@ -120,6 +138,19 @@ export function AdminDashboardContent() {
     await fetchStats()
     setIsRefreshing(false)
   }
+
+  // Fonction pour effacer les filtres de date
+  const clearDateFilters = () => {
+    setStartDate(undefined)
+    setEndDate(undefined)
+  }
+
+  // Refetch data when date filters change
+  useEffect(() => {
+    if (startDate || endDate) {
+      fetchStats()
+    }
+  }, [startDate, endDate])
 
   // Mock data for admin dashboard
   const systemMetrics = {
@@ -183,6 +214,13 @@ export function AdminDashboardContent() {
             <p className="text-slate-600 dark:text-slate-400 text-lg">System Overview & Management</p>
           </div>
           <div className="flex items-center space-x-4">
+            <DateFilter
+              startDate={startDate}
+              endDate={endDate}
+              onStartDateChange={setStartDate}
+              onEndDateChange={setEndDate}
+              onClearFilters={clearDateFilters}
+            />
             <Button
               variant="outline"
               size="lg"

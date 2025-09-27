@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { DateFilter } from "@/components/ui/date-filter"
 import { ArrowLeft, Users, TrendingUp, DollarSign, CreditCard, MapPin, Building, Globe, Phone, Mail, Calendar, Loader2, FileText, ExternalLink, ChevronLeft, ChevronRight, Percent, Edit, Save, X } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect } from "react"
@@ -69,6 +70,16 @@ interface CustomerTransactionFee {
   total_fee: number
 }
 
+// Interface pour les paramètres par défaut
+interface DefaultSettings {
+  minimum_payin: number
+  minimum_payout: number
+  max_payin: number
+  max_payout: number
+  payin_fee: string
+  payout_fee: string
+}
+
 // Interface pour les transactions
 interface Transaction {
   id: string
@@ -93,6 +104,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
   const [user, setUser] = useState<User | null>(null)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [customerTransactionFee, setCustomerTransactionFee] = useState<CustomerTransactionFee | null>(null)
+  const [defaultSettings, setDefaultSettings] = useState<DefaultSettings | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -103,6 +115,10 @@ export default function UserDetail({ params }: { params: { id: string } }) {
   const [totalPages, setTotalPages] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
   const [transactionsLoading, setTransactionsLoading] = useState(false)
+  
+  // États pour les filtres de date
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined)
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   
   // États pour la mise à jour des frais
   const [isEditingFees, setIsEditingFees] = useState(false)
@@ -155,7 +171,22 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         return
       }
 
-      const response = await smartFetch(`${baseUrl}/prod/v1/api/statistic?user_id=${userId}`)
+      // Construire l'URL avec les paramètres de date
+      let url = `${baseUrl}/prod/v1/api/statistic?user_id=${userId}`
+      const params = new URLSearchParams()
+      
+      if (startDate) {
+        params.append('start_date', startDate.toISOString().split('T')[0])
+      }
+      if (endDate) {
+        params.append('end_date', endDate.toISOString().split('T')[0])
+      }
+      
+      if (params.toString()) {
+        url += `&${params.toString()}`
+      }
+
+      const response = await smartFetch(url)
       
       if (!response.ok) {
         const errorText = await response.text()
@@ -176,6 +207,44 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     } catch (err) {
       console.error("Error fetching user stats:", err)
       // Ne pas définir d'erreur pour les stats car elles peuvent ne pas être disponibles
+    }
+  }
+
+  // Fonction pour récupérer les paramètres par défaut
+  const fetchDefaultSettings = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      // Vérifier que nous avons un token valide avant de faire l'appel
+      const accessToken = localStorage.getItem("access")
+      if (!accessToken) {
+        console.warn("No access token available for settings API")
+        return
+      }
+
+      const response = await smartFetch(`${baseUrl}/prod/v1/api/setting`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`Settings API error: ${response.status} - ${errorText}`)
+        
+        // Si c'est une erreur de token, essayer de rafraîchir
+        if (response.status === 401) {
+          console.log("Token expired, attempting refresh...")
+          return
+        }
+        
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      setDefaultSettings(data)
+    } catch (err) {
+      console.error("Error fetching default settings:", err)
+      // Ne pas définir d'erreur pour les paramètres car ils peuvent ne pas être disponibles
     }
   }
 
@@ -227,7 +296,22 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         throw new Error("Base URL not configured")
       }
 
-      const response = await smartFetch(`${baseUrl}/prod/v1/api/transaction?user_id=${userId}&page=${page}&page_size=${pageSize}`)
+      // Construire l'URL avec les paramètres de date
+      let url = `${baseUrl}/prod/v1/api/transaction?user_id=${userId}&page=${page}&page_size=${pageSize}`
+      const params = new URLSearchParams()
+      
+      if (startDate) {
+        params.append('start_date', startDate.toISOString().split('T')[0])
+      }
+      if (endDate) {
+        params.append('end_date', endDate.toISOString().split('T')[0])
+      }
+      
+      if (params.toString()) {
+        url += `&${params.toString()}`
+      }
+
+      const response = await smartFetch(url)
       
       if (!response.ok) {
         throw new Error(`Erreur ${response.status}: ${response.statusText}`)
@@ -269,6 +353,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
           fetchUserDetails(),
           fetchUserStats(),
           fetchCustomerTransactionFee(),
+          fetchDefaultSettings(),
           fetchUserTransactions(1)
         ])
       } finally {
@@ -287,6 +372,15 @@ export default function UserDetail({ params }: { params: { id: string } }) {
       fetchUserTransactions(currentPage)
     }
   }, [currentPage, userId])
+
+  // Refetch data when date filters change
+  useEffect(() => {
+    if (userId) {
+      fetchUserStats()
+      fetchUserTransactions(1) // Reset to first page when filtering
+      setCurrentPage(1)
+    }
+  }, [startDate, endDate, userId])
 
   // Initialiser le formulaire de frais quand les données utilisateur sont chargées
   useEffect(() => {
@@ -448,6 +542,47 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     initializeFeeForm()
   }
 
+  // Fonction pour vérifier si tous les frais sont null
+  const areAllFeesNull = () => {
+    return user && 
+      user.payin_fee === null && 
+      user.payout_fee === null && 
+      user.payin_fee_fixed === null && 
+      user.payout_fee_fixed === null && 
+      user.payout_fee_limite === null && 
+      user.payin_fee_limite === null
+  }
+
+  // Fonction pour obtenir les frais à afficher (personnalisés ou par défaut)
+  const getDisplayFees = () => {
+    if (areAllFeesNull() && defaultSettings) {
+      return {
+        payin_fee: parseFloat(defaultSettings.payin_fee),
+        payout_fee: parseFloat(defaultSettings.payout_fee),
+        minimum_payin: defaultSettings.minimum_payin,
+        minimum_payout: defaultSettings.minimum_payout,
+        max_payin: defaultSettings.max_payin,
+        max_payout: defaultSettings.max_payout,
+        isDefault: true
+      }
+    }
+    return {
+      payin_fee: user?.payin_fee,
+      payout_fee: user?.payout_fee,
+      payin_fee_fixed: user?.payin_fee_fixed,
+      payout_fee_fixed: user?.payout_fee_fixed,
+      payout_fee_limite: user?.payout_fee_limite,
+      payin_fee_limite: user?.payin_fee_limite,
+      isDefault: false
+    }
+  }
+
+  // Fonction pour effacer les filtres de date
+  const clearDateFilters = () => {
+    setStartDate(undefined)
+    setEndDate(undefined)
+  }
+
   // Composant de pagination
   const PaginationComponent = () => {
     if (totalPages <= 1) return null
@@ -562,15 +697,24 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     <DashboardLayout>
       <div className="p-6 space-y-6">
         {/* Header avec bouton retour */}
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Retour
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Détails de l'Utilisateur</h1>
-            <p className="text-muted-foreground">Informations complètes sur {user.fullname}</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="outline" onClick={() => router.back()}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Retour
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">Détails de l'Utilisateur</h1>
+              <p className="text-muted-foreground">Informations complètes sur {user.fullname}</p>
+            </div>
           </div>
+          <DateFilter
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            onClearFilters={clearDateFilters}
+          />
         </div>
 
         {/* Informations utilisateur */}
@@ -618,7 +762,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
 
          {/* Statistiques utilisateur */}
          {(userStats || customerTransactionFee) && (
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
              <Card>
                <CardHeader className="pb-2">
                  <CardTitle className="text-sm font-medium">Fonds Disponibles</CardTitle>
@@ -630,16 +774,6 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                </CardContent>
              </Card>
              {/* <Card>
-               <CardHeader className="pb-2">
-                 <CardTitle className="text-sm font-medium">Montant Total des Opérations</CardTitle>
-               </CardHeader>
-               <CardContent>
-                 <div className="text-2xl font-bold text-blue-600">
-                   {(userStats?.all_operation_amount || 0).toLocaleString()} FCFA
-                 </div>
-               </CardContent>
-             </Card> */}
-             <Card>
                <CardHeader className="pb-2">
                  <CardTitle className="text-sm font-medium">Méthodes de Paiement</CardTitle>
                </CardHeader>
@@ -668,7 +802,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                    ))}
                  </div>
                </CardContent>
-             </Card>
+             </Card> */}
              {customerTransactionFee && (
                <Card>
                  <CardHeader className="pb-2">
@@ -856,112 +990,182 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                   <div className="flex items-center space-x-2">
                     <Badge 
                       className={`${
-                        user.custome_fee 
+                        areAllFeesNull() 
+                          ? 'bg-orange-100 text-orange-800 border-orange-200'
+                          : user.custome_fee 
                           ? 'bg-blue-100 text-blue-800 border-blue-200' 
                           : 'bg-green-100 text-green-800 border-green-200'
                       }`}
                     >
-                      {user.custome_fee ? 'Frais Personnalisés' : 'Frais Standard'}
+                      {areAllFeesNull() ? 'Frais par Défaut' : user.custome_fee ? 'Frais Personnalisés' : 'Frais Standard'}
                     </Badge>
                   </div>
                   
-                  {user.custome_fee ? (
-                    // Afficher seulement payin_fee et payout_fee quand custome_fee est true
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {user.payin_fee !== null && (
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                  {(() => {
+                    const displayFees = getDisplayFees()
+                    
+                    if (displayFees.isDefault) {
+                      // Afficher les frais par défaut
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <TrendingUp className="h-4 w-4 text-blue-600" />
+                              <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                            </div>
+                            <span className="font-bold text-blue-900">
+                              {displayFees.payin_fee}%
+                            </span>
                           </div>
-                          <span className="font-bold text-blue-900">
-                            {user.payin_fee}%
-                          </span>
-                        </div>
-                      )}
-                      {user.payout_fee !== null && (
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-green-900">Frais de Sortie</span>
+                          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <TrendingUp className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-900">Frais de Sortie</span>
+                            </div>
+                            <span className="font-bold text-green-900">
+                              {displayFees.payout_fee}%
+                            </span>
                           </div>
-                          <span className="font-bold text-green-900">
-                            {user.payout_fee}%
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    // Afficher tous les frais non-null quand custome_fee est false
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {user.payin_fee !== null && (
-                        <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-4 w-4 text-blue-600" />
-                            <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                          <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <DollarSign className="h-4 w-4 text-purple-600" />
+                              <span className="font-medium text-purple-900">Min Entrée</span>
+                            </div>
+                            <span className="font-bold text-purple-900">
+                              {displayFees.minimum_payin} FCFA
+                            </span>
                           </div>
-                          <span className="font-bold text-blue-900">
-                            {user.payin_fee}%
-                          </span>
-                        </div>
-                      )}
-                      {user.payout_fee !== null && (
-                        <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <TrendingUp className="h-4 w-4 text-green-600" />
-                            <span className="font-medium text-green-900">Frais de Sortie</span>
+                          <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <DollarSign className="h-4 w-4 text-orange-600" />
+                              <span className="font-medium text-orange-900">Min Sortie</span>
+                            </div>
+                            <span className="font-bold text-orange-900">
+                              {displayFees.minimum_payout} FCFA
+                            </span>
                           </div>
-                          <span className="font-bold text-green-900">
-                            {user.payout_fee}%
-                          </span>
-                        </div>
-                      )}
-                      {user.payin_fee_fixed !== null && (
-                        <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <DollarSign className="h-4 w-4 text-purple-600" />
-                            <span className="font-medium text-purple-900">Frais Fixe Entrée</span>
+                          <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <CreditCard className="h-4 w-4 text-indigo-600" />
+                              <span className="font-medium text-indigo-900">Max Entrée</span>
+                            </div>
+                            <span className="font-bold text-indigo-900">
+                              {displayFees.max_payin?.toLocaleString()} FCFA
+                            </span>
                           </div>
-                          <span className="font-bold text-purple-900">
-                            {user.payin_fee_fixed} FCFA
-                          </span>
-                        </div>
-                      )}
-                      {user.payout_fee_fixed !== null && (
-                        <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <DollarSign className="h-4 w-4 text-orange-600" />
-                            <span className="font-medium text-orange-900">Frais Fixe Sortie</span>
+                          <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <CreditCard className="h-4 w-4 text-pink-600" />
+                              <span className="font-medium text-pink-900">Max Sortie</span>
+                            </div>
+                            <span className="font-bold text-pink-900">
+                              {displayFees.max_payout?.toLocaleString()} FCFA
+                            </span>
                           </div>
-                          <span className="font-bold text-orange-900">
-                            {user.payout_fee_fixed} FCFA
-                          </span>
                         </div>
-                      )}
-                      {user.payin_fee_limite !== null && (
-                        <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="h-4 w-4 text-indigo-600" />
-                            <span className="font-medium text-indigo-900">Limite Frais Entrée</span>
-                          </div>
-                          <span className="font-bold text-indigo-900">
-                            {user.payin_fee_limite} FCFA
-                          </span>
+                      )
+                    } else if (user.custome_fee) {
+                      // Afficher seulement payin_fee et payout_fee quand custome_fee est true
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {displayFees.payin_fee !== null && (
+                            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-blue-600" />
+                                <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                              </div>
+                              <span className="font-bold text-blue-900">
+                                {displayFees.payin_fee}%
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payout_fee !== null && (
+                            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <span className="font-medium text-green-900">Frais de Sortie</span>
+                              </div>
+                              <span className="font-bold text-green-900">
+                                {displayFees.payout_fee}%
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {user.payout_fee_limite !== null && (
-                        <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <CreditCard className="h-4 w-4 text-pink-600" />
-                            <span className="font-medium text-pink-900">Limite Frais Sortie</span>
-                          </div>
-                          <span className="font-bold text-pink-900">
-                            {user.payout_fee_limite} FCFA
-                          </span>
+                      )
+                    } else {
+                      // Afficher tous les frais non-null quand custome_fee est false
+                      return (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {displayFees.payin_fee !== null && (
+                            <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-blue-600" />
+                                <span className="font-medium text-blue-900">Frais d'Entrée</span>
+                              </div>
+                              <span className="font-bold text-blue-900">
+                                {displayFees.payin_fee}%
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payout_fee !== null && (
+                            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <span className="font-medium text-green-900">Frais de Sortie</span>
+                              </div>
+                              <span className="font-bold text-green-900">
+                                {displayFees.payout_fee}%
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payin_fee_fixed !== null && (
+                            <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <DollarSign className="h-4 w-4 text-purple-600" />
+                                <span className="font-medium text-purple-900">Frais Fixe Entrée</span>
+                              </div>
+                              <span className="font-bold text-purple-900">
+                                {displayFees.payin_fee_fixed} FCFA
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payout_fee_fixed !== null && (
+                            <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <DollarSign className="h-4 w-4 text-orange-600" />
+                                <span className="font-medium text-orange-900">Frais Fixe Sortie</span>
+                              </div>
+                              <span className="font-bold text-orange-900">
+                                {displayFees.payout_fee_fixed} FCFA
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payin_fee_limite !== null && (
+                            <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <CreditCard className="h-4 w-4 text-indigo-600" />
+                                <span className="font-medium text-indigo-900">Limite Frais Entrée</span>
+                              </div>
+                              <span className="font-bold text-indigo-900">
+                                {displayFees.payin_fee_limite} FCFA
+                              </span>
+                            </div>
+                          )}
+                          {displayFees.payout_fee_limite !== null && (
+                            <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
+                              <div className="flex items-center space-x-2">
+                                <CreditCard className="h-4 w-4 text-pink-600" />
+                                <span className="font-medium text-pink-900">Limite Frais Sortie</span>
+                              </div>
+                              <span className="font-bold text-pink-900">
+                                {displayFees.payout_fee_limite} FCFA
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
+                      )
+                    }
+                  })()}
                   
                   {(!user.custome_fee && 
                     user.payin_fee === null && 
@@ -969,7 +1173,8 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                     user.payin_fee_fixed === null && 
                     user.payout_fee_fixed === null && 
                     user.payin_fee_limite === null && 
-                    user.payout_fee_limite === null) && (
+                    user.payout_fee_limite === null && 
+                    !defaultSettings) && (
                     <div className="text-center py-4">
                       <p className="text-muted-foreground">Aucun frais configuré</p>
                     </div>
@@ -1458,14 +1663,14 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                            {user.custome_fee ? 'Oui' : 'Non'}
                          </Badge>
                        </div>
-                       <div className="flex justify-between">
+                       {/* <div className="flex justify-between">
                          <span className="text-gray-600 dark:text-gray-400">Frais entrée:</span>
                          <span className="font-medium">{user.payin_fee ? `${user.payin_fee}%` : "Non défini"}</span>
                        </div>
                        <div className="flex justify-between">
                          <span className="text-gray-600 dark:text-gray-400">Frais sortie:</span>
                          <span className="font-medium">{user.payout_fee ? `${user.payout_fee}%` : "Non défini"}</span>
-                       </div>
+                       </div> */}
                      </div>
                    </div>
                  </div>

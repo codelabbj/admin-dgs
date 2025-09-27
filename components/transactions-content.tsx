@@ -46,6 +46,7 @@ export function TransactionsContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [methodFilter, setMethodFilter] = useState("all")
+  const [userFilter, setUserFilter] = useState("")
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
@@ -113,13 +114,14 @@ export function TransactionsContent() {
         search: searchTerm,
         status: statusFilter,
         method: methodFilter,
+        user: userFilter,
         start_date: startDate,
         end_date: endDate
       }, 1)
     }, 500) // Debounce search by 500ms
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, methodFilter, startDate, endDate])
+  }, [searchTerm, statusFilter, methodFilter, userFilter, startDate, endDate])
 
   // Refetch data when page changes
   useEffect(() => {
@@ -127,6 +129,7 @@ export function TransactionsContent() {
       search: searchTerm,
       status: statusFilter,
       method: methodFilter,
+      user: userFilter,
       start_date: startDate,
       end_date: endDate
     }, currentPage)
@@ -149,7 +152,7 @@ export function TransactionsContent() {
     }
   }
 
-  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string; start_date?: string; end_date?: string }, page: number = 1) => {
+  const fetchTransactions = async (filters?: { search?: string; status?: string; method?: string; user?: string; start_date?: string; end_date?: string }, page: number = 1) => {
     setLoading(true)
     try {
       // Build query parameters
@@ -163,6 +166,9 @@ export function TransactionsContent() {
       }
       if (filters?.method && filters.method !== 'all') {
         queryParams.append('method', filters.method)
+      }
+      if (filters?.user) {
+        queryParams.append('user', filters.user)
       }
       if (filters?.start_date) {
         queryParams.append('start_date', filters.start_date)
@@ -907,6 +913,15 @@ export function TransactionsContent() {
                 className="pl-10"
               />
             </div>
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Filtrer par utilisateur (email/username)"
+                value={userFilter}
+                onChange={(e) => setUserFilter(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full md:w-40">
                 <SelectValue placeholder={t("status")} />
@@ -944,6 +959,7 @@ export function TransactionsContent() {
                   setStartDate("")
                   setEndDate("")
                   setSearchTerm("")
+                  setUserFilter("")
                   setStatusFilter("all")
                   setMethodFilter("all")
                 }}
