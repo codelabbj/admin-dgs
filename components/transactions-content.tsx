@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react"
+import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check, Loader2, RefreshCw } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
@@ -62,6 +62,9 @@ export function TransactionsContent() {
   const [refundLoading, setRefundLoading] = useState(false)
   const [statusVerificationModalOpen, setStatusVerificationModalOpen] = useState(false)
   const [statusVerificationData, setStatusVerificationData] = useState<any>(null)
+  const [webhookLogsModalOpen, setWebhookLogsModalOpen] = useState(false)
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([])
+  const [webhookLogsLoading, setWebhookLogsLoading] = useState(false)
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -159,22 +162,22 @@ export function TransactionsContent() {
       const queryParams = new URLSearchParams()
       
       if (filters?.search) {
-        queryParams.append('q', filters.search)
+        queryParams.append('search', filters.search)
       }
       if (filters?.status && filters.status !== 'all') {
         queryParams.append('status', filters.status)
       }
       if (filters?.method && filters.method !== 'all') {
-        queryParams.append('method', filters.method)
+        queryParams.append('type', filters.method)
       }
       if (filters?.user) {
-        queryParams.append('user', filters.user)
+        queryParams.append('customer_id', filters.user)
       }
       if (filters?.start_date) {
-        queryParams.append('start_date', filters.start_date)
+        queryParams.append('date_from', filters.start_date)
       }
       if (filters?.end_date) {
-        queryParams.append('end_date', filters.end_date)
+        queryParams.append('date_to', filters.end_date)
       }
       
       // Add pagination parameters
@@ -182,7 +185,7 @@ export function TransactionsContent() {
       queryParams.append('page_size', pageSize.toString())
       
       const queryString = queryParams.toString()
-      const url = `${baseUrl}/prod/v1/api/transaction?${queryString}`
+      const url = `${baseUrl}/api/v2/admin/transactions/?${queryString}`
       
       console.log('Fetching transactions with filters and pagination:', { filters, page, url })
       
@@ -500,6 +503,62 @@ export function TransactionsContent() {
     }
   }
 
+  // Fonction pour récupérer les détails d'une transaction
+  const fetchTransactionDetails = async (transactionUid: string) => {
+    try {
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/transactions/${transactionUid}/`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      return data
+    } catch (err) {
+      console.error("Error fetching transaction details:", err)
+      throw err
+    }
+  }
+
+  // Fonction pour récupérer les logs webhook d'une transaction
+  const fetchWebhookLogs = async (transactionUid: string) => {
+    try {
+      setWebhookLogsLoading(true)
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/transactions/${transactionUid}/webhook-logs/`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      setWebhookLogs(Array.isArray(data) ? data : data.results || [])
+    } catch (err) {
+      console.error("Error fetching webhook logs:", err)
+      setWebhookLogs([])
+    } finally {
+      setWebhookLogsLoading(false)
+    }
+  }
+
+  // Fonction pour ouvrir le modal des logs webhook
+  const openWebhookLogsModal = async (transaction: any) => {
+    setSelectedTransactionDetails(transaction)
+    await fetchWebhookLogs(transaction.id || transaction.transaction_uid)
+    setWebhookLogsModalOpen(true)
+  }
+
   const handleChangeStatus = async () => {
     if (!selectedTransaction || !selectedStatus) return
     
@@ -722,6 +781,45 @@ export function TransactionsContent() {
     doc.save("transactions.pdf")
   }
 
+  const handleExportCSV = async () => {
+    try {
+      let url = `${baseUrl}/api/v2/admin/reports/export-transactions/`
+      const params = new URLSearchParams()
+      
+      if (searchTerm) {
+        params.append('search', searchTerm)
+      }
+      if (statusFilter && statusFilter !== 'all') {
+        params.append('status', statusFilter)
+      }
+      if (startDate) {
+        params.append('start_date', startDate)
+      }
+      if (endDate) {
+        params.append('end_date', endDate)
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+      
+      const res = await smartFetch(url)
+      if (res.ok) {
+        const blob = await res.blob()
+        const url_blob = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url_blob
+        a.download = `transactions-${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url_blob)
+        document.body.removeChild(a)
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'export CSV des transactions:', error)
+    }
+  }
+
   // Since we're now filtering on the API side, we can use transactions directly
   const filteredTransactions = Array.isArray(transactions) ? transactions : []
 
@@ -848,9 +946,19 @@ export function TransactionsContent() {
             </span>
           </div>
           
+          <Button variant="outline" onClick={() => window.location.href = '/refunds'}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Gestion des Remboursements
+          </Button>
+          
           <Button variant="outline" onClick={handleExportPDF}>
             <Download className="h-4 w-4 mr-2" />
-            {t("export")}
+            {t("export")} PDF
+          </Button>
+          
+          <Button variant="outline" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-2" />
+            {t("export")} CSV
           </Button>
         </div>
       </div>
@@ -1059,6 +1167,15 @@ export function TransactionsContent() {
                           >
                             <Eye className="h-3 w-3" />
                             <span>View Details</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openWebhookLogsModal(transaction)}
+                            className="flex items-center space-x-1"
+                          >
+                            <Download className="h-3 w-3" />
+                            <span>Webhook Logs</span>
                           </Button>
                           <Button
                             variant="outline"
@@ -1602,6 +1719,108 @@ export function TransactionsContent() {
               type="button"
               variant="outline"
               onClick={() => setStatusVerificationModalOpen(false)}
+            >
+              Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Webhook Logs Modal */}
+      <Dialog open={webhookLogsModalOpen} onOpenChange={setWebhookLogsModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Logs Webhook de la Transaction</DialogTitle>
+            <DialogDescription>
+              Historique des appels webhook pour la transaction {selectedTransactionDetails?.id || selectedTransactionDetails?.transaction_uid}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {webhookLogsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-2 text-neutral-600 dark:text-neutral-400">Chargement des logs webhook...</span>
+              </div>
+            ) : webhookLogs.length === 0 ? (
+              <div className="text-center py-8">
+                <Download className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+                <p className="text-neutral-600 dark:text-neutral-400">Aucun log webhook trouvé</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {webhookLogs.map((log, index) => (
+                  <div key={index} className="border border-slate-200 dark:border-neutral-700 rounded-lg p-4">
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">URL</label>
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">
+                          {log.url || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Statut HTTP</label>
+                        <p className={`text-sm font-medium ${
+                          log.status_code >= 200 && log.status_code < 300 
+                            ? 'text-green-600' 
+                            : log.status_code >= 400 
+                            ? 'text-red-600' 
+                            : 'text-yellow-600'
+                        }`}>
+                          {log.status_code || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Méthode</label>
+                        <p className="text-sm font-mono">{log.method || "N/A"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Date</label>
+                        <p className="text-sm">
+                          {log.created_at ? new Date(log.created_at).toLocaleString() : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {log.request_body && (
+                      <div className="mb-3">
+                        <label className="text-sm font-medium text-muted-foreground">Corps de la Requête</label>
+                        <pre className="text-xs bg-slate-100 dark:bg-slate-800 p-2 rounded overflow-x-auto">
+                          {JSON.stringify(log.request_body, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {log.response_body && (
+                      <div className="mb-3">
+                        <label className="text-sm font-medium text-muted-foreground">Corps de la Réponse</label>
+                        <pre className="text-xs bg-slate-100 dark:bg-slate-800 p-2 rounded overflow-x-auto">
+                          {JSON.stringify(log.response_body, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    {log.error_message && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">Message d'Erreur</label>
+                        <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                          {log.error_message}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setWebhookLogsModalOpen(false)}
             >
               Fermer
             </Button>

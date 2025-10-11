@@ -35,6 +35,8 @@ import {
   BarChart3,
   CalendarDays,
   X,
+  Download,
+  CheckCircle,
 } from "lucide-react"
 import {
   XAxis,
@@ -84,67 +86,517 @@ export function DashboardContent() {
   //   )
   // }
 
-  // Interface pour les statistiques API
-  interface StatsData {
-    total_fee: number
-    payin_fee: number
-    payout_fee: number
-    availavailable_fund: number
-    // all_operation_amount: number
-    total_success_transaction: number
-    failled_transaction: number[]
-    payment_methode: { [key: string]: number }
-    country_payment: { [key: string]: number }
-    total_customers: number
-    total_verified: number
-    total_verification_pending: number
-    total_blocked: number
-    total_with_custom_fee: number
-    total_customer_pay_fee: number
-    payin_fee_sum: number
-    payin_fee_avg: number
-    payout_fee_sum: number
-    payout_fee_avg: number
+  // Interface pour les statistiques API globales
+  interface GlobalStatsData {
+    total_transactions: number
+    total_payin: {
+      count: number
+      amount: number | null
+    }
+    total_payout: {
+      count: number
+      amount: number | null
+    }
+    total_commissions: number
+    unpaid_commissions: number
+    month_transactions: {
+      count: number
+      amount: number | null
+    }
+    available_fund: number
+  }
+
+
+  // Interfaces pour les nouvelles APIs de monitoring
+  interface RealtimeData {
+    timestamp: string
+    last_hour: {
+      transactions: number
+      total_amount: number
+      payin_count: number
+      payout_count: number
+      completed: number
+      failed: number
+      processing: number
+      avg_processing_seconds: number
+    }
+    today: {
+      transactions: number
+      total_amount: number
+      completed_amount: number
+    }
+    alerts: {
+      failed_webhooks: number
+      failed_callbacks: number
+    }
+  }
+
+  interface TransactionFlowData {
+    period: string
+    data: Array<{
+      hour: string
+      count: number
+      total_amount: number
+      payin_count: number
+      payout_count: number
+      completed: number
+      failed: number
+    }>
+  }
+
+  interface OperatorPerformanceData {
+    period_days: number
+    operators: Array<{
+      operator_config__operator_code: string
+      operator_config__operator_name: string
+      total_transactions: number
+      total_amount: number
+      completed: number
+      failed: number
+      success_rate: number
+      avg_amount: number
+    }>
+  }
+
+  interface TopCustomersData {
+    customers: Array<{
+      customer_id: string
+      customer_name: string
+      total_transactions: number
+      total_amount: number
+      success_rate: number
+    }>
+  }
+
+  // Interface pour les données de santé API
+  interface ApiHealthData {
+    status: string
+    wave_api: string
+    recent_transactions_1h: number
+    failed_callbacks_24h: number
+    timestamp: string
+  }
+
+  // Interface pour les données de santé des opérateurs
+  interface OperatorHealthData {
+    operators: Array<{
+      operator_code: string
+      operator_name: string
+      status: string
+      balance: number | null
+    }>
+  }
+
+  // Interface pour le rapport quotidien
+  interface DailyReportData {
+    date: string
+    summary: {
+      total_transactions: number
+      completed_transactions: number
+      failed_transactions: number
+      success_rate: number
+    }
+    payin: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    payout: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    total_fees: number
+  }
+
+  // Interface pour le relevé client
+  interface CustomerStatementData {
+    customer_id: string
+    period: {
+      start: string
+      end: string
+    }
+    summary: {
+      total_payin: {
+        count: number
+        volume: number
+      }
+      total_payout: {
+        count: number
+        volume: number
+      }
+      total_fees_paid: number
+    }
+    transactions: Array<{
+      reference: string
+      date: string
+      type: string
+      amount: number
+      fees: number
+      status: string
+    }>
+    account_movements: Array<{
+      date: string
+      type: string
+      amount: number
+      balance_after: number
+      description: string
+    }>
+  }
+
+  // Interface pour le rapport de commissions
+  interface CommissionReportData {
+    period: {
+      start: string
+      end: string
+    }
+    summary: {
+      total_count: number
+      confirmed_count: number
+      withdrawn_count: number
+      total_operator_fees: number
+      total_aggregator_fees: number
+      unpaid_aggregator_fees: number
+    }
+    by_operator: Array<{
+      operator_config__operator_code: string
+      operator_config__operator_name: string
+      count: number
+      total_operator_fee: number
+      total_aggregator_fee: number
+      total_transaction_volume: number
+    }>
+  }
+
+  // Interface pour le rapport de réconciliation
+  interface ReconciliationReportData {
+    date: string
+    payin: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    payout: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    account_movements: {
+      total_credits: number
+      total_debits: number
+      net: number
+    }
+    recharges: {
+      count: number
+      total: number
+    }
+    withdrawals: {
+      count: number
+      total: number
+    }
+    commissions: {
+      count: number
+      operator_fees: number
+      aggregator_fees: number
+    }
+  }
+
+  interface HealthData {
+    status: string
+    timestamp: string
+    metrics: {
+      stuck_transactions: number
+      recent_webhook_failures: number
+      success_rate_last_hour: number
+      frozen_accounts: number
+      unpaid_commissions_amount: number
+    }
+    issues: string[]
+  }
+
+  interface FinancialSummaryData {
+    period: string
+    start_date: string
+    payin: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    payout: {
+      count: number
+      volume: number
+      fees_collected: number
+    }
+    commissions: {
+      count: number
+      total_operator_fees: number
+      total_aggregator_fees: number
+    }
+    total_customer_balances: number
+  }
+
+  interface AuditSummaryData {
+    period_hours: number
+    action_counts: Array<{
+      action: string
+      count: number
+    }>
+    suspicious_activities: number
+    top_active_customers: Array<{
+      customer_id: string
+      action_count: number
+    }>
+  }
+
+  interface SyncStatusData {
+    timestamp: string
+    automatic_sync: {
+      frequency: string
+      last_run: string | null
+      next_scheduled: string
+    }
+    stuck_sync: {
+      frequency: string
+      last_run: string | null
+      next_scheduled: string
+    }
+    pending_transactions: {
+      total: number
+      by_age: {
+        last_10_minutes: number
+        last_hour: number
+        last_6_hours: number
+        older_than_6h: number
+      }
+      orphans_without_external_id: number
+    }
+    stuck_transactions: {
+      count: number
+      sample: Array<{
+        reference: string
+        created_at: string
+        customer_id: string
+        amount: number
+        phone: string
+      }>
+    }
+    recommendations: Array<{
+      level: string
+      message: string
+      action: string
+    }>
+    info: {
+      auto_sync_enabled: boolean
+      manual_sync_endpoint: string
+      monitoring_endpoint: string
+    }
+  }
+
+  interface CeleryTasksData {
+    timestamp: string
+    tasks: Array<{
+      name: string
+      status: string
+      last_run: string
+      next_run: string
+    }>
+    total_enabled_tasks: number
   }
 
   // État pour les données API
-  const [stats, setStats] = useState<StatsData | null>(null)
+  const [globalStats, setGlobalStats] = useState<GlobalStatsData | null>(null)
+  const [apiHealth, setApiHealth] = useState<ApiHealthData | null>(null)
+  const [operatorHealth, setOperatorHealth] = useState<OperatorHealthData | null>(null)
+  const [dailyReport, setDailyReport] = useState<DailyReportData | null>(null)
+  const [customerStatement, setCustomerStatement] = useState<CustomerStatementData | null>(null)
+  const [commissionReport, setCommissionReport] = useState<CommissionReportData | null>(null)
+  const [reconciliationReport, setReconciliationReport] = useState<ReconciliationReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
+  // États pour les nouvelles données de monitoring
+  const [realtimeData, setRealtimeData] = useState<RealtimeData | null>(null)
+  const [transactionFlowData, setTransactionFlowData] = useState<TransactionFlowData | null>(null)
+  const [operatorPerformanceData, setOperatorPerformanceData] = useState<OperatorPerformanceData | null>(null)
+  const [topCustomersData, setTopCustomersData] = useState<TopCustomersData | null>(null)
+  const [healthData, setHealthData] = useState<HealthData | null>(null)
+  const [financialSummaryData, setFinancialSummaryData] = useState<FinancialSummaryData | null>(null)
+  const [auditSummaryData, setAuditSummaryData] = useState<AuditSummaryData | null>(null)
+  const [syncStatusData, setSyncStatusData] = useState<SyncStatusData | null>(null)
+  const [celeryTasksData, setCeleryTasksData] = useState<CeleryTasksData | null>(null)
 
   useEffect(() => {
     // Ajouter un délai pour s'assurer que l'authentification soit complètement établie
     const timer = setTimeout(() => {
       console.log('Contenu du tableau de bord: Début de récupération des statistiques après délai')
-      fetchStats()
+      fetchAllMonitoringData()
     }, 1000) // Attendre 1 seconde pour que l'authentification soit complètement établie
     
     return () => clearTimeout(timer)
   }, [])
 
-  const fetchStats = async () => {
+
+  // Fonction pour récupérer toutes les données de monitoring
+  const fetchAllMonitoringData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      // Vérifier que nous avons un token valide avant de faire l'appel
-      const accessToken = localStorage.getItem("access")
-      if (!accessToken) {
-        console.warn("No access token available for statistics API")
-        setError("Token d'authentification manquant")
-        return
+      // Récupérer toutes les données en parallèle
+      await Promise.all([
+        fetchGlobalStats(),
+        fetchApiHealth(),
+        fetchOperatorHealth(),
+        fetchDailyReport(),
+        fetchCommissionReport(),
+        fetchReconciliationReport(),
+        fetchRealtimeData(),
+        fetchTransactionFlowData(),
+        fetchOperatorPerformanceData(),
+        fetchTopCustomersData(),
+        fetchHealthData(),
+        fetchFinancialSummaryData(),
+        fetchAuditSummaryData(),
+        fetchSyncStatusData(),
+        fetchCeleryTasksData()
+      ])
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de monitoring:', error)
+      setError('Échec de récupération des données de monitoring')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Fonction pour récupérer les données en temps réel
+  const fetchRealtimeData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/realtime/`)
+      if (res.ok) {
+        const data = await res.json()
+        setRealtimeData(data)
       }
-      
-      // Construire l'URL avec les paramètres de date
-      let url = `${baseUrl}/prod/v1/api/statistic`
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données temps réel:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de flux de transactions
+  const fetchTransactionFlowData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/transaction-flow/`)
+      if (res.ok) {
+        const data = await res.json()
+        setTransactionFlowData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de flux:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de performance des opérateurs
+  const fetchOperatorPerformanceData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/operator-performance/?days=10`)
+      if (res.ok) {
+        const data = await res.json()
+        setOperatorPerformanceData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de performance:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données des meilleurs clients
+  const fetchTopCustomersData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/top-customers/?days=&limit=10`)
+      if (res.ok) {
+        const data = await res.json()
+        setTopCustomersData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données des clients:', error)
+    }
+  }
+
+  // Fonction pour récupérer les statistiques globales
+  const fetchGlobalStats = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/stats/`)
+      if (res.ok) {
+        const data = await res.json()
+        setGlobalStats(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des statistiques globales:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de santé API
+  const fetchApiHealth = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/health/`)
+      if (res.ok) {
+        const data = await res.json()
+        setApiHealth(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de santé API:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de santé des opérateurs
+  const fetchOperatorHealth = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/health/operators/`)
+      if (res.ok) {
+        const data = await res.json()
+        setOperatorHealth(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de santé des opérateurs:', error)
+    }
+  }
+
+  // Fonction pour récupérer le rapport quotidien
+  const fetchDailyReport = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/reports/daily/`)
+      if (res.ok) {
+        const data = await res.json()
+        setDailyReport(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du rapport quotidien:', error)
+    }
+  }
+
+  // Fonction pour récupérer le relevé client
+  const fetchCustomerStatement = async (customerId: string) => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/reports/customer-statement/${customerId}/`)
+      if (res.ok) {
+        const data = await res.json()
+        setCustomerStatement(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du relevé client:', error)
+    }
+  }
+
+  // Fonction pour récupérer le rapport de commissions
+  const fetchCommissionReport = async (startDate?: string, endDate?: string) => {
+    try {
+      let url = `${baseUrl}/api/v2/admin/reports/commissions/`
       const params = new URLSearchParams()
       
       if (startDate) {
-        params.append('start_date', startDate.toISOString().split('T')[0])
+        params.append('start_date', startDate)
       }
       if (endDate) {
-        params.append('end_date', endDate.toISOString().split('T')[0])
+        params.append('end_date', endDate)
       }
       
       if (params.toString()) {
@@ -152,31 +604,108 @@ export function DashboardContent() {
       }
       
       const res = await smartFetch(url)
-      
       if (res.ok) {
         const data = await res.json()
-        setStats(data)
-      } else {
-        const errorText = await res.text()
-        console.error(`Statistics API error: ${res.status} - ${errorText}`)
-        
-        if (res.status === 401) {
-          setError("Token d'authentification invalide ou expiré")
-      } else {
-        setError(`Échec de récupération des statistiques: ${res.status}`)
-        }
+        setCommissionReport(data)
       }
     } catch (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error)
-      setError('Échec de récupération des statistiques')
-    } finally {
-      setLoading(false)
+      console.error('Erreur lors de la récupération du rapport de commissions:', error)
+    }
+  }
+
+  // Fonction pour récupérer le rapport de réconciliation
+  const fetchReconciliationReport = async (date?: string) => {
+    try {
+      let url = `${baseUrl}/api/v2/admin/reports/reconciliation/`
+      const params = new URLSearchParams()
+      
+      if (date) {
+        params.append('date', date)
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+      
+      const res = await smartFetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setReconciliationReport(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération du rapport de réconciliation:', error)
+    }
+  }
+
+
+  // Fonction pour récupérer les données de santé
+  const fetchHealthData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/health/`)
+      if (res.ok) {
+        const data = await res.json()
+        setHealthData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de santé:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de résumé financier
+  const fetchFinancialSummaryData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/financial-summary/`)
+      if (res.ok) {
+        const data = await res.json()
+        setFinancialSummaryData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données financières:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de résumé d'audit
+  const fetchAuditSummaryData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/audit-summary/?hours=12`)
+      if (res.ok) {
+        const data = await res.json()
+        setAuditSummaryData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données d\'audit:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données de statut de synchronisation
+  const fetchSyncStatusData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/sync-status/`)
+      if (res.ok) {
+        const data = await res.json()
+        setSyncStatusData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données de sync:', error)
+    }
+  }
+
+  // Fonction pour récupérer les données des tâches Celery
+  const fetchCeleryTasksData = async () => {
+    try {
+      const res = await smartFetch(`${baseUrl}/api/v2/admin/monitoring/celery-tasks/`)
+      if (res.ok) {
+        const data = await res.json()
+        setCeleryTasksData(data)
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données Celery:', error)
     }
   }
 
   const refreshData = async () => {
     setIsRefreshing(true)
-    await fetchStats()
+    await fetchAllMonitoringData()
     setIsRefreshing(false)
   }
 
@@ -186,13 +715,13 @@ export function DashboardContent() {
   }
 
   const applyDateFilters = () => {
-    fetchStats()
+    fetchAllMonitoringData()
   }
 
   // Refetch data when date filters change
   useEffect(() => {
     if (startDate || endDate) {
-      fetchStats()
+      fetchAllMonitoringData()
     }
   }, [startDate, endDate])
 
@@ -201,22 +730,6 @@ export function DashboardContent() {
     return showBalances ? `${amount.toLocaleString()} FCFA` : "••••••"
   }
 
-  // Utiliser les données API pour les emplacements des clients si disponibles, sinon afficher l'état vide
-  const customerLocationData = stats?.country_payment
-    ? Object.entries(stats.country_payment).map(([country, percentage]) => ({
-        country: t(country as any) || country, // Retour au nom du pays original si la traduction n'est pas trouvée
-        percentage,
-      }))
-    : []
-
-  // Utiliser les données API pour les méthodes de paiement si disponibles, sinon afficher l'état vide
-  const paymentMethodData = stats?.payment_methode
-    ? Object.entries(stats.payment_methode).map(([method, data]: [string, any]) => ({
-        name: method,
-        value: data.percentage || 0,
-        color: method === "Mobile Money" ? "#dc2626" : method === "Credit Card" ? "#10b981" : "#8b5cf6",
-      }))
-    : []
 
   // Données simulées pour le tableau de bord amélioré
   const recentTransactions = [
@@ -226,42 +739,6 @@ export function DashboardContent() {
     { id: 4, type: "Retrait", amount: "100,000 FCFA", status: "En Cours", time: "il y a 3 heures", method: "Virement Bancaire" },
   ]
 
-  // Calculer les statistiques rapides basées sur les données API
-  const quickStats = stats ? [
-    { 
-      label: "Total Clients", 
-      value: (stats.total_customers || 0).toLocaleString(), 
-      change: "+12%", 
-      icon: Users, 
-      color: "blue" 
-    },
-    { 
-      label: "Transactions Réussies", 
-      value: (stats.total_success_transaction || 0).toLocaleString(), 
-      change: "+5%", 
-      icon: Activity, 
-      color: "green" 
-    },
-    { 
-      label: "Total Frais", 
-      value: `${(stats.total_fee || 0).toLocaleString()} FCFA`, 
-      change: "+23%", 
-      icon: DollarSign, 
-      color: "purple" 
-    },
-    { 
-      label: "Clients Vérifiés", 
-      value: (stats.total_verified || 0).toLocaleString(), 
-      change: "Stable", 
-      icon: Shield, 
-      color: "emerald" 
-    },
-  ] : [
-    { label: "Total Utilisateurs", value: "2,847", change: "+12%", icon: Users, color: "blue" },
-    { label: "Sessions Actives", value: "156", change: "+5%", icon: Activity, color: "green" },
-    { label: "Appels API", value: "1.2M", change: "+23%", icon: Zap, color: "purple" },
-    { label: "Disponibilité", value: "99.9%", change: "Stable", icon: Shield, color: "emerald" },
-  ]
 
   if (loading) {
     return (
@@ -376,29 +853,676 @@ export function DashboardContent() {
           </div>
         </div>
 
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickStats.map((stat, index) => (
-            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
+
+        {/* Global Stats Section */}
+        {globalStats && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <BarChart3 className="h-6 w-6 text-white" />
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{stat.label}</p>
+                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{globalStats.total_transactions.toLocaleString()}</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Transactions</p>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <Badge className={`bg-${stat.color}-100 text-${stat.color}-800 hover:bg-${stat.color}-100 rounded-full text-xs`}>
-                    {stat.change}
-                  </Badge>
-                </div>
-              </CardContent>
+              </CardHeader>
             </Card>
-          ))}
+
+            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 backdrop-blur-xl border-green-200 dark:border-green-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-green-600 rounded-xl shadow-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">{globalStats.total_payin.count.toLocaleString()}</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">Total Payin</p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      {formatCurrency(globalStats.total_payin.amount)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
+                    <TrendingDown className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{globalStats.total_payout.count.toLocaleString()}</p>
+                    <p className="text-sm text-purple-700 dark:text-purple-300">Total Payout</p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400">
+                      {formatCurrency(globalStats.total_payout.amount)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(globalStats.total_commissions)}</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">Total Commissions</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 backdrop-blur-xl border-red-200 dark:border-red-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-red-600 rounded-xl shadow-lg">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(globalStats.unpaid_commissions)}</p>
+                    <p className="text-sm text-red-700 dark:text-red-300">Unpaid Commissions</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 backdrop-blur-xl border-indigo-200 dark:border-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-indigo-600 rounded-xl shadow-lg">
+                    <CalendarDays className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{globalStats.month_transactions.count.toLocaleString()}</p>
+                    <p className="text-sm text-indigo-700 dark:text-indigo-300">This Month</p>
+                    <p className="text-xs text-indigo-600 dark:text-indigo-400">
+                      {formatCurrency(globalStats.month_transactions.amount)}
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
           </div>
+        )}
+
+        {/* Global Stats Charts */}
+        {globalStats && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Vue d'Ensemble des Transactions
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Répartition des volumes et commissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Transaction Volume Distribution */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Volume des Transactions</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Payin', value: globalStats.total_payin.amount || 0, color: '#10b981' },
+                          { name: 'Payout', value: globalStats.total_payout.amount || 0, color: '#ef4444' }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Payin', value: globalStats.total_payin.amount || 0, color: '#10b981' },
+                          { name: 'Payout', value: globalStats.total_payout.amount || 0, color: '#ef4444' }
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Volume']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Commission Status */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Statut des Commissions</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={[
+                      { 
+                        name: 'Total', 
+                        value: globalStats.total_commissions,
+                        color: '#3b82f6'
+                      },
+                      { 
+                        name: 'Impayées', 
+                        value: globalStats.unpaid_commissions,
+                        color: '#ef4444'
+                      }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value) => [formatCurrency(Number(value)), 'Montant']}
+                      />
+                      <Bar dataKey="value" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* API Health Section */}
+        {apiHealth && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 ${apiHealth.status === 'healthy' ? 'bg-green-600' : 'bg-red-600'} rounded-xl shadow-lg`}>
+                    <Shield className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-neutral-900 dark:text-white capitalize">{apiHealth.status}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">API Status</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className={`p-3 ${apiHealth.wave_api === 'healthy' ? 'bg-green-600' : 'bg-red-600'} rounded-xl shadow-lg`}>
+                    <Zap className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-neutral-900 dark:text-white capitalize">{apiHealth.wave_api}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Wave API</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <Activity className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{apiHealth.recent_transactions_1h}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Recent Transactions (1h)</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
+                    <RefreshCw className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{apiHealth.failed_callbacks_24h}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Failed Callbacks (24h)</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+        )}
+
+        {/* Operator Health Section */}
+        {operatorHealth && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <Zap className="h-5 w-5 mr-2 text-crimson-600" />
+                Operator Health Status
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Real-time status of payment operators
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {operatorHealth.operators.map((operator, index) => (
+                  <div key={index} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-neutral-900 dark:text-white">{operator.operator_name}</h4>
+                      <Badge className={`${
+                        operator.status === 'healthy' ? 'bg-green-100 text-green-800' :
+                        operator.status === 'error' ? 'bg-red-100 text-red-800' :
+                        operator.status === 'not_implemented' ? 'bg-gray-100 text-gray-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {operator.status}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                        Code: <span className="font-mono">{operator.operator_code}</span>
+                      </p>
+                      {operator.balance !== null && (
+                        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                          Balance: <span className="font-semibold">{formatCurrency(operator.balance)}</span>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Daily Report Section */}
+        {dailyReport && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Rapport Quotidien - {new Date(dailyReport.date).toLocaleDateString()}
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Résumé des transactions de la journée
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Transactions</h4>
+                    <BarChart3 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{dailyReport.summary.total_transactions}</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Taux de succès: {dailyReport.summary.success_rate.toFixed(1)}%</p>
+                </div>
+
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-green-900 dark:text-green-100">Transactions Réussies</h4>
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{dailyReport.summary.completed_transactions}</p>
+                  <p className="text-xs text-green-700 dark:text-green-300">Volume: {formatCurrency(dailyReport.payin.volume + dailyReport.payout.volume)}</p>
+                </div>
+
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100">Paiements Entrants</h4>
+                    <TrendingUp className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{dailyReport.payin.count}</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">Volume: {formatCurrency(dailyReport.payin.volume)}</p>
+                  <p className="text-xs text-purple-600 dark:text-purple-400">Frais: {formatCurrency(dailyReport.payin.fees_collected)}</p>
+                </div>
+
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-orange-900 dark:text-orange-100">Paiements Sortants</h4>
+                    <TrendingDown className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{dailyReport.payout.count}</p>
+                  <p className="text-xs text-orange-700 dark:text-orange-300">Volume: {formatCurrency(dailyReport.payout.volume)}</p>
+                  <p className="text-xs text-orange-600 dark:text-orange-400">Frais: {formatCurrency(dailyReport.payout.fees_collected)}</p>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Total des Frais</h4>
+                  <p className="text-2xl font-bold text-neutral-900 dark:text-white">{formatCurrency(dailyReport.total_fees)}</p>
+                </div>
+              </div>
+
+              {/* Charts Section */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Transaction Status Pie Chart */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Répartition des Transactions</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Réussies', value: dailyReport.summary.completed_transactions, color: '#10b981' },
+                          { name: 'Échouées', value: dailyReport.summary.failed_transactions, color: '#ef4444' },
+                          { name: 'En Attente', value: dailyReport.summary.total_transactions - dailyReport.summary.completed_transactions - dailyReport.summary.failed_transactions, color: '#f59e0b' }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Réussies', value: dailyReport.summary.completed_transactions, color: '#10b981' },
+                          { name: 'Échouées', value: dailyReport.summary.failed_transactions, color: '#ef4444' },
+                          { name: 'En Attente', value: dailyReport.summary.total_transactions - dailyReport.summary.completed_transactions - dailyReport.summary.failed_transactions, color: '#f59e0b' }
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [value, 'Transactions']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Payin vs Payout Volume Chart */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Volume Payin vs Payout</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={[
+                      { name: 'Payin', volume: dailyReport.payin.volume, count: dailyReport.payin.count },
+                      { name: 'Payout', volume: dailyReport.payout.volume, count: dailyReport.payout.count }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value, name) => [
+                          formatCurrency(Number(value)), 
+                          name === 'volume' ? 'Volume' : 'Nombre'
+                        ]}
+                      />
+                      <Bar dataKey="volume" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Commission Report Section */}
+        {commissionReport && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-crimson-600" />
+                Rapport de Commissions
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Période: {new Date(commissionReport.period.start).toLocaleDateString()} - {new Date(commissionReport.period.end).toLocaleDateString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Commissions</h4>
+                    <DollarSign className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{commissionReport.summary.total_count}</p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">Confirmées: {commissionReport.summary.confirmed_count}</p>
+                </div>
+
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-green-900 dark:text-green-100">Frais Opérateurs</h4>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{formatCurrency(commissionReport.summary.total_operator_fees)}</p>
+                </div>
+
+                <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100">Frais Agrégateur</h4>
+                    <Activity className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(commissionReport.summary.total_aggregator_fees)}</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">Impayés: {formatCurrency(commissionReport.summary.unpaid_aggregator_fees)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Par Opérateur</h4>
+                {commissionReport.by_operator.map((operator, index) => (
+                  <div key={index} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-600">
+                    <div className="flex items-center justify-between mb-3">
+                      <h5 className="font-semibold text-neutral-900 dark:text-white">{operator.operator_config__operator_name}</h5>
+                      <Badge className="bg-blue-100 text-blue-800">{operator.operator_config__operator_code}</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <p className="text-neutral-600 dark:text-neutral-400">Transactions</p>
+                        <p className="font-semibold text-neutral-900 dark:text-white">{operator.count}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-600 dark:text-neutral-400">Volume</p>
+                        <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(operator.total_transaction_volume)}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-600 dark:text-neutral-400">Frais Opérateur</p>
+                        <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(operator.total_operator_fee)}</p>
+                      </div>
+                      <div>
+                        <p className="text-neutral-600 dark:text-neutral-400">Frais Agrégateur</p>
+                        <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(operator.total_aggregator_fee)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Commission Charts Section */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Commission Distribution Pie Chart */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Répartition des Commissions</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Frais Opérateurs', value: commissionReport.summary.total_operator_fees, color: '#10b981' },
+                          { name: 'Frais Agrégateur', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Frais Opérateurs', value: commissionReport.summary.total_operator_fees, color: '#10b981' },
+                          { name: 'Frais Agrégateur', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Montant']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Operator Commission Bar Chart */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Commissions par Opérateur</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={commissionReport.by_operator.map(op => ({
+                      name: op.operator_config__operator_name,
+                      operatorFee: op.total_operator_fee,
+                      aggregatorFee: op.total_aggregator_fee
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" angle={-45} textAnchor="end" height={80} />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value) => [formatCurrency(Number(value)), 'Montant']}
+                      />
+                      <Bar dataKey="operatorFee" stackId="a" fill="#10b981" name="Frais Opérateur" />
+                      <Bar dataKey="aggregatorFee" stackId="a" fill="#3b82f6" name="Frais Agrégateur" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Reconciliation Report Section */}
+        {reconciliationReport && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <Activity className="h-5 w-5 mr-2 text-crimson-600" />
+                Rapport de Réconciliation - {new Date(reconciliationReport.date).toLocaleDateString()}
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                État des comptes et mouvements financiers
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-green-900 dark:text-green-100">Paiements Entrants</h4>
+                    <TrendingUp className="h-4 w-4 text-green-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-green-900 dark:text-green-100">{reconciliationReport.payin.count}</p>
+                  <p className="text-xs text-green-700 dark:text-green-300">Volume: {formatCurrency(reconciliationReport.payin.volume)}</p>
+                  <p className="text-xs text-green-600 dark:text-green-400">Frais: {formatCurrency(reconciliationReport.payin.fees_collected)}</p>
+                </div>
+
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-red-900 dark:text-red-100">Paiements Sortants</h4>
+                    <TrendingDown className="h-4 w-4 text-red-600" />
+                  </div>
+                  <p className="text-2xl font-bold text-red-900 dark:text-red-100">{reconciliationReport.payout.count}</p>
+                  <p className="text-xs text-red-700 dark:text-red-300">Volume: {formatCurrency(reconciliationReport.payout.volume)}</p>
+                  <p className="text-xs text-red-600 dark:text-red-400">Frais: {formatCurrency(reconciliationReport.payout.fees_collected)}</p>
+                </div>
+
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Solde Net</h4>
+                    <BarChart3 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <p className={`text-2xl font-bold ${reconciliationReport.account_movements.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {formatCurrency(reconciliationReport.account_movements.net)}
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Crédits: {formatCurrency(reconciliationReport.account_movements.total_credits)}
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    Débits: {formatCurrency(reconciliationReport.account_movements.total_debits)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">Recharges</h4>
+                  <p className="text-lg font-bold text-neutral-900 dark:text-white">{reconciliationReport.recharges.count}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Total: {formatCurrency(reconciliationReport.recharges.total)}</p>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">Retraits</h4>
+                  <p className="text-lg font-bold text-neutral-900 dark:text-white">{reconciliationReport.withdrawals.count}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">Total: {formatCurrency(reconciliationReport.withdrawals.total)}</p>
+                </div>
+
+                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                  <h4 className="text-sm font-medium text-neutral-900 dark:text-white mb-2">Commissions</h4>
+                  <p className="text-lg font-bold text-neutral-900 dark:text-white">{reconciliationReport.commissions.count}</p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                    Opérateur: {formatCurrency(reconciliationReport.commissions.operator_fees)}
+                  </p>
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                    Agrégateur: {formatCurrency(reconciliationReport.commissions.aggregator_fees)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Reconciliation Charts Section */}
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Financial Flow Chart */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Flux Financiers</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={[
+                      { 
+                        name: 'Crédits', 
+                        value: reconciliationReport.account_movements.total_credits,
+                        color: '#10b981'
+                      },
+                      { 
+                        name: 'Débits', 
+                        value: Math.abs(reconciliationReport.account_movements.total_debits),
+                        color: '#ef4444'
+                      }
+                    ]}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip 
+                        formatter={(value) => [formatCurrency(Number(value)), 'Montant']}
+                      />
+                      <Bar dataKey="value" fill="#3b82f6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Transaction Types Distribution */}
+                <div className="p-4 bg-white dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-700">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Types de Transactions</h4>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Payin', value: reconciliationReport.payin.volume, color: '#10b981' },
+                          { name: 'Payout', value: reconciliationReport.payout.volume, color: '#ef4444' },
+                          { name: 'Recharges', value: reconciliationReport.recharges.total, color: '#3b82f6' },
+                          { name: 'Retraits', value: reconciliationReport.withdrawals.total, color: '#f59e0b' }
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {[
+                          { name: 'Payin', value: reconciliationReport.payin.volume, color: '#10b981' },
+                          { name: 'Payout', value: reconciliationReport.payout.volume, color: '#ef4444' },
+                          { name: 'Recharges', value: reconciliationReport.recharges.total, color: '#3b82f6' },
+                          { name: 'Retraits', value: reconciliationReport.withdrawals.total, color: '#f59e0b' }
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Volume']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
 
         {/* Enhanced Balance Cards */}
         <div className="grid grid-cols-1 gap-8">
@@ -439,7 +1563,7 @@ export function DashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
-                {formatCurrency(stats?.availavailable_fund)}
+                {formatCurrency(globalStats?.available_fund)}
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">-2.1%</Badge>
@@ -450,31 +1574,41 @@ export function DashboardContent() {
         </div>
 
         {/* Fee Statistics Section */}
-        {stats && (
+
+
+
+
+
+
+
+        {/* Enhanced Charts Section */}
+        <div className="grid grid-cols-1 gap-8">
+
+        </div>
+
+        {/* Realtime Monitoring Section */}
+        {realtimeData && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
-                    <TrendingUp className="h-6 w-6 text-white" />
+                    <Activity className="h-6 w-6 text-white" />
                   </div>
                   <ArrowUpRight className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 mt-4">
-                  Frais d'Entrée
+                  Transactions (Dernière Heure)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
-                  {formatCurrency(stats.payin_fee)}
+                  {realtimeData.last_hour.transactions}
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
-                    Moy: {(stats.payin_fee_avg || 0).toFixed(2)} FCFA
+                  <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
+                    {formatCurrency(realtimeData.last_hour.total_amount)}
                   </Badge>
-                  <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 rounded-full text-xs">
-                    Somme: {(stats.payin_fee_sum || 0).toLocaleString()} FCFA
-                  </Badge> */}
                 </div>
               </CardContent>
             </Card>
@@ -483,48 +1617,21 @@ export function DashboardContent() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="p-3 bg-green-600 rounded-xl shadow-lg">
-                    <TrendingDown className="h-6 w-6 text-white" />
+                    <TrendingUp className="h-6 w-6 text-white" />
                   </div>
-                  <ArrowDownRight className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
+                  <ArrowUpRight className="h-5 w-5 text-green-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300 mt-4">
-                  Frais de Sortie
+                  Transactions Aujourd'hui
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-2">
-                  {formatCurrency(stats.payout_fee)}
+                  {realtimeData.today.transactions}
                 </div>
                 <div className="flex items-center space-x-2">
-                  {/* <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
-                    Moy: {(stats.payout_fee_avg || 0).toFixed(2)} FCFA
-                  </Badge>
-                  <Badge className="bg-green-100 text-green-700 hover:bg-green-100 rounded-full text-xs">
-                    Somme: {(stats.payout_fee_sum || 0).toLocaleString()} FCFA
-                  </Badge> */}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                  <ArrowUpRight className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
-                </div>
-                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300 mt-4">
-                  Total Frais
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-orange-900 dark:text-orange-100 mb-2">
-                  {formatCurrency(stats.total_fee)}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-200 rounded-full">
-                    Total
+                  <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
+                    {formatCurrency(realtimeData.today.total_amount)}
                   </Badge>
                 </div>
               </CardContent>
@@ -534,105 +1641,48 @@ export function DashboardContent() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
-                    <Users className="h-6 w-6 text-white" />
+                    <Shield className="h-6 w-6 text-white" />
                   </div>
                   <ArrowUpRight className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
                 </div>
                 <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 mt-4">
-                  Frais Personnalisés
+                  Alertes Système
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
-                  {stats.total_with_custom_fee}
+                  {realtimeData.alerts.failed_webhooks + realtimeData.alerts.failed_callbacks}
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">
-                    Clients
+                  <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full text-xs">
+                    Webhooks: {realtimeData.alerts.failed_webhooks}
                   </Badge>
                   <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 rounded-full text-xs">
-                    Payant: {stats.total_customer_pay_fee}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Customer Statistics Section */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_customers}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Total Clients</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 rounded-full text-xs">
-                    Total
+                    Callbacks: {realtimeData.alerts.failed_callbacks}
                   </Badge>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
+            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="p-3 bg-green-600 rounded-xl shadow-lg">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_verified}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Vérifiés</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 rounded-full text-xs">
-                    {stats.total_customers ? ((stats.total_verified || 0) / stats.total_customers * 100).toFixed(1) : 0}%
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-yellow-600 rounded-xl shadow-lg">
+                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
                     <Clock className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_verification_pending}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">En Attente</p>
-                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-orange-600 group-hover:scale-110 transition-transform" />
                 </div>
-                <div className="mt-4">
-                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 rounded-full text-xs">
-                    {stats.total_customers ? ((stats.total_verification_pending || 0) / stats.total_customers * 100).toFixed(1) : 0}%
-                  </Badge>
+                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-300 mt-4">
+                  Temps Moyen Traitement
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-orange-900 dark:text-orange-100 mb-2">
+                  {realtimeData.last_hour.avg_processing_seconds}s
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-red-600 rounded-xl shadow-lg">
-                    <Shield className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_blocked}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Bloqués</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-red-100 text-red-800 hover:bg-red-100 rounded-full text-xs">
-                    {stats.total_customers && stats.total_blocked > 0 ? ((stats.total_blocked || 0) / stats.total_customers * 100).toFixed(1) : 0}%
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-200 rounded-full">
+                    En cours: {realtimeData.last_hour.processing}
                   </Badge>
                 </div>
               </CardContent>
@@ -640,311 +1690,273 @@ export function DashboardContent() {
           </div>
         )}
 
-        {/* Additional Fee Analytics */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-indigo-600 rounded-xl shadow-lg">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stats.total_customer_pay_fee}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Clients Payant Frais</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 rounded-full text-xs">
-                    {stats.total_customers ? ((stats.total_customer_pay_fee || 0) / stats.total_customers * 100).toFixed(1) : 0}%
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-teal-600 rounded-xl shadow-lg">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(stats.payin_fee_sum || 0).toLocaleString()}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-teal-100 text-teal-800 hover:bg-teal-100 rounded-full text-xs">
-                    Moy: {(stats.payin_fee_avg || 0).toFixed(2)} FCFA
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card> */}
-
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-rose-600 rounded-xl shadow-lg">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{(stats.payout_fee_sum || 0).toLocaleString()}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100 rounded-full text-xs">
-                    Moy: {(stats.payout_fee_avg || 0).toFixed(2)} FCFA
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card> */}
-          </div>
-        )}
-
-        {/* Fee Distribution Chart */}
-        {stats && (
+        {/* Health Status Section */}
+        {healthData && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                <DollarSign className="h-5 w-5 mr-2 text-crimson-600" />
-                Répartition des Frais
+                <Shield className={`h-5 w-5 mr-2 ${
+                  healthData.status === 'healthy' ? 'text-green-600' :
+                  healthData.status === 'warning' ? 'text-yellow-600' :
+                  'text-red-600'
+                }`} />
+                Statut de Santé du Système
               </CardTitle>
               <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                Distribution des frais d'entrée et de sortie
+                Dernière mise à jour: {new Date(healthData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              <div className="flex items-center justify-center mb-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: "Frais d'Entrée", value: stats.payin_fee, color: "#3b82f6" },
-                        { name: "Frais de Sortie", value: stats.payout_fee, color: "#10b981" }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {[
-                        { name: "Frais d'Entrée", value: stats.payin_fee, color: "#3b82f6" },
-                        { name: "Frais de Sortie", value: stats.payout_fee, color: "#10b981" }
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => `${value.toLocaleString()} FCFA`}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Frais d'Entrée</p>
-                    <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                      {(stats.payin_fee || 0).toLocaleString()} FCFA
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Frais de Sortie</p>
-                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                      {(stats.payout_fee || 0).toLocaleString()} FCFA
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Transaction Success/Failure Chart */}
-        {stats && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
-                Statistiques des Transactions
-              </CardTitle>
-              <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                Réussites vs Échecs
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center mb-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={[
-                    { name: "Réussies", value: stats.total_success_transaction, color: "#10b981" },
-                    { name: "Échecs", value: (stats.failled_transaction?.[0] || 0) || 0, color: "#ef4444" }
-                  ]}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => [value.toLocaleString(), "Transactions"]}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
-                    <Bar dataKey="value" fill="#8884d8" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Transactions Réussies</p>
-                    <p className="text-lg font-bold text-green-900 dark:text-green-100">
-                      {(stats.total_success_transaction || 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
                   <div className="w-4 h-4 bg-red-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Transactions Échouées</p>
+                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Transactions Bloquées</p>
                     <p className="text-lg font-bold text-red-900 dark:text-red-100">
-                      {((stats.failled_transaction?.[0] || 0) || 0).toLocaleString()}
+                      {healthData.metrics.stuck_transactions}
                     </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Customer Status Distribution Chart */}
-        {stats && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
-            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                <Users className="h-5 w-5 mr-2 text-crimson-600" />
-                Distribution des Statuts Clients
-              </CardTitle>
-              <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                Répartition des clients par statut de vérification
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-center mb-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: "Vérifiés", value: stats.total_verified, color: "#10b981" },
-                        { name: "En Attente", value: stats.total_verification_pending, color: "#f59e0b" },
-                        { name: "Bloqués", value: stats.total_blocked, color: "#ef4444" },
-                        { name: "Autres", value: stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked, color: "#6b7280" }
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={120}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {[
-                        { name: "Vérifiés", value: stats.total_verified, color: "#10b981" },
-                        { name: "En Attente", value: stats.total_verification_pending, color: "#f59e0b" },
-                        { name: "Bloqués", value: stats.total_blocked, color: "#ef4444" },
-                        { name: "Autres", value: stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked, color: "#6b7280" }
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [value, "Clients"]}
-                      contentStyle={{
-                        backgroundColor: "white",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center space-x-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-green-900 dark:text-green-100">Vérifiés</p>
-                    <p className="text-lg font-bold text-green-900 dark:text-green-100">{stats.total_verified}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
                   <div className="w-4 h-4 bg-yellow-500 rounded-full"></div>
                   <div>
-                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">En Attente</p>
-                    <p className="text-lg font-bold text-yellow-900 dark:text-yellow-100">{stats.total_verification_pending}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-red-900 dark:text-red-100">Bloqués</p>
-                    <p className="text-lg font-bold text-red-900 dark:text-red-100">{stats.total_blocked}</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-xl">
-                  <div className="w-4 h-4 bg-gray-500 rounded-full"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Autres</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      {stats.total_customers - stats.total_verified - stats.total_verification_pending - stats.total_blocked}
+                    <p className="text-sm font-medium text-yellow-900 dark:text-yellow-100">Échecs Webhooks</p>
+                    <p className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
+                      {healthData.metrics.recent_webhook_failures}
                     </p>
                   </div>
                 </div>
+                <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">Taux de Réussite</p>
+                    <p className="text-lg font-bold text-blue-900 dark:text-blue-100">
+                      {healthData.metrics.success_rate_last_hour}%
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-purple-900 dark:text-purple-100">Comptes Gelés</p>
+                    <p className="text-lg font-bold text-purple-900 dark:text-purple-100">
+                      {healthData.metrics.frozen_accounts}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
+                  <div className="w-4 h-4 bg-orange-500 rounded-full"></div>
+                  <div>
+                    <p className="text-sm font-medium text-orange-900 dark:text-orange-100">Commissions Impayées</p>
+                    <p className="text-lg font-bold text-orange-900 dark:text-orange-100">
+                      {formatCurrency(healthData.metrics.unpaid_commissions_amount)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {healthData.issues.length > 0 && (
+                <div className="mt-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700">
+                  <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">Problèmes Détectés:</h4>
+                  <ul className="space-y-1">
+                    {healthData.issues.map((issue, index) => (
+                      <li key={index} className="text-sm text-red-800 dark:text-red-200">• {issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Transaction Flow Chart */}
+        {transactionFlowData && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+              <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
+                Flux de Transactions ({transactionFlowData.period})
+              </CardTitle>
+              <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                Évolution des transactions par heure
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-center mb-6">
+                <ResponsiveContainer width="100%" height={400}>
+                  <AreaChart data={transactionFlowData.data}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="hour" 
+                      tickFormatter={(value) => new Date(value).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                    />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(value, name) => [
+                        typeof value === 'number' ? value.toLocaleString() : value,
+                        name === 'count' ? 'Nombre' : 
+                        name === 'total_amount' ? 'Montant Total' :
+                        name === 'payin_count' ? 'Entrées' :
+                        name === 'payout_count' ? 'Sorties' :
+                        name === 'completed' ? 'Terminées' :
+                        name === 'failed' ? 'Échouées' : name
+                      ]}
+                      labelFormatter={(value) => new Date(value).toLocaleString('fr-FR')}
+                      contentStyle={{
+                        backgroundColor: "white",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                      }}
+                    />
+                    <Area type="monotone" dataKey="count" stackId="1" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="completed" stackId="2" stroke="#10b981" fill="#10b981" fillOpacity={0.6} />
+                    <Area type="monotone" dataKey="failed" stackId="2" stroke="#ef4444" fill="#ef4444" fillOpacity={0.6} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* Fee Analytics Comparison Chart */}
-        {/* {stats && (
+        {/* Financial Summary Section */}
+        {financialSummaryData && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 backdrop-blur-xl border-emerald-200 dark:border-emerald-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
+                    <TrendingUp className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-300 mt-4">
+                  Entrées ({financialSummaryData.period})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
+                  {financialSummaryData.payin.count}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-emerald-200 text-emerald-800 hover:bg-emerald-200 rounded-full">
+                    {formatCurrency(financialSummaryData.payin.volume)}
+                  </Badge>
+                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 rounded-full text-xs">
+                    Frais: {formatCurrency(financialSummaryData.payin.fees_collected)}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 backdrop-blur-xl border-red-200 dark:border-red-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-red-600 rounded-xl shadow-lg">
+                    <TrendingDown className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowDownRight className="h-5 w-5 text-red-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300 mt-4">
+                  Sorties ({financialSummaryData.period})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-900 dark:text-red-100 mb-2">
+                  {financialSummaryData.payout.count}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-red-200 text-red-800 hover:bg-red-200 rounded-full">
+                    {formatCurrency(financialSummaryData.payout.volume)}
+                  </Badge>
+                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100 rounded-full text-xs">
+                    Frais: {formatCurrency(financialSummaryData.payout.fees_collected)}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-purple-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-purple-700 dark:text-purple-300 mt-4">
+                  Commissions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+                  {financialSummaryData.commissions.count}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full text-xs">
+                    Opérateur: {formatCurrency(financialSummaryData.commissions.total_operator_fees)}
+                  </Badge>
+                  <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 rounded-full text-xs">
+                    Agrégateur: {formatCurrency(financialSummaryData.commissions.total_aggregator_fees)}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                  <ArrowUpRight className="h-5 w-5 text-blue-600 group-hover:scale-110 transition-transform" />
+                </div>
+                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300 mt-4">
+                  Soldes Clients
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                  {formatCurrency(financialSummaryData.total_customer_balances)}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
+                    Total
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Operator Performance Chart */}
+        {operatorPerformanceData && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
-                Analyse Comparative des Frais
+                Performance des Opérateurs ({operatorPerformanceData.period_days} jours)
               </CardTitle>
               <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                Comparaison des frais d'entrée et de sortie avec leurs moyennes
+                Comparaison des performances par opérateur
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
               <div className="flex items-center justify-center mb-6">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={[
-                    { name: "Frais Entrée", total: stats.payin_fee, sum: stats.payin_fee_sum, avg: stats.payin_fee_avg },
-                    { name: "Frais Sortie", total: stats.payout_fee, sum: stats.payout_fee_sum, avg: stats.payout_fee_avg }
-                  ]}>
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={operatorPerformanceData.operators}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
+                    <XAxis dataKey="operator_config__operator_name" />
                     <YAxis />
                     <Tooltip
                       formatter={(value, name) => [
-                        `${value.toLocaleString()} FCFA`,
-                        name === "total" ? "Total" : name === "sum" ? "Somme" : "Moyenne"
+                        typeof value === 'number' ? value.toLocaleString() : value,
+                        name === 'total_transactions' ? 'Transactions Total' :
+                        name === 'total_amount' ? 'Montant Total' :
+                        name === 'completed' ? 'Terminées' :
+                        name === 'failed' ? 'Échouées' :
+                        name === 'success_rate' ? 'Taux de Réussite (%)' :
+                        name === 'avg_amount' ? 'Montant Moyen' : name
                       ]}
                       contentStyle={{
                         backgroundColor: "white",
@@ -953,215 +1965,191 @@ export function DashboardContent() {
                         boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
                       }}
                     />
-                    <Bar dataKey="total" fill="#3b82f6" name="Total" />
-                    <Bar dataKey="sum" fill="#10b981" name="Somme" />
-                    <Bar dataKey="avg" fill="#f59e0b" name="Moyenne" />
+                    <Bar dataKey="total_transactions" fill="#3b82f6" name="Transactions Total" />
+                    <Bar dataKey="completed" fill="#10b981" name="Terminées" />
+                    <Bar dataKey="failed" fill="#ef4444" name="Échouées" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-blue-900 dark:text-blue-100">Frais d'Entrée</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
-                      <span className="font-medium">{(stats.payin_fee || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
-                      <span className="font-medium">{(stats.payin_fee_sum || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
-                      <span className="font-medium">{(stats.payin_fee_avg || 0).toFixed(2)} FCFA</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <h4 className="font-semibold text-green-900 dark:text-green-100">Frais de Sortie</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total:</span>
-                      <span className="font-medium">{(stats.payout_fee || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme:</span>
-                      <span className="font-medium">{(stats.payout_fee_sum || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne:</span>
-                      <span className="font-medium">{(stats.payout_fee_avg || 0).toFixed(2)} FCFA</span>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {operatorPerformanceData.operators.map((operator, index) => (
+                  <div key={index} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                    <h4 className="font-semibold text-neutral-900 dark:text-white mb-2">
+                      {operator.operator_config__operator_name}
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions:</span>
+                        <span className="font-medium">{operator.total_transactions}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant:</span>
+                        <span className="font-medium">{formatCurrency(operator.total_amount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Taux de Réussite:</span>
+                        <span className="font-medium">{operator.success_rate.toFixed(1)}%</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant Moyen:</span>
+                        <span className="font-medium">{formatCurrency(operator.avg_amount)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        )} */}
+        )}
 
-        {/* Enhanced Charts Section */}
-        <div className="grid grid-cols-1 gap-8">
-          {/* Customer Locations */}
+        {/* Sync Status Section */}
+        {syncStatusData && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                <MapPin className="h-5 w-5 mr-2 text-crimson-600" />
-                {t("whereCustomers")}
+                <RefreshCw className="h-5 w-5 mr-2 text-crimson-600" />
+                Statut de Synchronisation
               </CardTitle>
               <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                {t("customerDistribution")}
+                Dernière mise à jour: {new Date(syncStatusData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {customerLocationData.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-center mb-6">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={customerLocationData.map((item, index) => ({
-                            name: item.country,
-                            value: item.percentage,
-                            color: index === 0 ? "#dc2626" : "#f59e0b"
-                          }))}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={90}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {customerLocationData.map((item, index) => (
-                            <Cell key={`cell-${index}`} fill={index === 0 ? "#dc2626" : "#f59e0b"} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value) => `${value}%`}
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e2e8f0",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="space-y-3">
-                    {customerLocationData.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-slate-100/50 dark:bg-neutral-800/50 rounded-xl border border-slate-200 dark:border-neutral-600"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-white dark:bg-neutral-700 rounded-xl shadow-sm">
-                            <MapPin className="h-4 w-4 text-crimson-600" />
-                          </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            {item.country.toUpperCase()}
-                          </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Sync Automatique</h4>
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
+                    Fréquence: {syncStatusData.automatic_sync.frequency}
+                  </p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Prochaine: {syncStatusData.automatic_sync.next_scheduled}
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-700">
+                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 mb-2">Sync Bloquées</h4>
+                  <p className="text-sm text-orange-700 dark:text-orange-300 mb-1">
+                    Fréquence: {syncStatusData.stuck_sync.frequency}
+                  </p>
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Prochaine: {syncStatusData.stuck_sync.next_scheduled}
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-700">
+                  <h4 className="font-semibold text-red-900 dark:text-red-100 mb-2">Transactions Bloquées</h4>
+                  <p className="text-2xl font-bold text-red-900 dark:text-red-100 mb-1">
+                    {syncStatusData.stuck_transactions.count}
+                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-300">
+                    Échantillon disponible
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-700">
+                  <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">En Attente</h4>
+                  <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100 mb-1">
+                    {syncStatusData.pending_transactions.total}
+                  </p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    &gt; 6h: {syncStatusData.pending_transactions.by_age.older_than_6h}
+                  </p>
+                </div>
+              </div>
+              
+              {syncStatusData.recommendations.length > 0 && (
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-700">
+                  <h4 className="font-semibold text-yellow-900 dark:text-yellow-100 mb-2">Recommandations:</h4>
+                  <ul className="space-y-2">
+                    {syncStatusData.recommendations.map((rec, index) => (
+                      <li key={index} className="flex items-start space-x-2">
+                        <span className={`text-sm font-medium ${
+                          rec.level === 'critical' ? 'text-red-600' :
+                          rec.level === 'warning' ? 'text-yellow-600' :
+                          'text-blue-600'
+                        }`}>
+                          {rec.level === 'critical' ? '🚨' : rec.level === 'warning' ? '⚠️' : 'ℹ️'}
+                        </span>
+                        <div>
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200">{rec.message}</p>
+                          <p className="text-xs text-yellow-700 dark:text-yellow-300">{rec.action}</p>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className="bg-crimson-100 text-crimson-800 hover:bg-crimson-100 rounded-full font-bold"
-                        >
-                          {typeof item.percentage === "number" ? item.percentage : 0}%
-                        </Badge>
-                      </div>
+                      </li>
                     ))}
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  {t("noDataAvailable")}
+                  </ul>
                 </div>
               )}
             </CardContent>
           </Card>
+        )}
 
-          {/* Payment Methods */}
-          {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+        {/* Celery Tasks Monitoring */}
+        {celeryTasksData && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
-                {t("mostUsedPayment")}
+                <Zap className="h-5 w-5 mr-2 text-crimson-600" />
+                Monitoring des Tâches Celery
               </CardTitle>
               <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                {t("paymentMethodDistribution")}
+                Dernière mise à jour: {new Date(celeryTasksData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {paymentMethodData.length > 0 ? (
-                <>
-                  <div className="flex items-center justify-center mb-6">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie
-                          data={paymentMethodData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={90}
-                          paddingAngle={5}
-                          dataKey="value"
-                        >
-                          {paymentMethodData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value) => `${value}%`}
-                          contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e2e8f0",
-                            borderRadius: "12px",
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
-                          }}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
+                  <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Tâches Activées</h4>
+                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                    {celeryTasksData.total_enabled_tasks}
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
+                  <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Tâches Configurées</h4>
+                  <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                    {celeryTasksData.tasks.length}
+                  </p>
+                </div>
+              </div>
+              
+              {celeryTasksData.tasks.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-semibold text-neutral-900 dark:text-white mb-4">Détails des Tâches:</h4>
                   <div className="space-y-3">
-                    {paymentMethodData.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-slate-100/50 dark:bg-neutral-800/50 rounded-xl border border-slate-200 dark:border-neutral-600"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 bg-white dark:bg-neutral-700 rounded-xl shadow-sm">
-                            {item.name === "Mobile Money" && <Smartphone className="h-4 w-4 text-crimson-600" />}
-                            {item.name === "Credit Card" && <CreditCard className="h-4 w-4 text-crimson-600" />}
-                            {item.name === "Bank Account" && <Building className="h-4 w-4 text-crimson-600" />}
-                            {!["Mobile Money", "Credit Card", "Bank Account"].includes(item.name) && <CreditCard className="h-4 w-4 text-crimson-600" />}
-                          </div>
-                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                            {item.name === "Mobile Money" && t("mobileMoneyMethod")}
-                            {item.name === "Credit Card" && t("creditCardMethod")}
-                            {item.name === "Bank Account" && t("bankAccountMethod")}
-                            {!["Mobile Money", "Credit Card", "Bank Account"].includes(item.name) && item.name}
-                          </span>
+                    {celeryTasksData.tasks.map((task, index) => (
+                      <div key={index} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-neutral-900 dark:text-white">{task.name}</h5>
+                          <Badge className={`${
+                            task.status === 'active' ? 'bg-green-100 text-green-800' :
+                            task.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {task.status}
+                          </Badge>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className="bg-crimson-100 text-crimson-800 hover:bg-crimson-100 rounded-full font-bold"
-                        >
-                          {item.value}%
-                        </Badge>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-neutral-600 dark:text-neutral-400">Dernière exécution:</span>
+                            <span className="ml-2 font-medium">{task.last_run || 'Jamais'}</span>
+                          </div>
+                          <div>
+                            <span className="text-neutral-600 dark:text-neutral-400">Prochaine exécution:</span>
+                            <span className="ml-2 font-medium">{task.next_run || 'Non programmée'}</span>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
-                  {t("noDataAvailable")}
                 </div>
               )}
             </CardContent>
-          </Card> */}
-        </div>
+          </Card>
+        )}
 
         {/* Complete API Data Summary */}
-        {stats && (
+        {false && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
@@ -1177,138 +2165,12 @@ export function DashboardContent() {
                 {/* Financial Data */}
                 <div className="space-y-4">
                   <h4 className="font-semibold text-blue-900 dark:text-blue-100 border-b border-blue-200 pb-2">Données Financières</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Frais:</span>
-                      <span className="font-medium">{(stats.total_fee || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Entrée:</span>
-                      <span className="font-medium">{(stats.payin_fee || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Frais Sortie:</span>
-                      <span className="font-medium">{(stats.payout_fee || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    {/* <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Montant Opérations:</span>
-                      <span className="font-medium">{(stats.all_operation_amount || 0).toLocaleString()} FCFA</span>
-                    </div> */}
-                  </div>
                 </div>
 
-                {/* Transaction Data */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-green-900 dark:text-green-100 border-b border-green-200 pb-2">Données Transactions</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Réussies:</span>
-                      <span className="font-medium">{(stats.total_success_transaction || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions Échouées:</span>
-                      <span className="font-medium">{((stats.failled_transaction?.[0] || 0) || 0).toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Taux de Réussite:</span>
-                      <span className="font-medium">
-                        {((stats.total_success_transaction || 0) + ((stats.failled_transaction?.[0] || 0))) > 0 ? (((stats.total_success_transaction || 0) / ((stats.total_success_transaction || 0) + ((stats.failled_transaction?.[0] || 0)))) * 100).toFixed(1) : 0}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Customer Data */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-purple-900 dark:text-purple-100 border-b border-purple-200 pb-2">Données Clients</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Clients:</span>
-                      <span className="font-medium">{stats.total_customers}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Clients Vérifiés:</span>
-                      <span className="font-medium">{stats.total_verified}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">En Attente:</span>
-                      <span className="font-medium">{stats.total_verification_pending}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Bloqués:</span>
-                      <span className="font-medium">{stats.total_blocked}</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Fee Analytics */}
-                {/* <div className="space-y-4">
-                  <h4 className="font-semibold text-orange-900 dark:text-orange-100 border-b border-orange-200 pb-2">Analyses Frais</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Entrée:</span>
-                      <span className="font-medium">{(stats.payin_fee_sum || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Entrée:</span>
-                      <span className="font-medium">{(stats.payin_fee_avg || 0).toFixed(2)} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Somme Frais Sortie:</span>
-                      <span className="font-medium">{(stats.payout_fee_sum || 0).toLocaleString()} FCFA</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Moyenne Frais Sortie:</span>
-                      <span className="font-medium">{(stats.payout_fee_avg || 0).toFixed(2)} FCFA</span>
-                    </div>
-                  </div>
-                </div> */}
 
-                {/* Fee Configuration */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-indigo-900 dark:text-indigo-100 border-b border-indigo-200 pb-2">Configuration Frais</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Avec Frais Personnalisés:</span>
-                      <span className="font-medium">{stats.total_with_custom_fee}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Clients Payant Frais:</span>
-                      <span className="font-medium">{stats.total_customer_pay_fee}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">% Clients Payant:</span>
-                      <span className="font-medium">
-                        {stats.total_customers ? ((stats.total_customer_pay_fee || 0) / stats.total_customers * 100).toFixed(1) : 0}%
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Payment Methods & Countries */}
-                <div className="space-y-4">
-                  <h4 className="font-semibold text-teal-900 dark:text-teal-100 border-b border-teal-200 pb-2">Méthodes & Pays</h4>
-                  <div className="space-y-2">
-                    <div className="space-y-1">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Méthodes de Paiement:</span>
-                      {Object.entries(stats.payment_methode).map(([method, value]) => (
-                        <div key={method} className="flex justify-between ml-2">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-500">{method}:</span>
-                          <span className="text-xs font-medium">{value}%</span>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-sm text-neutral-600 dark:text-neutral-400">Pays:</span>
-                      {Object.entries(stats.country_payment).map(([country, value]) => (
-                        <div key={country} className="flex justify-between ml-2">
-                          <span className="text-xs text-neutral-500 dark:text-neutral-500">{country.toUpperCase()}:</span>
-                          <span className="text-xs font-medium">{value}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>

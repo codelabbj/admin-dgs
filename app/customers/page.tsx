@@ -7,65 +7,94 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Loader2, Shield, ChevronLeft, ChevronRight } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
-// Interface pour les données utilisateur de l'API
-interface User {
-  id: string
-  email: string
-  first_name: string
-  last_name: string
-  phone: string | null
-  country: string | null
-  entreprise_name: string | null
-  website: string | null
-  logo: string | null
-  otp: string | null
-  otp_created_at: string | null
-  ip_adress: string | null
-  success_url: string | null
-  cancel_url: string | null
-  callback_url: string | null
-  reason_for_rejection: string | null
-  account_status: string
-  customer_pay_fee: boolean
-  created_at: string
-  updated_at: string
-  fullname: string
+// Interface pour les données client de l'API
+interface Customer {
+  customer_id: string
+  uid: string
   is_active: boolean
-  is_partner: boolean
-  trade_commerce: string | null
-  gerant_doc: string | null
-  entreprise_number: string | null
+  webhook_url: string | null
+  payin_fee_rate: string
+  payout_fee_rate: string
+  use_fixed_fees: boolean
+  payin_fee_fixed: string | null
+  payout_fee_fixed: string | null
+  daily_payin_limit: string | null
+  daily_payout_limit: string | null
+  monthly_payin_limit: string | null
+  monthly_payout_limit: string | null
+  ip_whitelist: string[]
+  require_ip_whitelist: boolean
+  notes: string
+  created_at: string
+}
+
+interface CustomerPermission {
+  uid: string
+  customer_id: string
+  operator_config: string
+  operator_name: string
+  operator_code: string
+  is_active: boolean
+  activated_at: string
+  deactivated_at: string | null
+  notes: string
+}
+
+interface Operator {
+  uid: string
+  name: string
+  code: string
+  is_active: boolean
 }
 
 export default function Customers() {
   const router = useRouter()
   
   // États pour la gestion des données
-  const [users, setUsers] = useState<User[]>([])
+  const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [verifying, setVerifying] = useState(false)
-  const [verificationMessage, setVerificationMessage] = useState("")
-  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
-  const [verificationUser, setVerificationUser] = useState<User | null>(null)
-  const [verificationStatus, setVerificationStatus] = useState<"verify" | "rejected">("verify")
-  const [verificationReason, setVerificationReason] = useState("")
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+  const [isActiveFilter, setIsActiveFilter] = useState<string>("")
+  
+  // États pour les modals
+  const [isPermissionsModalOpen, setIsPermissionsModalOpen] = useState(false)
+  const [isActivateModalOpen, setIsActivateModalOpen] = useState(false)
+  const [isDeactivateModalOpen, setIsDeactivateModalOpen] = useState(false)
+  const [isFreezeModalOpen, setIsFreezeModalOpen] = useState(false)
+  const [isUnfreezeModalOpen, setIsUnfreezeModalOpen] = useState(false)
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false)
+  
+  // États pour les actions
+  const [actionLoading, setActionLoading] = useState(false)
+  const [actionMessage, setActionMessage] = useState("")
+  const [selectedCustomerForAction, setSelectedCustomerForAction] = useState<Customer | null>(null)
+  
+  // États pour les permissions
+  const [customerPermissions, setCustomerPermissions] = useState<CustomerPermission[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
+  const [selectedOperator, setSelectedOperator] = useState<string>("")
+  
+  // États pour les formulaires
+  const [freezeReason, setFreezeReason] = useState("")
+  const [balanceAmount, setBalanceAmount] = useState("")
+  const [balanceType, setBalanceType] = useState<"credit" | "debit">("credit")
+  const [balanceReason, setBalanceReason] = useState("")
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
-  const [totalUsers, setTotalUsers] = useState(0)
+  const [totalCustomers, setTotalCustomers] = useState(0)
 
-  // Fonction pour récupérer les utilisateurs depuis l'API
-  const fetchUsers = async (query: string = "", page: number = 1) => {
+  // Fonction pour récupérer les clients depuis l'API
+  const fetchCustomers = async (query: string = "", page: number = 1, isActive: string = "") => {
     try {
       setLoading(true)
       setError(null)
@@ -78,64 +107,56 @@ export default function Customers() {
       // Construire l'URL avec les paramètres de pagination et de recherche
       const params = new URLSearchParams()
       if (query) {
-        params.append('q', query)
+        params.append('search', query)
+      }
+      if (isActive) {
+        params.append('is_active', isActive)
       }
       params.append('page', page.toString())
       params.append('page_size', pageSize.toString())
       
-      const url = `${baseUrl}/v1/api/users?${params.toString()}`
+      const url = `${baseUrl}/api/v2/admin/customers-config/?${params.toString()}`
       const response = await smartFetch(url)
       
       if (!response.ok) {
-        // Essayer de récupérer le message d'erreur du backend
         try {
           const errorData = await response.json()
           const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
           throw new Error(errorMessage)
         } catch (parseError) {
-          // Si on ne peut pas parser le JSON, utiliser le message par défaut
           throw new Error(`Erreur ${response.status}: ${response.statusText}`)
         }
       }
 
       const data = await response.json()
       
-      // Gérer différentes structures de réponse
-      if (Array.isArray(data)) {
-        setUsers(data)
-        setTotalUsers(data.length)
-        setTotalPages(Math.ceil(data.length / pageSize))
-      } else if (data && Array.isArray(data.data)) {
-        setUsers(data.data)
-        setTotalUsers(data.total || data.data.length)
-        setTotalPages(data.total_pages || Math.ceil((data.total || data.data.length) / pageSize))
-      } else if (data && Array.isArray(data.results)) {
-        setUsers(data.results)
-        setTotalUsers(data.count || data.results.length)
+      if (data && Array.isArray(data.results)) {
+        setCustomers(data.results)
+        setTotalCustomers(data.count || data.results.length)
         setTotalPages(Math.ceil((data.count || data.results.length) / pageSize))
       } else {
-        setUsers([])
-        setTotalUsers(0)
+        setCustomers([])
+        setTotalCustomers(0)
         setTotalPages(0)
       }
     } catch (err) {
-      console.error("Error fetching users:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des utilisateurs"
+      console.error("Error fetching customers:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des clients"
       setError(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  // Fonction pour récupérer les détails d'un utilisateur
-  const fetchUserDetails = async (userId: string) => {
+  // Fonction pour récupérer les permissions d'un client
+  const fetchCustomerPermissions = async (customerId: string) => {
     try {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
-      const response = await smartFetch(`${baseUrl}/v1/api/user-details`)
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/permissions/`)
       
       if (!response.ok) {
         const errorData = await response.json()
@@ -143,35 +164,53 @@ export default function Customers() {
         throw new Error(errorMessage)
       }
 
-      const userDetails = await response.json()
-      setSelectedUser(userDetails)
+      const permissions = await response.json()
+      setCustomerPermissions(permissions)
     } catch (err) {
-      console.error("Error fetching user details:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des détails utilisateur"
+      console.error("Error fetching customer permissions:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des permissions"
       setError(errorMessage)
     }
   }
 
-  // Fonction pour vérifier un compte utilisateur
-  const verifyAccount = async (userId: string, status: "verify" | "rejected", reason?: string) => {
+  // Fonction pour récupérer les opérateurs
+  const fetchOperators = async () => {
     try {
-      setVerifying(true)
-      setVerificationMessage("")
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/operators/`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const operatorsData = await response.json()
+      setOperators(operatorsData.results || operatorsData)
+    } catch (err) {
+      console.error("Error fetching operators:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des opérateurs"
+      setError(errorMessage)
+    }
+  }
+
+  // Fonction pour activer un client
+  const activateCustomer = async (customerId: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
       
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
-      const payload = {
-        status: status,
-        customer_id: userId,
-        reason_for_block: reason || (status === "rejected" ? "BLOCK" : undefined)
-      }
-
-      const response = await smartFetch(`${baseUrl}/v1/api/verify-account`, {
-        method: "POST",
-        body: JSON.stringify(payload)
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/activate/`, {
+        method: "POST"
       })
       
       if (!response.ok) {
@@ -181,53 +220,33 @@ export default function Customers() {
       }
 
       const result = await response.json()
-      setVerificationMessage(result.message || "Vérification effectuée avec succès")
+      setActionMessage(result.message || "Client activé avec succès")
       
-      // Rafraîchir la liste des utilisateurs
-      await fetchUsers(searchQuery, currentPage)
+      // Rafraîchir la liste des clients
+      await fetchCustomers(searchQuery, currentPage, isActiveFilter)
       
     } catch (err) {
-      console.error("Error verifying account:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la vérification"
+      console.error("Error activating customer:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'activation"
       setError(errorMessage)
     } finally {
-      setVerifying(false)
+      setActionLoading(false)
     }
   }
 
-
-  // Fonction pour ouvrir le modal de vérification
-  const openVerificationModal = (user: User) => {
-    setVerificationUser(user)
-    setVerificationStatus("verify")
-    setVerificationReason("")
-    setIsVerificationModalOpen(true)
-  }
-
-  // Fonction pour soumettre la vérification depuis le modal
-  const submitVerificationFromModal = async () => {
-    if (!verificationUser) return
-    
+  // Fonction pour désactiver un client
+  const deactivateCustomer = async (customerId: string) => {
     try {
-      setVerifying(true)
-      setVerificationMessage("")
+      setActionLoading(true)
+      setActionMessage("")
       
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
-      const payload = {
-        status: verificationStatus,
-        customer_id: verificationUser.id,
-        reason_for_block: verificationReason || (verificationStatus === "rejected" ? "BLOCK" : undefined)
-      }
-
-      console.log("Verification payload:", payload)
-
-      const response = await smartFetch(`${baseUrl}/v1/api/verify-account`, {
-        method: "POST",
-        body: JSON.stringify(payload)
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/deactivate/`, {
+        method: "DELETE"
       })
       
       if (!response.ok) {
@@ -237,29 +256,260 @@ export default function Customers() {
       }
 
       const result = await response.json()
-      setVerificationMessage(result.message || "Vérification effectuée avec succès")
+      setActionMessage(result.message || "Client désactivé avec succès")
       
-      // Fermer le modal et rafraîchir la liste
-      setIsVerificationModalOpen(false)
-      await fetchUsers(searchQuery, currentPage)
+      // Rafraîchir la liste des clients
+      await fetchCustomers(searchQuery, currentPage, isActiveFilter)
       
     } catch (err) {
-      console.error("Error verifying account:", err)
-      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la vérification"
+      console.error("Error deactivating customer:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la désactivation"
       setError(errorMessage)
     } finally {
-      setVerifying(false)
+      setActionLoading(false)
     }
   }
 
-  // Charger les utilisateurs au montage du composant
+  // Fonction pour geler un compte
+  const freezeAccount = async (customerId: string, reason: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/freeze/`, {
+        method: "POST",
+        body: JSON.stringify({ reason })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setActionMessage(result.message || "Compte gelé avec succès")
+      
+      // Rafraîchir la liste des clients
+      await fetchCustomers(searchQuery, currentPage, isActiveFilter)
+      
+    } catch (err) {
+      console.error("Error freezing account:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du gel du compte"
+      setError(errorMessage)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Fonction pour dégeler un compte
+  const unfreezeAccount = async (customerId: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/unfreeze/`, {
+        method: "POST"
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setActionMessage(result.message || "Compte dégelé avec succès")
+      
+      // Rafraîchir la liste des clients
+      await fetchCustomers(searchQuery, currentPage, isActiveFilter)
+      
+    } catch (err) {
+      console.error("Error unfreezing account:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du dégel du compte"
+      setError(errorMessage)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Fonction pour ajuster le solde
+  const adjustBalance = async (customerId: string, amount: string, type: "credit" | "debit", reason: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/adjust-balance/`, {
+        method: "POST",
+        body: JSON.stringify({ 
+          amount: parseInt(amount), 
+          type, 
+          reason 
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setActionMessage(result.message || "Solde ajusté avec succès")
+      
+      // Rafraîchir la liste des clients
+      await fetchCustomers(searchQuery, currentPage, isActiveFilter)
+      
+    } catch (err) {
+      console.error("Error adjusting balance:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'ajustement du solde"
+      setError(errorMessage)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Fonction pour accorder une permission
+  const grantPermission = async (customerId: string, operatorUid: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers/${customerId}/permissions/`, {
+        method: "POST",
+        body: JSON.stringify({ operator_uid: operatorUid })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setActionMessage("Permission accordée avec succès")
+      
+      // Rafraîchir les permissions
+      await fetchCustomerPermissions(customerId)
+      
+    } catch (err) {
+      console.error("Error granting permission:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'octroi de permission"
+      setError(errorMessage)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  // Fonction pour révoquer une permission
+  const revokePermission = async (permissionUid: string) => {
+    try {
+      setActionLoading(true)
+      setActionMessage("")
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/permissions/${permissionUid}/`, {
+        method: "DELETE"
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setActionMessage(result.message || "Permission révoquée avec succès")
+      
+      // Rafraîchir les permissions si un client est sélectionné
+      if (selectedCustomerForAction) {
+        await fetchCustomerPermissions(selectedCustomerForAction.customer_id)
+      }
+      
+    } catch (err) {
+      console.error("Error revoking permission:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la révocation de permission"
+      setError(errorMessage)
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+
+  // Fonction pour ouvrir le modal des permissions
+  const openPermissionsModal = async (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    await fetchCustomerPermissions(customer.customer_id)
+    await fetchOperators()
+    setIsPermissionsModalOpen(true)
+  }
+
+  // Fonction pour ouvrir le modal d'activation
+  const openActivateModal = (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    setIsActivateModalOpen(true)
+  }
+
+  // Fonction pour ouvrir le modal de désactivation
+  const openDeactivateModal = (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    setIsDeactivateModalOpen(true)
+  }
+
+  // Fonction pour ouvrir le modal de gel
+  const openFreezeModal = (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    setFreezeReason("")
+    setIsFreezeModalOpen(true)
+  }
+
+  // Fonction pour ouvrir le modal de dégel
+  const openUnfreezeModal = (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    setIsUnfreezeModalOpen(true)
+  }
+
+  // Fonction pour ouvrir le modal d'ajustement de solde
+  const openBalanceModal = (customer: Customer) => {
+    setSelectedCustomerForAction(customer)
+    setBalanceAmount("")
+    setBalanceType("credit")
+    setBalanceReason("")
+    setIsBalanceModalOpen(true)
+  }
+
+  // Charger les clients au montage du composant
   useEffect(() => {
-    fetchUsers("", 1)
+    fetchCustomers("", 1, "")
   }, [])
 
-  // Charger les utilisateurs quand la page change
+  // Charger les clients quand la page change
   useEffect(() => {
-    fetchUsers(searchQuery, currentPage)
+    fetchCustomers(searchQuery, currentPage, isActiveFilter)
   }, [currentPage])
 
   // Fonction pour gérer la recherche avec debounce
@@ -269,17 +519,23 @@ export default function Customers() {
       return (query: string) => {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-          fetchUsers(query, 1) // Reset to first page when searching
+          fetchCustomers(query, 1, isActiveFilter) // Reset to first page when searching
         }, 300) // Attendre 300ms après la dernière frappe
       }
     })(),
-    []
+    [isActiveFilter]
   )
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     setCurrentPage(1) // Reset to first page when searching
     debouncedSearch(query)
+  }
+
+  const handleActiveFilter = (filter: string) => {
+    setIsActiveFilter(filter)
+    setCurrentPage(1)
+    fetchCustomers(searchQuery, 1, filter)
   }
 
   // Fonctions de pagination
@@ -323,7 +579,7 @@ export default function Customers() {
       <div className="flex items-center justify-between px-2 py-4">
         <div className="flex items-center text-sm text-muted-foreground">
           <span>
-            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalUsers)} sur {totalUsers} utilisateurs
+            Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalCustomers)} sur {totalCustomers} clients
           </span>
         </div>
         
@@ -366,80 +622,55 @@ export default function Customers() {
 
   // Calculer les statistiques à partir des données réelles
   const calculateStats = () => {
-    const totalUsers = users.length
-    const activeUsers = users.filter(user => user.is_active).length
-    const partners = users.filter(user => user.is_partner).length
+    const totalCustomers = customers.length
+    const activeCustomers = customers.filter(customer => customer.is_active).length
     
-    // Calculer les nouveaux utilisateurs ce mois-ci
+    // Calculer les nouveaux clients ce mois-ci
     const currentMonth = new Date().getMonth()
     const currentYear = new Date().getFullYear()
-    const newThisMonth = users.filter(user => {
-      const createdDate = new Date(user.created_at)
+    const newThisMonth = customers.filter(customer => {
+      const createdDate = new Date(customer.created_at)
       return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear
     }).length
 
+    // Calculer les clients avec IP whitelist
+    const withWhitelist = customers.filter(customer => customer.require_ip_whitelist).length
+
     return {
-      totalUsers,
-      activeUsers,
+      totalCustomers,
+      activeCustomers,
       newThisMonth,
-      partners
+      withWhitelist
     }
   }
 
-  // Calculer les meilleures localisations
-  const calculateTopLocations = () => {
-    const countryCount: { [key: string]: number } = {}
-    
-    users.forEach(user => {
-      const country = user.country || 'Non spécifié'
-      if (country) {
-        countryCount[country] = (countryCount[country] || 0) + 1
-      }
-    })
-
-    const totalUsers = users.length
-    return Object.entries(countryCount)
-      .map(([country, count]) => ({
-        country,
-        customers: count,
-        percentage: totalUsers > 0 ? Math.round((count / totalUsers) * 100) : 0
-      }))
-      .sort((a, b) => b.customers - a.customers)
-      .slice(0, 5)
-  }
-
   const stats = calculateStats()
-  const topLocations = calculateTopLocations()
 
   // Statistiques des clients calculées dynamiquement
   const customerStats = [
-    { label: "Total Clients", value: stats.totalUsers.toLocaleString(), change: "+12%", icon: Users, color: "blue" },
-    { label: "Clients Actifs", value: stats.activeUsers.toLocaleString(), change: "+8%", icon: UserCheck, color: "green" },
+    { label: "Total Clients", value: stats.totalCustomers.toLocaleString(), change: "+12%", icon: Users, color: "blue" },
+    { label: "Clients Actifs", value: stats.activeCustomers.toLocaleString(), change: "+8%", icon: UserCheck, color: "green" },
     { label: "Nouveaux ce Mois", value: stats.newThisMonth.toLocaleString(), change: "+23%", icon: TrendingUp, color: "purple" },
-    { label: "Partenaires", value: stats.partners.toLocaleString(), change: "+15%", icon: Building, color: "amber" },
+    { label: "Avec IP Whitelist", value: stats.withWhitelist.toLocaleString(), change: "+15%", icon: Shield, color: "amber" },
   ]
 
-  // Tous les clients (les utilisateurs sont déjà paginés par l'API)
-  // Le state 'users' contient déjà les résultats de la page courante
-  const allCustomers = users
+  // Tous les clients (les clients sont déjà paginés par l'API)
+  // Le state 'customers' contient déjà les résultats de la page courante
+  const allCustomers = customers
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .map(user => {
-      const status = user.account_status === 'active' ? 'Actif' : 
-                    user.account_status === 'verify' ? 'Vérifié' :
-                    user.account_status === 'pending' ? 'En Attente' : 
-                    user.account_status === 'rejected' ? 'Rejeté' : 'Inactif'
-      
-      console.log(`User ${user.fullname} - account_status: ${user.account_status}, mapped status: ${status}`)
+    .map(customer => {
+      const status = customer.is_active ? 'Actif' : 'Inactif'
       
       return {
-        id: user.id,
-        name: user.fullname,
-        email: user.email,
+        id: customer.customer_id,
+        uid: customer.uid,
+        name: `Client ${customer.customer_id.slice(0, 8)}`,
+        email: customer.webhook_url || "N/A",
         status: status,
-        location: user.country,
-        type: user.is_partner ? "Partenaire" : "Standard",
-        avatar: user.logo || "/placeholder-user.jpg",
-        user: user // Ajouter l'objet user original
+        location: customer.ip_whitelist.length > 0 ? `${customer.ip_whitelist.length} IPs` : "Aucune IP",
+        type: customer.use_fixed_fees ? "Frais Fixes" : "Frais Variables",
+        avatar: "/placeholder-user.jpg",
+        customer: customer // Ajouter l'objet customer original
       }
     })
 
@@ -460,7 +691,7 @@ export default function Customers() {
               </div>
               <div className="flex-shrink-0">
                 <Button 
-                  onClick={() => fetchUsers(searchQuery)} 
+                  onClick={() => fetchCustomers(searchQuery, currentPage, isActiveFilter)} 
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -471,20 +702,20 @@ export default function Customers() {
           </div>
         )}
 
-        {/* Affichage des messages de vérification */}
-        {verificationMessage && (
+        {/* Affichage des messages d'action */}
+        {actionMessage && (
           <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
             <div className="flex items-center space-x-3">
               <div className="flex-shrink-0">
                 <span className="text-green-600 dark:text-green-400 text-xl">✅</span>
               </div>
               <div className="flex-1">
-                <p className="text-green-800 dark:text-green-200 font-medium">Vérification réussie</p>
-                <p className="text-sm text-green-700 dark:text-green-300 mt-1">{verificationMessage}</p>
+                <p className="text-green-800 dark:text-green-200 font-medium">Action réussie</p>
+                <p className="text-sm text-green-700 dark:text-green-300 mt-1">{actionMessage}</p>
               </div>
               <div className="flex-shrink-0">
                 <Button 
-                  onClick={() => setVerificationMessage("")} 
+                  onClick={() => setActionMessage("")} 
                   size="sm"
                   variant="outline"
                   className="border-green-200 text-green-800 hover:bg-green-100"
@@ -577,23 +808,42 @@ export default function Customers() {
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
-                  placeholder="Rechercher des clients par nom, email ou localisation..."
+                  placeholder="Rechercher des clients par ID ou webhook..."
                   className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
-              {/* <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtres Avancés
-              </Button> */}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant={isActiveFilter === "" ? "default" : "outline"} 
+                  className="rounded-xl h-12 px-4"
+                  onClick={() => handleActiveFilter("")}
+                >
+                  Tous
+                </Button>
+                <Button 
+                  variant={isActiveFilter === "true" ? "default" : "outline"} 
+                  className="rounded-xl h-12 px-4"
+                  onClick={() => handleActiveFilter("true")}
+                >
+                  Actifs
+                </Button>
+                <Button 
+                  variant={isActiveFilter === "false" ? "default" : "outline"} 
+                  className="rounded-xl h-12 px-4"
+                  onClick={() => handleActiveFilter("false")}
+                >
+                  Inactifs
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="w-full">
           {/* Tous les Clients */}
-          <div className="lg:col-span-2">
+          <div className="w-full">
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
@@ -601,7 +851,7 @@ export default function Customers() {
                     Tous les Clients
                   </CardTitle>
                   <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Liste complète de tous les clients ({totalUsers} au total)
+                    Liste complète de tous les clients ({totalCustomers} au total)
                   </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
@@ -618,7 +868,7 @@ export default function Customers() {
                         <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
                       </div>
                       <Button 
-                        onClick={() => fetchUsers(searchQuery, currentPage)} 
+                        onClick={() => fetchCustomers(searchQuery, currentPage, isActiveFilter)} 
                         className="bg-crimson-600 hover:bg-crimson-700 text-white"
                       >
                         🔄 Réessayer
@@ -635,288 +885,584 @@ export default function Customers() {
                 ) : (
                   <div className="space-y-4">
                     {allCustomers.map((customer) => (
-                    <div key={customer.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={customer.avatar} />
-                          <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
-                            {customer.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-neutral-900 dark:text-white">{customer.name}</p>
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">{customer.email}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                customer.type === 'Premium' ? 'border-amber-200 text-amber-700' : 'border-slate-200 text-slate-700'
-                              }`}
-                            >
-                              {customer.type}
-                            </Badge>
-                            <Badge 
-                              className={`text-xs ${
-                                customer.status === 'Vérifié' ? 'bg-emerald-100 text-emerald-800' :
-                                customer.status === 'Actif' ? 'bg-blue-100 text-blue-800' :
-                                customer.status === 'En Attente' ? 'bg-yellow-100 text-yellow-800' :
-                                customer.status === 'Rejeté' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {customer.status}
-                            </Badge>
+                      <div key={customer.id} className="p-6 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 hover:shadow-md transition-shadow">
+                        {/* Customer Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center space-x-4">
+                            <Avatar className="h-16 w-16">
+                              <AvatarImage src={customer.avatar} />
+                              <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300 text-lg">
+                                {customer.name.split(' ').map(n => n[0]).join('')}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <h3 className="text-xl font-bold text-neutral-900 dark:text-white">{customer.name}</h3>
+                              <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {customer.id}</p>
+                              <div className="flex items-center space-x-2 mt-2">
+                                <Badge 
+                                  className={`text-xs ${
+                                    customer.status === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {customer.status}
+                                </Badge>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    customer.type === 'Frais Fixes' ? 'border-amber-200 text-amber-700' : 'border-slate-200 text-slate-700'
+                                  }`}
+                                >
+                                  {customer.type}
+                                </Badge>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <div className="text-right mr-4">
-                          <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{customer.location}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Verification Actions */}
-                        <div className="flex items-center space-x-2">
-                          {customer.status === 'En Attente' && (
-                            <>
-                              {/* <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
-                                onClick={() => verifyAccount(customer.user.id, "approved")}
-                                disabled={verifying}
-                              >
-                                {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3 w-3" />}
-                                Approuver
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                className="rounded-lg"
-                                onClick={() => verifyAccount(customer.user.id, "rejected")}
-                                disabled={verifying}
-                              >
-                                {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
-                                Rejeter
-                              </Button> */}
-                              <Button 
-                                size="sm" 
-                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                                onClick={() => openVerificationModal(customer.user)}
-                                disabled={verifying}
-                              >
-                                <Shield className="h-3 w-3" />
-                                Vérifier
-                              </Button>
-                            </>
-                          )}
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="sm" 
-                            className="rounded-lg text-crimson-600 hover:text-crimson-700"
-                            onClick={() => router.push(`/customers/${customer.user.id}`)}
+                            className="text-crimson-600 hover:text-crimson-700 border-crimson-200 hover:border-crimson-300"
+                            onClick={() => router.push(`/customers/${customer.id}`)}
                           >
-                            Voir les Détails
+                            Voir Détails
+                          </Button>
+                        </div>
+
+                        {/* Customer Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div className="p-3 bg-white dark:bg-neutral-700 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <MapPin className="h-4 w-4 text-neutral-500" />
+                              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Localisation</span>
+                            </div>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">{customer.location}</p>
+                          </div>
+                          <div className="p-3 bg-white dark:bg-neutral-700 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <Building className="h-4 w-4 text-neutral-500" />
+                              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Webhook</span>
+                            </div>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 truncate">{customer.email}</p>
+                          </div>
+                          <div className="p-3 bg-white dark:bg-neutral-700 rounded-lg">
+                            <div className="flex items-center space-x-2">
+                              <Shield className="h-4 w-4 text-neutral-500" />
+                              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Permissions</span>
+                            </div>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">Gérer les accès</p>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => openPermissionsModal(customer.customer)}
+                            disabled={actionLoading}
+                          >
+                            <Shield className="h-3 w-3 mr-1" />
+                            Permissions
+                          </Button>
+                          
+                          {customer.status === 'Actif' ? (
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => openDeactivateModal(customer.customer)}
+                              disabled={actionLoading}
+                            >
+                              <UserX className="h-3 w-3 mr-1" />
+                              Désactiver
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => openActivateModal(customer.customer)}
+                              disabled={actionLoading}
+                            >
+                              <UserCheck className="h-3 w-3 mr-1" />
+                              Activer
+                            </Button>
+                          )}
+                          
+                          <Button 
+                            size="sm" 
+                            className="bg-orange-600 hover:bg-orange-700 text-white"
+                            onClick={() => openFreezeModal(customer.customer)}
+                            disabled={actionLoading}
+                          >
+                            ❄️ Geler
+                          </Button>
+                          
+                          <Button 
+                            size="sm" 
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            onClick={() => openBalanceModal(customer.customer)}
+                            disabled={actionLoading}
+                          >
+                            💰 Solde
                           </Button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 )}
                 <PaginationComponent />
               </CardContent>
             </Card>
           </div>
-
-          {/* Aperçu des Clients */}
-          <div className="space-y-6">
-            {/* Meilleures Localisations */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-              <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                                  <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                    <Globe className="h-5 w-5 mr-2 text-crimson-600" />
-                    Meilleures Localisations
-                  </CardTitle>
-                  <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Répartition des clients par pays
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  {topLocations.map((location, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="p-2 bg-slate-100 dark:bg-neutral-800 rounded-lg">
-                          <MapPin className="h-4 w-4 text-crimson-600" />
-                        </div>
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{location.country}</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-20 bg-slate-200 dark:bg-neutral-700 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-crimson-500 to-crimson-600 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${location.percentage}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-bold text-neutral-700 dark:text-neutral-300 w-8">
-                          {location.percentage}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Actions Rapides */}
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-              <CardHeader>
-                <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
-                  <Users className="h-4 w-4 mr-2" />
-                  Exporter la Liste des Clients
-                </Button>
-                <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Voir les Analyses
-                </Button>
-                <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Support Client
-                </Button>
-              </CardContent>
-            </Card> */}
-          </div>
         </div>
       </div>
 
 
-      {/* Modal de vérification */}
-      <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
-        <DialogContent className="max-w-lg">
+      {/* Modal des Permissions */}
+      <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
               <Shield className="h-5 w-5 mr-2 text-blue-600" />
-              Vérification du Compte
+              Gestion des Permissions
             </DialogTitle>
             <DialogDescription className="text-neutral-600 dark:text-neutral-400">
-              Vérifiez le compte utilisateur avec les détails personnalisés
+              Gérez les permissions d'opérateurs pour ce client
             </DialogDescription>
           </DialogHeader>
           
-          {verificationUser && (
+          {selectedCustomerForAction && (
             <div className="space-y-6">
-              {/* Informations utilisateur */}
+              {/* Informations client */}
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
                 <div className="flex items-center space-x-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={verificationUser.logo || undefined} />
                     <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
-                      {verificationUser.fullname.split(' ').map(n => n[0]).join('')}
+                      {selectedCustomerForAction.customer_id.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
                     <h3 className="font-semibold text-neutral-900 dark:text-white">
-                      {verificationUser.fullname}
+                      Client {selectedCustomerForAction.customer_id.slice(0, 8)}
                     </h3>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{verificationUser.email}</p>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">ID: {verificationUser.id}</p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Statut: {selectedCustomerForAction.is_active ? 'Actif' : 'Inactif'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Formulaire de vérification */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                    Statut de vérification
-                  </label>
-                  <div className="flex space-x-4">
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="verify"
-                        checked={verificationStatus === "verify"}
-                        onChange={(e) => setVerificationStatus(e.target.value as "verify" | "rejected")}
-                        className="text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-300">Approuver</span>
-                    </label>
-                    <label className="flex items-center space-x-2">
-                      <input
-                        type="radio"
-                        name="status"
-                        value="rejected"
-                        checked={verificationStatus === "rejected"}
-                        onChange={(e) => setVerificationStatus(e.target.value as "verify" | "rejected")}
-                        className="text-red-600 focus:ring-red-500"
-                      />
-                      <span className="text-sm text-neutral-700 dark:text-neutral-300">Rejeter</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                    Raison (optionnel)
-                  </label>
-                  <Input
-                    placeholder="Entrez une raison pour le rejet..."
-                    value={verificationReason}
-                    onChange={(e) => setVerificationReason(e.target.value)}
-                    className="rounded-xl border-slate-200 dark:border-neutral-700"
-                  />
+              {/* Permissions existantes */}
+              <div>
+                <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Permissions Actuelles</h4>
+                <div className="space-y-3">
+                  {customerPermissions.length === 0 ? (
+                    <p className="text-neutral-500 dark:text-neutral-400 text-center py-4">Aucune permission accordée</p>
+                  ) : (
+                    customerPermissions.map((permission) => (
+                      <div key={permission.uid} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg">
+                        <div>
+                          <p className="font-medium text-neutral-900 dark:text-white">{permission.operator_name}</p>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">Code: {permission.operator_code}</p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                            Activé le: {new Date(permission.activated_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge className={permission.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                            {permission.is_active ? "Actif" : "Inactif"}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => revokePermission(permission.uid)}
+                            disabled={actionLoading}
+                          >
+                            Révoquer
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
-              {/* Payload preview */}
-              {/* <div className="p-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
-                <h4 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  Payload à envoyer:
-                </h4>
-                <pre className="text-xs text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 p-3 rounded-lg overflow-x-auto">
-                  {JSON.stringify({
-                    status: verificationStatus,
-                    customer_id: verificationUser.id,
-                    reason_for_block: verificationReason || (verificationStatus === "rejected" ? "BLOCK" : undefined)
-                  }, null, 2)}
-                </pre>
-              </div> */}
+              {/* Accorder une nouvelle permission */}
+              <div>
+                <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Accorder une Nouvelle Permission</h4>
+                <div className="flex items-center space-x-3">
+                  <select
+                    value={selectedOperator}
+                    onChange={(e) => setSelectedOperator(e.target.value)}
+                    className="flex-1 p-2 border border-slate-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900"
+                  >
+                    <option value="">Sélectionner un opérateur</option>
+                    {operators.map((operator) => (
+                      <option key={operator.uid} value={operator.uid}>
+                        {operator.name} ({operator.code})
+                      </option>
+                    ))}
+                  </select>
+                  <Button
+                    onClick={() => selectedOperator && grantPermission(selectedCustomerForAction.customer_id, selectedOperator)}
+                    disabled={!selectedOperator || actionLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accorder"}
+                  </Button>
+                </div>
+              </div>
 
               {/* Actions */}
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
-                  onClick={() => setIsVerificationModalOpen(false)}
-                  disabled={verifying}
+                  onClick={() => setIsPermissionsModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Fermer
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal d'Activation */}
+      <Dialog open={isActivateModalOpen} onOpenChange={setIsActivateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              <UserCheck className="h-5 w-5 mr-2 text-green-600" />
+              Activer le Client
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Êtes-vous sûr de vouloir activer ce client ?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomerForAction && (
+              <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <p className="font-medium text-neutral-900 dark:text-white">
+                  Client {selectedCustomerForAction.customer_id.slice(0, 8)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsActivateModalOpen(false)}
                   className="rounded-xl"
                 >
                   Annuler
                 </Button>
                 <Button
-                  onClick={submitVerificationFromModal}
-                  disabled={verifying}
-                  className={`rounded-xl ${
-                    verificationStatus === "verify" 
-                      ? "bg-green-600 hover:bg-green-700" 
-                      : "bg-red-600 hover:bg-red-700"
-                  } text-white`}
+                  onClick={() => {
+                    activateCustomer(selectedCustomerForAction.customer_id)
+                    setIsActivateModalOpen(false)
+                  }}
+                  disabled={actionLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
                 >
-                  {verifying ? (
+                  {actionLoading ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Vérification...
+                      Activation...
                     </>
                   ) : (
                     <>
-                      <Shield className="h-4 w-4 mr-2" />
-                      {verificationStatus === "verify" ? "Approuver" : "Rejeter"}
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Activer
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Désactivation */}
+      <Dialog open={isDeactivateModalOpen} onOpenChange={setIsDeactivateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              <UserX className="h-5 w-5 mr-2 text-red-600" />
+              Désactiver le Client
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Êtes-vous sûr de vouloir désactiver ce client ?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomerForAction && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <p className="font-medium text-neutral-900 dark:text-white">
+                  Client {selectedCustomerForAction.customer_id.slice(0, 8)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsDeactivateModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => {
+                    deactivateCustomer(selectedCustomerForAction.customer_id)
+                    setIsDeactivateModalOpen(false)
+                  }}
+                  disabled={actionLoading}
+                  variant="destructive"
+                  className="rounded-xl"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Désactivation...
+                    </>
+                  ) : (
+                    <>
+                      <UserX className="h-4 w-4 mr-2" />
+                      Désactiver
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Gel */}
+      <Dialog open={isFreezeModalOpen} onOpenChange={setIsFreezeModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              ❄️ Geler le Compte
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Geler le compte de ce client avec une raison
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomerForAction && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <p className="font-medium text-neutral-900 dark:text-white">
+                  Client {selectedCustomerForAction.customer_id.slice(0, 8)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+              </div>
+
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  Raison du gel
+                </label>
+                <Input
+                  placeholder="Entrez la raison du gel..."
+                  value={freezeReason}
+                  onChange={(e) => setFreezeReason(e.target.value)}
+                  className="rounded-xl border-slate-200 dark:border-neutral-700"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsFreezeModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => {
+                    freezeAccount(selectedCustomerForAction.customer_id, freezeReason)
+                    setIsFreezeModalOpen(false)
+                  }}
+                  disabled={actionLoading || !freezeReason.trim()}
+                  className="bg-orange-600 hover:bg-orange-700 text-white rounded-xl"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Gel...
+                    </>
+                  ) : (
+                    <>
+                      ❄️
+                      Geler
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Dégel */}
+      <Dialog open={isUnfreezeModalOpen} onOpenChange={setIsUnfreezeModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              🔥 Dégeler le Compte
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Êtes-vous sûr de vouloir dégeler ce compte ?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomerForAction && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <p className="font-medium text-neutral-900 dark:text-white">
+                  Client {selectedCustomerForAction.customer_id.slice(0, 8)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsUnfreezeModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => {
+                    unfreezeAccount(selectedCustomerForAction.customer_id)
+                    setIsUnfreezeModalOpen(false)
+                  }}
+                  disabled={actionLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Dégel...
+                    </>
+                  ) : (
+                    <>
+                      🔥
+                      Dégeler
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal d'Ajustement de Solde */}
+      <Dialog open={isBalanceModalOpen} onOpenChange={setIsBalanceModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              💰 Ajuster le Solde
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Ajuster le solde de ce client
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedCustomerForAction && (
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <p className="font-medium text-neutral-900 dark:text-white">
+                  Client {selectedCustomerForAction.customer_id.slice(0, 8)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">ID: {selectedCustomerForAction.customer_id}</p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                    Type d'ajustement
+                  </label>
+                  <div className="flex space-x-4">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="balanceType"
+                        value="credit"
+                        checked={balanceType === "credit"}
+                        onChange={(e) => setBalanceType(e.target.value as "credit" | "debit")}
+                        className="text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300">Crédit</span>
+                    </label>
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name="balanceType"
+                        value="debit"
+                        checked={balanceType === "debit"}
+                        onChange={(e) => setBalanceType(e.target.value as "credit" | "debit")}
+                        className="text-red-600 focus:ring-red-500"
+                      />
+                      <span className="text-sm text-neutral-700 dark:text-neutral-300">Débit</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                    Montant
+                  </label>
+                  <Input
+                    type="number"
+                    placeholder="Entrez le montant..."
+                    value={balanceAmount}
+                    onChange={(e) => setBalanceAmount(e.target.value)}
+                    className="rounded-xl border-slate-200 dark:border-neutral-700"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                    Raison
+                  </label>
+                  <Input
+                    placeholder="Entrez la raison de l'ajustement..."
+                    value={balanceReason}
+                    onChange={(e) => setBalanceReason(e.target.value)}
+                    className="rounded-xl border-slate-200 dark:border-neutral-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsBalanceModalOpen(false)}
+                  className="rounded-xl"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={() => {
+                    adjustBalance(selectedCustomerForAction.customer_id, balanceAmount, balanceType, balanceReason)
+                    setIsBalanceModalOpen(false)
+                  }}
+                  disabled={actionLoading || !balanceAmount || !balanceReason.trim()}
+                  className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Ajustement...
+                    </>
+                  ) : (
+                    <>
+                      💰
+                      Ajuster
                     </>
                   )}
                 </Button>
@@ -928,3 +1474,4 @@ export default function Customers() {
     </DashboardLayout>
   )
 }
+

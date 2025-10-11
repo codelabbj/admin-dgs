@@ -26,16 +26,36 @@ export function getUserData(): any {
 export function storeAuthData(response: any): void {
   console.log('storeAuthData called with:', response)
   
-  localStorage.setItem("access", response.access)
-  localStorage.setItem("refresh", response.refresh)
-  localStorage.setItem("exp", response.exp)
+  // Handle both response structures:
+  // 1. Direct tokens: response.access, response.refresh, response.exp
+  // 2. Nested tokens: response.data.access, response.data.refresh, response.data.exp
   
-  if (response.data) {
-    localStorage.setItem("user", JSON.stringify(response.data))
+  const accessToken = response.access || response.data?.access
+  const refreshToken = response.refresh || response.data?.refresh
+  const expiration = response.exp || response.data?.exp
+  
+  if (!accessToken || !refreshToken || !expiration) {
+    console.error('storeAuthData: Missing required tokens in response:', {
+      hasAccess: !!accessToken,
+      hasRefresh: !!refreshToken,
+      hasExp: !!expiration,
+      response: response
+    })
+    return
+  }
+  
+  localStorage.setItem("access", accessToken)
+  localStorage.setItem("refresh", refreshToken)
+  localStorage.setItem("exp", expiration)
+  
+  // Handle user data - check both locations
+  const userData = response.data || response.user
+  if (userData) {
+    localStorage.setItem("user", JSON.stringify(userData))
     
     // Store is_staff separately for quick access
-    if (response.data.is_staff !== undefined) {
-      localStorage.setItem("is_staff", response.data.is_staff.toString())
+    if (userData.is_staff !== undefined) {
+      localStorage.setItem("is_staff", userData.is_staff.toString())
     }
   }
   
@@ -148,7 +168,7 @@ export function hasAuthData(): boolean {
   return result
 }
 
-// Validate token format and structure
+// Validate token format and structure - More lenient approach
 export function isValidTokenFormat(token: string): boolean {
   if (!token || typeof token !== 'string') {
     console.log('isValidTokenFormat: Invalid token type or empty')
@@ -162,33 +182,48 @@ export function isValidTokenFormat(token: string): boolean {
     return false
   }
   
-  // Each part should be base64 encoded
+  // Basic validation - just check if parts exist and are not empty
+  const hasValidParts = parts.every((part, index) => {
+    if (!part || part.length === 0) {
+      console.log(`isValidTokenFormat: Part ${index} is empty`)
+      return false
+    }
+    return true
+  })
+  
+  if (!hasValidParts) {
+    console.log('isValidTokenFormat: Token has empty parts')
+    return false
+  }
+  
+  // Optional: Try to decode header and payload (parts 0 and 1) for basic validation
+  // But don't fail if signature (part 2) has issues
   try {
-    parts.forEach((part, index) => {
-      if (part) {
-        // Use a more robust base64 decoding approach
-        try {
-          // Try standard base64 decoding
-          atob(part)
-          console.log(`isValidTokenFormat: Part ${index} decoded successfully`)
-        } catch (base64Error) {
-          // If standard base64 fails, try with padding
-          try {
-            const paddedPart = part + '='.repeat((4 - part.length % 4) % 4)
-            atob(paddedPart)
-            console.log(`isValidTokenFormat: Part ${index} decoded successfully with padding`)
-          } catch (paddingError) {
-            console.error(`isValidTokenFormat: Part ${index} failed both standard and padded decoding:`, paddingError)
-            throw paddingError
-          }
-        }
+    // Validate header (part 0)
+    if (parts[0]) {
+      try {
+        atob(parts[0])
+        console.log('isValidTokenFormat: Header decoded successfully')
+      } catch (error) {
+        console.warn('isValidTokenFormat: Header decoding failed, but continuing:', error)
       }
-    })
-    console.log('isValidTokenFormat: Token format is valid')
+    }
+    
+    // Validate payload (part 1)
+    if (parts[1]) {
+      try {
+        atob(parts[1])
+        console.log('isValidTokenFormat: Payload decoded successfully')
+      } catch (error) {
+        console.warn('isValidTokenFormat: Payload decoding failed, but continuing:', error)
+      }
+    }
+    
+    console.log('isValidTokenFormat: Token format is valid (lenient check)')
     return true
   } catch (error) {
-    console.error('isValidTokenFormat: Error decoding token parts:', error)
-    return false
+    console.warn('isValidTokenFormat: Token validation warning, but allowing:', error)
+    return true // Be lenient - don't fail on decoding issues
   }
 }
 
@@ -288,9 +323,10 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
         throw new Error("No refresh token available")
       }
 
-      // Validate refresh token format before attempting refresh
+      // Validate refresh token format before attempting refresh - but be lenient
       if (!isValidTokenFormat(refreshToken)) {
-        throw new Error("Invalid refresh token format")
+        console.warn('Refresh token format validation failed, but attempting refresh anyway')
+        // Don't throw error immediately - let the server decide
       }
 
       // Check if refresh token is expired
@@ -423,11 +459,12 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
     throw new Error("No access token available")
   }
 
-  // Validate token format before making request
+  // Validate token format before making request - but don't clear tokens immediately
   if (!isValidTokenFormat(accessToken)) {
     console.error('smartFetch: Invalid token format', { url })
-    clearAuthData()
-    throw new Error("Invalid token format")
+    // Don't clear tokens immediately - let the server response determine if we should
+    // The server will return 401 if the token is truly invalid
+    console.warn('smartFetch: Proceeding with potentially invalid token, server will validate')
   }
 
   // Make request with access token
