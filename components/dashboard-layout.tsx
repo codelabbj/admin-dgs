@@ -99,6 +99,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigation = [
     { name: t("dashboard"), href: "/", icon: Home, current: pathname === "/" },
     { name: t("customers"), href: "/customers", icon: Users, current: pathname === "/customers" },
+    { name: t("users"), href: "/users", icon: Users, current: pathname === "/users" },
     { name: t("transactions"), href: "/transactions", icon: CreditCard, current: pathname === "/transactions" },
     { name: "Recharges", href: "/recharges", icon: Zap, current: pathname === "/recharges" },
     { name: "Retrait", href: "/withdrawal", icon: Zap, current: pathname === "/withdrawal" },
