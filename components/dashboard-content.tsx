@@ -395,10 +395,13 @@ export function DashboardContent() {
   interface CeleryTasksData {
     timestamp: string
     tasks: Array<{
-      name: string
+      name?: string
       status: string
-      last_run: string
-      next_run: string
+      last_run?: string
+      next_run?: string
+      // API might return different property names
+      date?: string
+      runtime?: string
     }>
     total_enabled_tasks: number
   }
@@ -425,6 +428,20 @@ export function DashboardContent() {
   const [auditSummaryData, setAuditSummaryData] = useState<AuditSummaryData | null>(null)
   const [syncStatusData, setSyncStatusData] = useState<SyncStatusData | null>(null)
   const [celeryTasksData, setCeleryTasksData] = useState<CeleryTasksData | null>(null)
+
+  // Debug: Check for problematic objects
+  if (celeryTasksData) {
+    console.log('CeleryTasksData received:', celeryTasksData)
+    if (celeryTasksData.tasks) {
+      celeryTasksData.tasks.forEach((task, index) => {
+        console.log(`Task ${index}:`, task)
+        const keys = Object.keys(task)
+        if (keys.includes('date') && keys.includes('status') && keys.includes('runtime')) {
+          console.error(`PROBLEMATIC TASK OBJECT ${index}:`, task)
+        }
+      })
+    }
+  }
 
   useEffect(() => {
     // Ajouter un délai pour s'assurer que l'authentification soit complètement établie
@@ -755,6 +772,10 @@ export function DashboardContent() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="space-y-8 p-6 pb-20">
+        {/* Debug info commented out */}
+        {/* <div style={{background: 'red', color: 'white', padding: '10px', margin: '10px'}}>
+          DEBUG: Dashboard rendering - check console for object data
+        </div> */}
         {/* Enhanced Header */}
         <div className="flex items-center justify-between sticky top-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md z-10 py-6 -mx-6 px-6 border-b border-slate-200 dark:border-neutral-700">
           <div>
@@ -2084,8 +2105,8 @@ export function DashboardContent() {
           </Card>
         )}
 
-        {/* Celery Tasks Monitoring */}
-        {celeryTasksData && (
+        {/* Celery Tasks Monitoring - TEMPORARILY DISABLED */}
+        {false && celeryTasksData && (
           <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
@@ -2120,7 +2141,9 @@ export function DashboardContent() {
                     {celeryTasksData.tasks.map((task, index) => (
                       <div key={index} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-medium text-neutral-900 dark:text-white">{task.name}</h5>
+                          <h5 className="font-medium text-neutral-900 dark:text-white">
+                            {task.name || task.date || `Task ${index + 1}`}
+                          </h5>
                           <Badge className={`${
                             task.status === 'active' ? 'bg-green-100 text-green-800' :
                             task.status === 'inactive' ? 'bg-red-100 text-red-800' :
@@ -2132,11 +2155,15 @@ export function DashboardContent() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                           <div>
                             <span className="text-neutral-600 dark:text-neutral-400">Dernière exécution:</span>
-                            <span className="ml-2 font-medium">{task.last_run || 'Jamais'}</span>
+                            <span className="ml-2 font-medium">
+                              {task.last_run || task.runtime || 'Jamais'}
+                            </span>
                           </div>
                           <div>
                             <span className="text-neutral-600 dark:text-neutral-400">Prochaine exécution:</span>
-                            <span className="ml-2 font-medium">{task.next_run || 'Non programmée'}</span>
+                            <span className="ml-2 font-medium">
+                              {task.next_run || 'Non programmée'}
+                            </span>
                           </div>
                         </div>
                       </div>
