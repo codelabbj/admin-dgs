@@ -27,7 +27,7 @@ interface Customer {
   daily_payout_limit: string | null
   monthly_payin_limit: string | null
   monthly_payout_limit: string | null
-  ip_whitelist: string[]
+  ip_whitelist: string[] | null
   require_ip_whitelist: boolean
   notes: string
   created_at: string
@@ -667,7 +667,7 @@ export default function Customers() {
         name: `Client ${customer.customer_id.slice(0, 8)}`,
         email: customer.webhook_url || "N/A",
         status: status,
-        location: customer.ip_whitelist.length > 0 ? `${customer.ip_whitelist.length} IPs` : "Aucune IP",
+        location: customer.ip_whitelist && Array.isArray(customer.ip_whitelist) && customer.ip_whitelist.length > 0 ? `${customer.ip_whitelist.length} IPs` : "Aucune IP",
         type: customer.use_fixed_fees ? "Frais Fixes" : "Frais Variables",
         avatar: "/placeholder-user.jpg",
         customer: customer // Ajouter l'objet customer original

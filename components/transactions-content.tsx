@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check, Loader2, RefreshCw } from "lucide-react"
+import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check, Loader2, RefreshCw, Zap } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
@@ -65,6 +65,18 @@ export function TransactionsContent() {
   const [webhookLogsModalOpen, setWebhookLogsModalOpen] = useState(false)
   const [webhookLogs, setWebhookLogs] = useState<any[]>([])
   const [webhookLogsLoading, setWebhookLogsLoading] = useState(false)
+  
+  // États pour le modal de création de webhook
+  const [webhookModalOpen, setWebhookModalOpen] = useState(false)
+  const [webhookLoading, setWebhookLoading] = useState(false)
+  const [webhookSuccess, setWebhookSuccess] = useState<string | null>(null)
+  const [webhookError, setWebhookError] = useState<string | null>(null)
+  
+  // États pour le formulaire de webhook
+  const [transactionId, setTransactionId] = useState("")
+  const [webhookStatus, setWebhookStatus] = useState("")
+  const [webhookAmount, setWebhookAmount] = useState("")
+  const [webhookPhone, setWebhookPhone] = useState("")
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -820,6 +832,69 @@ export function TransactionsContent() {
     }
   }
 
+  // Fonction pour créer un webhook Wave
+  const createWaveWebhook = async () => {
+    try {
+      setWebhookLoading(true)
+      setWebhookError(null)
+      setWebhookSuccess(null)
+      
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const payload = {
+        transaction_id: transactionId, // This is the transaction UID from the clicked transaction
+        status: webhookStatus,
+        amount: parseInt(webhookAmount),
+        phone: webhookPhone
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/webhooks/wave/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setWebhookSuccess(result.message || "Webhook créé avec succès")
+      
+      // Reset form
+      setTransactionId("")
+      setWebhookStatus("")
+      setWebhookAmount("")
+      setWebhookPhone("")
+      
+    } catch (err) {
+      console.error("Error creating webhook:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la création du webhook"
+      setWebhookError(errorMessage)
+    } finally {
+      setWebhookLoading(false)
+    }
+  }
+
+  // Fonction pour ouvrir le modal de webhook pour une transaction spécifique
+  const openWebhookModalForTransaction = (transaction: any) => {
+    // Use the transaction UID from the clicked transaction
+    const transactionUid = transaction.uid || transaction.transaction_uid || transaction.id || ""
+    setTransactionId(transactionUid)
+    setWebhookStatus("success") // Default status
+    setWebhookAmount(transaction.amount?.toString() || "")
+    setWebhookPhone("") // User will need to fill this
+    setWebhookError(null)
+    setWebhookSuccess(null)
+    setWebhookModalOpen(true)
+  }
+
   // Since we're now filtering on the API side, we can use transactions directly
   const filteredTransactions = Array.isArray(transactions) ? transactions : []
 
@@ -1168,7 +1243,7 @@ export function TransactionsContent() {
                             <Eye className="h-3 w-3" />
                             <span>View Details</span>
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="outline"
                             size="sm"
                             onClick={() => openWebhookLogsModal(transaction)}
@@ -1176,7 +1251,7 @@ export function TransactionsContent() {
                           >
                             <Download className="h-3 w-3" />
                             <span>Webhook Logs</span>
-                          </Button>
+                          </Button> */}
                           <Button
                             variant="outline"
                             size="sm"
@@ -1193,6 +1268,15 @@ export function TransactionsContent() {
                           >
                             <Settings className="h-3 w-3" />
                             <span>Change Status</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openWebhookModalForTransaction(transaction)}
+                            className="flex items-center space-x-1"
+                          >
+                            <Zap className="h-3 w-3" />
+                            <span>Create Webhook</span>
                           </Button>
                         </div>
                       </TableCell>
@@ -1823,6 +1907,122 @@ export function TransactionsContent() {
               onClick={() => setWebhookLogsModalOpen(false)}
             >
               Fermer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Webhook Creation Modal */}
+      <Dialog open={webhookModalOpen} onOpenChange={setWebhookModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              <Zap className="h-5 w-5 mr-2 text-blue-600" />
+              Créer un Webhook Wave
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Créez un webhook pour une transaction Wave
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Affichage des messages d'erreur et de succès */}
+            {webhookError && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p className="text-sm text-red-800 dark:text-red-200">{webhookError}</p>
+              </div>
+            )}
+            
+            {webhookSuccess && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                <p className="text-sm text-green-800 dark:text-green-200">{webhookSuccess}</p>
+              </div>
+            )}
+
+            {/* Formulaire */}
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Transaction UID (Auto-filled)
+              </label>
+              <Input
+                placeholder="Transaction UID"
+                value={transactionId}
+                readOnly
+                className="rounded-xl border-slate-200 dark:border-neutral-700 bg-gray-50 dark:bg-gray-800"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Statut
+              </label>
+              <Input
+                placeholder="success, failed, pending"
+                value={webhookStatus}
+                onChange={(e) => setWebhookStatus(e.target.value)}
+                className="rounded-xl border-slate-200 dark:border-neutral-700"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Montant
+              </label>
+              <Input
+                type="number"
+                placeholder="1000"
+                value={webhookAmount}
+                onChange={(e) => setWebhookAmount(e.target.value)}
+                className="rounded-xl border-slate-200 dark:border-neutral-700"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Numéro de Téléphone
+              </label>
+              <Input
+                placeholder="+221701234567"
+                value={webhookPhone}
+                onChange={(e) => setWebhookPhone(e.target.value)}
+                className="rounded-xl border-slate-200 dark:border-neutral-700"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setWebhookModalOpen(false)
+                setWebhookError(null)
+                setWebhookSuccess(null)
+                setTransactionId("")
+                setWebhookStatus("")
+                setWebhookAmount("")
+                setWebhookPhone("")
+              }}
+              disabled={webhookLoading}
+              className="rounded-xl"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={createWaveWebhook}
+              disabled={webhookLoading || !transactionId || !webhookStatus || !webhookAmount || !webhookPhone}
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+            >
+              {webhookLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Créer Webhook
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

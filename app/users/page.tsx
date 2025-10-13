@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight } from "lucide-react"
+import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight, Settings } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -57,6 +57,32 @@ export default function Customers() {
   const [verificationUser, setVerificationUser] = useState<User | null>(null)
   const [verificationStatus, setVerificationStatus] = useState<"verify" | "rejected">("verify")
   const [verificationReason, setVerificationReason] = useState("")
+  
+  // États pour le modal de création de configuration client
+  const [isCustomerConfigModalOpen, setIsCustomerConfigModalOpen] = useState(false)
+  const [selectedUserForConfig, setSelectedUserForConfig] = useState<User | null>(null)
+  const [configLoading, setConfigLoading] = useState(false)
+  const [configMessage, setConfigMessage] = useState("")
+  
+  // États pour le formulaire de configuration client
+  const [configForm, setConfigForm] = useState({
+    is_active: true,
+    webhook_url: "",
+    payin_fee_rate: 1.3,
+    payout_fee_rate: 1.6,
+    use_fixed_fees: false,
+    payin_fee_fixed: "",
+    payout_fee_fixed: "",
+    daily_payin_limit: "",
+    daily_payout_limit: "",
+    monthly_payin_limit: "",
+    monthly_payout_limit: "",
+    require_ip_whitelist: false,
+    ip_whitelist: "",
+    notes: "",
+    auto_create_account: true,
+    grant_default_operators: false
+  })
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -250,6 +276,103 @@ export default function Customers() {
     } finally {
       setVerifying(false)
     }
+  }
+
+  // Fonction pour mettre à jour une configuration client
+  const updateCustomerConfig = async () => {
+    if (!selectedUserForConfig) return
+    
+    try {
+      setConfigLoading(true)
+      setConfigMessage("")
+      setError(null)
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      // Préparer la liste des IPs
+      const ipList = configForm.ip_whitelist
+        .split(',')
+        .map(ip => ip.trim())
+        .filter(ip => ip.length > 0)
+
+      const payload = {
+        customer_id: selectedUserForConfig.id,
+        is_active: configForm.is_active,
+        webhook_url: configForm.webhook_url || null,
+        payin_fee_rate: configForm.payin_fee_rate,
+        payout_fee_rate: configForm.payout_fee_rate,
+        use_fixed_fees: configForm.use_fixed_fees,
+        payin_fee_fixed: configForm.payin_fee_fixed || null,
+        payout_fee_fixed: configForm.payout_fee_fixed || null,
+        daily_payin_limit: configForm.daily_payin_limit || null,
+        daily_payout_limit: configForm.daily_payout_limit || null,
+        monthly_payin_limit: configForm.monthly_payin_limit || null,
+        monthly_payout_limit: configForm.monthly_payout_limit || null,
+        require_ip_whitelist: configForm.require_ip_whitelist,
+        ip_whitelist: ipList,
+        notes: configForm.notes || "",
+        auto_create_account: configForm.auto_create_account,
+        grant_default_operators: configForm.grant_default_operators
+      }
+
+      console.log("Customer config payload:", payload)
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${selectedUserForConfig.id}/config/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setConfigMessage(result.message || "Configuration client mise à jour avec succès")
+      
+      // Fermer le modal et rafraîchir la liste
+      setIsCustomerConfigModalOpen(false)
+      await fetchUsers(searchQuery, currentPage)
+      
+    } catch (err) {
+      console.error("Error updating customer config:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la mise à jour de la configuration"
+      setError(errorMessage)
+    } finally {
+      setConfigLoading(false)
+    }
+  }
+
+  // Fonction pour ouvrir le modal de configuration client
+  const openCustomerConfigModal = (user: User) => {
+    setSelectedUserForConfig(user)
+    setConfigForm({
+      is_active: true,
+      webhook_url: "",
+      payin_fee_rate: 1.3,
+      payout_fee_rate: 1.6,
+      use_fixed_fees: false,
+      payin_fee_fixed: "",
+      payout_fee_fixed: "",
+      daily_payin_limit: "",
+      daily_payout_limit: "",
+      monthly_payin_limit: "",
+      monthly_payout_limit: "",
+      require_ip_whitelist: false,
+      ip_whitelist: "",
+      notes: "",
+      auto_create_account: true,
+      grant_default_operators: false
+    })
+    setConfigMessage("")
+    setIsCustomerConfigModalOpen(true)
   }
 
   // Charger les utilisateurs au montage du composant
@@ -713,6 +836,15 @@ export default function Customers() {
                             </>
                           )}
                           <Button 
+                            size="sm" 
+                            className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                            onClick={() => openCustomerConfigModal(customer.user)}
+                            disabled={configLoading}
+                          >
+                            <Settings className="h-3 w-3" />
+                            Mettre à jour Config
+                          </Button>
+                          <Button 
                             variant="ghost" 
                             size="sm" 
                             className="rounded-lg text-crimson-600 hover:text-crimson-700"
@@ -922,6 +1054,256 @@ export default function Customers() {
                 </Button>
         </div>
       </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de création de configuration client */}
+      <Dialog open={isCustomerConfigModalOpen} onOpenChange={setIsCustomerConfigModalOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              <Settings className="h-5 w-5 mr-2 text-green-600" />
+              Mettre à jour Configuration Client
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Mettez à jour les paramètres de configuration pour ce client
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedUserForConfig && (
+            <div className="space-y-6">
+              {/* Informations client */}
+              <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={selectedUserForConfig.logo || undefined} />
+                    <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
+                      {selectedUserForConfig.fullname.split(' ').map(n => n[0]).join('')}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <h3 className="font-semibold text-neutral-900 dark:text-white">
+                      {selectedUserForConfig.fullname}
+                    </h3>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{selectedUserForConfig.email}</p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">ID: {selectedUserForConfig.id}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Affichage des messages */}
+              {configMessage && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-800 dark:text-green-200">{configMessage}</p>
+                </div>
+              )}
+
+              {/* Formulaire de configuration */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Configuration de base */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Configuration de Base</h4>
+                  
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="is_active"
+                      checked={configForm.is_active}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="is_active" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Client actif
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      URL Webhook
+                    </label>
+                    <Input
+                      placeholder="https://customer.com/webhook"
+                      value={configForm.webhook_url}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, webhook_url: e.target.value }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      Taux de frais Payin (%)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="1.3"
+                      value={configForm.payin_fee_rate}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_rate: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      Taux de frais Payout (%)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="1.6"
+                      value={configForm.payout_fee_rate}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_rate: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="use_fixed_fees"
+                      checked={configForm.use_fixed_fees}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, use_fixed_fees: e.target.checked }))}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="use_fixed_fees" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Utiliser des frais fixes
+                    </label>
+                  </div>
+                </div>
+
+                {/* Limites et IP Whitelist */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Limites et Sécurité</h4>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      Limite quotidienne Payin
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="1000000"
+                      value={configForm.daily_payin_limit}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payin_limit: e.target.value }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      Limite quotidienne Payout
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="1000000"
+                      value={configForm.daily_payout_limit}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payout_limit: e.target.value }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="require_ip_whitelist"
+                      checked={configForm.require_ip_whitelist}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, require_ip_whitelist: e.target.checked }))}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="require_ip_whitelist" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      IP Whitelist requise
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                      Adresses IP autorisées (séparées par des virgules)
+                    </label>
+                    <Input
+                      placeholder="192.168.1.1, 10.0.0.1"
+                      value={configForm.ip_whitelist}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, ip_whitelist: e.target.value }))}
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Options avancées */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Options Avancées</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="auto_create_account"
+                      checked={configForm.auto_create_account}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, auto_create_account: e.target.checked }))}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="auto_create_account" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Créer automatiquement le compte
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="grant_default_operators"
+                      checked={configForm.grant_default_operators}
+                      onChange={(e) => setConfigForm(prev => ({ ...prev, grant_default_operators: e.target.checked }))}
+                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                    />
+                    <label htmlFor="grant_default_operators" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Accorder les opérateurs par défaut
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                    Notes
+                  </label>
+                  <textarea
+                    placeholder="Notes sur ce client..."
+                    value={configForm.notes}
+                    onChange={(e) => setConfigForm(prev => ({ ...prev, notes: e.target.value }))}
+                    className="w-full p-3 border border-slate-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsCustomerConfigModalOpen(false)}
+                  disabled={configLoading}
+                  className="rounded-xl"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={updateCustomerConfig}
+                  disabled={configLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                >
+                  {configLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Mise à jour...
+                    </>
+                  ) : (
+                    <>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Mettre à jour Configuration
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

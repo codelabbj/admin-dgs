@@ -27,7 +27,7 @@ interface CustomerDetails {
   daily_payout_limit: string | null
   monthly_payin_limit: string | null
   monthly_payout_limit: string | null
-  ip_whitelist: string[]
+  ip_whitelist: string[] | null
   require_ip_whitelist: boolean
   notes: string
   created_at: string
@@ -487,7 +487,7 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                              <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Adresses IP autorisées</label>
                     <div className="mt-2 space-y-2">
-                      {customer.ip_whitelist.length === 0 ? (
+                      {!customer.ip_whitelist || customer.ip_whitelist.length === 0 ? (
                         <p className="text-neutral-500 dark:text-neutral-400 text-sm">Aucune IP configurée</p>
                       ) : (
                         customer.ip_whitelist.map((ip, index) => (
