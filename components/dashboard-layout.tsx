@@ -41,6 +41,7 @@ import {
   Store,
   Zap,
   Code,
+  DollarSign,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -98,8 +99,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigation = [
     { name: t("dashboard"), href: "/", icon: Home, current: pathname === "/" },
     { name: t("customers"), href: "/customers", icon: Users, current: pathname === "/customers" },
+    { name: t("users"), href: "/users", icon: Users, current: pathname === "/users" },
     { name: t("transactions"), href: "/transactions", icon: CreditCard, current: pathname === "/transactions" },
+    { name: "Recharges", href: "/recharges", icon: Zap, current: pathname === "/recharges" },
     { name: "Retrait", href: "/withdrawal", icon: Zap, current: pathname === "/withdrawal" },
+    { name: "Gestion Commissions", href: "/commission-management", icon: DollarSign, current: pathname === "/commission-management" },
+    { name: "Webhooks", href: "/webhooks", icon: Code, current: pathname === "/webhooks" },
+    { name: "Operators", href: "/operators", icon: Network, current: pathname === "/operators" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
     // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },

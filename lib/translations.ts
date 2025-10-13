@@ -55,7 +55,8 @@ export const translations = {
     noDataAvailable: "No data available",
 
     // Navigation
-    customers: "Users",
+    customers: "Clients",
+    users: "Users",
     payouts: "Payouts",
     myStore: "My Store",
     payDirect: "pay Direct",
@@ -330,7 +331,8 @@ export const translations = {
     noDataAvailable: "Aucune donnée disponible",
 
     // Navigation
-    customers: "Utilisateurs",
+    customers: "Clients",
+    users: "Utilisateurs",
     payouts: "Paiements",
     myStore: "Ma Boutique",
     payDirect: "pay Direct",

@@ -46,9 +46,22 @@ export default function Login() {
       const data = await res.json()
       if (res.ok) {
         console.log('Login successful, storing auth data:', data)
+        console.log('Login response structure:', {
+          hasAccess: !!data.access,
+          hasRefresh: !!data.refresh,
+          hasExp: !!data.exp,
+          hasData: !!data.data,
+          hasDataAccess: !!data.data?.access,
+          hasDataRefresh: !!data.data?.refresh,
+          hasDataExp: !!data.data?.exp,
+          isStaff: data.is_staff,
+          dataIsStaff: data.data?.is_staff,
+          fullResponse: data
+        })
         
-        // Check if user is staff
-        if (data.is_staff === false) {
+        // Check if user is staff - check both direct and nested locations
+        const isStaff = data.is_staff || data.data?.is_staff
+        if (isStaff === false) {
           // Show backend error when user is not staff
           const errorMessage = data.detail || data.details || data.message || data.error || "Access denied. Staff privileges required."
           setApiError(errorMessage)
