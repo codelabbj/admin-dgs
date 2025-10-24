@@ -66,6 +66,10 @@ export function TransactionsContent() {
   const [webhookLogs, setWebhookLogs] = useState<any[]>([])
   const [webhookLogsLoading, setWebhookLogsLoading] = useState(false)
   
+  // États pour les erreurs
+  const [statusChangeError, setStatusChangeError] = useState<string | null>(null)
+  const [refundError, setRefundError] = useState<string | null>(null)
+  
   // États pour le modal de création de webhook
   const [webhookModalOpen, setWebhookModalOpen] = useState(false)
   const [webhookLoading, setWebhookLoading] = useState(false)
@@ -580,8 +584,24 @@ export function TransactionsContent() {
       return
     }
     
+    // Get the transaction ID using the same logic as other functions
+    const transactionId = selectedTransaction.id || selectedTransaction.uid || selectedTransaction.transaction_uid || selectedTransaction.reference
+    
+    if (!transactionId) {
+      console.error('No transaction ID found for status change:', selectedTransaction)
+      alert('Erreur: Impossible de trouver l\'ID de la transaction')
+      return
+    }
+    
     setChangeStatusLoading(true)
+    setStatusChangeError(null) // Clear any previous errors
     try {
+      console.log('Changing transaction status:', {
+        transactionId,
+        status: selectedStatus,
+        transaction: selectedTransaction
+      })
+      
       const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
         method: 'POST',
         headers: {
@@ -589,19 +609,21 @@ export function TransactionsContent() {
         },
         body: JSON.stringify({
           status: selectedStatus,
-          id: selectedTransaction.id
+          id: transactionId
         })
       })
       
       if (res.ok) {
         const data = await res.json()
-        // Update the transaction in the local state
+        // Update the transaction in the local state using the transaction key
         setTransactions(prev => 
-          prev.map(tx => 
-            tx.id === selectedTransaction.id 
+          prev.map(tx => {
+            const txKey = getTransactionKey(tx)
+            const selectedTxKey = getTransactionKey(selectedTransaction)
+            return txKey === selectedTxKey 
               ? { ...tx, status: selectedStatus, ...data }
               : tx
-          )
+          })
         )
         setChangeStatusModalOpen(false)
         setSelectedTransaction(null)
@@ -609,11 +631,44 @@ export function TransactionsContent() {
         // You could add a toast notification here for success
       } else {
         console.error('Failed to change transaction status:', res.status)
-        // You could add a toast notification here for error
+        try {
+          const errorData = await res.json()
+          console.error('Status change error response:', {
+            status: res.status,
+            statusText: res.statusText,
+            errorData,
+            errorKeys: Object.keys(errorData)
+          })
+          
+          // Create detailed error message
+          let errorMessage = `Erreur ${res.status}: `
+          if (errorData.detail) {
+            errorMessage += errorData.detail
+          } else if (errorData.details) {
+            errorMessage += errorData.details
+          } else if (errorData.message) {
+            errorMessage += errorData.message
+          } else if (errorData.error) {
+            errorMessage += errorData.error
+          } else if (errorData.errors) {
+            // Handle validation errors
+            const validationErrors = Object.entries(errorData.errors)
+              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+              .join('; ')
+            errorMessage += validationErrors
+          } else {
+            errorMessage += res.statusText || 'Erreur inconnue'
+          }
+          
+          setStatusChangeError(errorMessage)
+        } catch (parseError) {
+          console.error('Could not parse error response:', parseError)
+          setStatusChangeError(`Erreur ${res.status}: ${res.statusText}`)
+        }
       }
     } catch (error) {
       console.error('Error changing transaction status:', error)
-      // You could add a toast notification here for error
+      setStatusChangeError(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     } finally {
       setChangeStatusLoading(false)
     }
@@ -691,6 +746,7 @@ export function TransactionsContent() {
   const openChangeStatusModal = (transaction: any) => {
     setSelectedTransaction(transaction)
     setSelectedStatus(transaction.status || "")
+    setStatusChangeError(null) // Clear any previous errors
     setChangeStatusModalOpen(true)
   }
 
@@ -702,8 +758,23 @@ export function TransactionsContent() {
   const handleRefundConfirmation = async () => {
     if (!selectedTransaction) return
     
+    // Get the transaction ID using the same logic as other functions
+    const transactionId = selectedTransaction.id || selectedTransaction.uid || selectedTransaction.transaction_uid || selectedTransaction.reference
+    
+    if (!transactionId) {
+      console.error('No transaction ID found for refund:', selectedTransaction)
+      alert('Erreur: Impossible de trouver l\'ID de la transaction')
+      return
+    }
+    
     setRefundLoading(true)
+    setRefundError(null) // Clear any previous errors
     try {
+      console.log('Processing refund:', {
+        transactionId,
+        transaction: selectedTransaction
+      })
+      
       const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
         method: 'POST',
         headers: {
@@ -711,19 +782,21 @@ export function TransactionsContent() {
         },
         body: JSON.stringify({
           status: "customer_refund",
-          id: selectedTransaction.id
+          id: transactionId
         })
       })
       
       if (res.ok) {
         const data = await res.json()
-        // Update the transaction in the local state
+        // Update the transaction in the local state using the transaction key
         setTransactions(prev => 
-          prev.map(tx => 
-            tx.id === selectedTransaction.id 
+          prev.map(tx => {
+            const txKey = getTransactionKey(tx)
+            const selectedTxKey = getTransactionKey(selectedTransaction)
+            return txKey === selectedTxKey 
               ? { ...tx, status: "customer_refund", ...data }
               : tx
-          )
+          })
         )
         setRefundModalOpen(false)
         setChangeStatusModalOpen(false)
@@ -732,11 +805,44 @@ export function TransactionsContent() {
         // You could add a toast notification here for success
       } else {
         console.error('Failed to process refund:', res.status)
-        // You could add a toast notification here for error
+        try {
+          const errorData = await res.json()
+          console.error('Refund error response:', {
+            status: res.status,
+            statusText: res.statusText,
+            errorData,
+            errorKeys: Object.keys(errorData)
+          })
+          
+          // Create detailed error message
+          let errorMessage = `Erreur ${res.status}: `
+          if (errorData.detail) {
+            errorMessage += errorData.detail
+          } else if (errorData.details) {
+            errorMessage += errorData.details
+          } else if (errorData.message) {
+            errorMessage += errorData.message
+          } else if (errorData.error) {
+            errorMessage += errorData.error
+          } else if (errorData.errors) {
+            // Handle validation errors
+            const validationErrors = Object.entries(errorData.errors)
+              .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+              .join('; ')
+            errorMessage += validationErrors
+          } else {
+            errorMessage += res.statusText || 'Erreur inconnue'
+          }
+          
+          setRefundError(errorMessage)
+        } catch (parseError) {
+          console.error('Could not parse refund error response:', parseError)
+          setRefundError(`Erreur ${res.status}: ${res.statusText}`)
+        }
       }
     } catch (error) {
       console.error('Error processing refund:', error)
-      // You could add a toast notification here for error
+      setRefundError(`Erreur: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     } finally {
       setRefundLoading(false)
     }
@@ -1252,14 +1358,14 @@ export function TransactionsContent() {
                             <Download className="h-3 w-3" />
                             <span>Webhook Logs</span>
                           </Button> */}
-                          <Button
+                          {/* <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleCheckStatus(transaction.reference)}
                             disabled={statusLoading[transaction.reference]}
                           >
                             {statusLoading[transaction.reference] ? t("checking") : t("checkStatus")}
-                          </Button>
+                          </Button> */}
                           <Button
                             variant="outline"
                             size="sm"
@@ -1303,6 +1409,32 @@ export function TransactionsContent() {
               </span>
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Error Display */}
+          {statusChangeError && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <span className="text-red-600 dark:text-red-400 text-xl">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-red-800 dark:text-red-200 font-medium">Erreur lors du changement de statut</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{statusChangeError}</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <Button 
+                    onClick={() => setStatusChangeError(null)} 
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-800 hover:bg-red-100"
+                  >
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="grid gap-4 py-4">
             {(() => {
               const allowedTransitions = getAllowedStatusTransitions(
@@ -1357,7 +1489,10 @@ export function TransactionsContent() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setChangeStatusModalOpen(false)}
+              onClick={() => {
+                setChangeStatusModalOpen(false)
+                setStatusChangeError(null) // Clear error when closing
+              }}
               disabled={changeStatusLoading}
             >
               Annuler
@@ -1653,6 +1788,32 @@ export function TransactionsContent() {
               </span>
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Error Display */}
+          {refundError && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <span className="text-red-600 dark:text-red-400 text-xl">⚠️</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-red-800 dark:text-red-200 font-medium">Erreur lors du remboursement</p>
+                  <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{refundError}</p>
+                </div>
+                <div className="flex-shrink-0">
+                  <Button 
+                    onClick={() => setRefundError(null)} 
+                    size="sm"
+                    variant="outline"
+                    className="border-red-200 text-red-800 hover:bg-red-100"
+                  >
+                    Fermer
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="py-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex">
@@ -1676,7 +1837,10 @@ export function TransactionsContent() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setRefundModalOpen(false)}
+              onClick={() => {
+                setRefundModalOpen(false)
+                setRefundError(null) // Clear error when closing
+              }}
               disabled={refundLoading}
             >
               Annuler

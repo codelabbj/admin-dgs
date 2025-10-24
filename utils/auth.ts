@@ -139,19 +139,26 @@ export function isRefreshTokenExpired(): boolean {
     const exp = payload.exp * 1000 // Convert to milliseconds
     const now = Date.now()
     
-    const isExpired = exp <= now
+    // Add 5 minute buffer to be more lenient
+    const bufferTime = 5 * 60 * 1000 // 5 minutes in milliseconds
+    const isExpired = exp <= (now + bufferTime)
+    
     console.log('isRefreshTokenExpired:', {
       exp: new Date(exp).toISOString(),
       now: new Date(now).toISOString(),
       isExpired,
-      timeUntilExpiry: exp - now
+      timeUntilExpiry: exp - now,
+      timeUntilExpiryMinutes: Math.round((exp - now) / 60000),
+      bufferTimeMinutes: 5
     })
     
     return isExpired
   } catch (error) {
     console.error('Error decoding refresh token:', error)
     console.log('Refresh token that failed to decode:', refreshToken.substring(0, 50) + '...')
-    return true
+    // Be more lenient - if we can't decode, assume it's still valid and let the server decide
+    console.log('isRefreshTokenExpired: Could not decode token, assuming valid (server will validate)')
+    return false
   }
 }
 
@@ -320,8 +327,11 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
     try {
       const refreshToken = getRefreshToken()
       if (!refreshToken) {
+        console.error('refreshAccessTokenInBackground: No refresh token available')
         throw new Error("No refresh token available")
       }
+
+      console.log('refreshAccessTokenInBackground: Starting token refresh process')
 
       // Validate refresh token format before attempting refresh - but be lenient
       if (!isValidTokenFormat(refreshToken)) {
@@ -329,8 +339,12 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
         // Don't throw error immediately - let the server decide
       }
 
-      // Check if refresh token is expired
-      if (isRefreshTokenExpired()) {
+      // Check if refresh token is expired - but be more lenient
+      const refreshExpired = isRefreshTokenExpired()
+      console.log('refreshAccessTokenInBackground: Refresh token expiration check:', { refreshExpired })
+      
+      if (refreshExpired) {
+        console.error('refreshAccessTokenInBackground: Refresh token has expired')
         throw new Error("Refresh token has expired")
       }
 
@@ -339,23 +353,50 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
         throw new Error("Base URL not configured")
       }
 
-      console.log('Attempting token refresh...')
+      console.log('refreshAccessTokenInBackground: Attempting token refresh...', {
+        baseUrl,
+        refreshEndpoint: `${baseUrl}/v1/api/refresh-token`,
+        hasRefreshToken: !!refreshToken
+      })
+      
       const response = await fetch(`${baseUrl}/v1/api/refresh-token`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh: refreshToken }),
       })
 
+      console.log('refreshAccessTokenInBackground: Refresh response received', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
+
       if (!response.ok) {
-        const errorText = await response.text()
+        let errorText = ''
+        try {
+          const errorData = await response.json()
+          errorText = JSON.stringify(errorData)
+          console.error('refreshAccessTokenInBackground: Refresh failed with error data:', errorData)
+        } catch (parseError) {
+          errorText = await response.text()
+          console.error('refreshAccessTokenInBackground: Refresh failed with text:', errorText)
+        }
+        
         console.error(`Token refresh failed: ${response.status} - ${errorText}`)
         throw new Error(`Token refresh failed: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('refreshAccessTokenInBackground: Refresh response data:', {
+        hasAccess: !!data.access,
+        hasRefresh: !!data.refresh,
+        hasExp: !!data.exp,
+        dataKeys: Object.keys(data)
+      })
       
       // Validate response data
       if (!data.access || !data.refresh || !data.exp) {
+        console.error('refreshAccessTokenInBackground: Invalid refresh response format:', data)
         throw new Error("Invalid refresh response format")
       }
       
@@ -364,7 +405,7 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
       localStorage.setItem("refresh", data.refresh)
       localStorage.setItem("exp", data.exp)
       
-      console.log('Token refresh successful')
+      console.log('refreshAccessTokenInBackground: Token refresh successful, new tokens stored')
       
       // Dispatch auth state change event
       if (typeof window !== 'undefined') {
@@ -378,12 +419,13 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
       
       return true
     } catch (error) {
-      console.error("Token refresh failed:", error)
+      console.error("refreshAccessTokenInBackground: Token refresh failed:", error)
       
       // If refresh fails, clear auth data and redirect to login
+      console.log('refreshAccessTokenInBackground: Clearing auth data due to refresh failure')
       clearAuthData()
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        console.log('Redirecting to login due to refresh failure')
+        console.log('refreshAccessTokenInBackground: Redirecting to login due to refresh failure')
         window.location.href = '/login'
       }
       
@@ -488,9 +530,42 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
     statusText: response.statusText 
   })
 
-  // If we get 401, try to refresh token and retry once
-  if (response.status === 401 && refreshToken && !isRefreshTokenExpired()) {
-    console.log('smartFetch: Got 401, attempting token refresh...')
+  // Check for token expiration in response body (for non-401 responses)
+  let isTokenExpired = false
+  if (!response.ok) {
+    try {
+      const responseClone = response.clone()
+      const errorData = await responseClone.json()
+      console.log('smartFetch: Error response data:', errorData)
+      
+      // Check if the error message indicates token expiration
+      const errorMessage = errorData.detail || errorData.message || errorData.error || ''
+      isTokenExpired = errorMessage.toLowerCase().includes('token expired') || 
+                      errorMessage.toLowerCase().includes('token has expired') ||
+                      errorMessage.toLowerCase().includes('expired')
+      
+      console.log('smartFetch: Token expiration check:', { 
+        errorMessage, 
+        isTokenExpired 
+      })
+    } catch (parseError) {
+      console.log('smartFetch: Could not parse error response:', parseError)
+    }
+  }
+
+  // If we get 401 or token expired error, try to refresh token and retry once
+  const shouldRefresh = (response.status === 401 || isTokenExpired) && 
+                       refreshToken && 
+                       !isRefreshTokenExpired()
+  
+  if (shouldRefresh) {
+    console.log('smartFetch: Token expired or 401 error, attempting token refresh...', {
+      status: response.status,
+      isTokenExpired,
+      hasRefreshToken: !!refreshToken,
+      refreshTokenExpired: isRefreshTokenExpired()
+    })
+    
     const refreshed = await refreshAccessTokenInBackground()
     if (refreshed) {
       const newAccessToken = getAccessToken()
@@ -592,6 +667,48 @@ export function debugAuthState(): void {
   console.log('isAuthenticated():', isAuthenticated())
   console.log('isStaff():', isStaff())
   console.log('isAuthenticatedStaff():', isAuthenticatedStaff())
+  console.log('isAccessTokenExpired():', isAccessTokenExpired())
+  console.log('isRefreshTokenExpired():', isRefreshTokenExpired())
+  console.log('========================')
+}
+
+// Enhanced debug function for token refresh issues
+export function debugTokenRefresh(): void {
+  if (typeof window === 'undefined') {
+    console.log('debugTokenRefresh: Not in browser environment')
+    return
+  }
+  
+  console.log('=== TOKEN REFRESH DEBUG ===')
+  
+  const accessToken = getAccessToken()
+  const refreshToken = getRefreshToken()
+  const exp = getTokenExp()
+  
+  console.log('Access Token Present:', !!accessToken)
+  console.log('Refresh Token Present:', !!refreshToken)
+  console.log('Expiration Time:', exp)
+  
+  if (accessToken) {
+    console.log('Access Token Valid Format:', isValidTokenFormat(accessToken))
+    console.log('Access Token Expired:', isAccessTokenExpired())
+  }
+  
+  if (refreshToken) {
+    console.log('Refresh Token Valid Format:', isValidTokenFormat(refreshToken))
+    console.log('Refresh Token Expired:', isRefreshTokenExpired())
+  }
+  
+  if (exp) {
+    const expDate = new Date(exp)
+    const now = new Date()
+    const timeUntilExpiry = expDate.getTime() - now.getTime()
+    console.log('Time Until Expiry (ms):', timeUntilExpiry)
+    console.log('Time Until Expiry (minutes):', Math.round(timeUntilExpiry / 60000))
+  }
+  
+  console.log('Base URL:', process.env.NEXT_PUBLIC_BASE_URL)
+  console.log('Refresh Endpoint:', process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/refresh-token` : 'Not configured')
   console.log('========================')
 }
 

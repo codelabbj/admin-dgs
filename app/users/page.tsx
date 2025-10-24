@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight, Settings } from "lucide-react"
-import { smartFetch } from "@/utils/auth"
+import { smartFetch, debugTokenRefresh } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 
@@ -110,21 +110,47 @@ export default function Customers() {
       params.append('page_size', pageSize.toString())
       
       const url = `${baseUrl}/v1/api/users?${params.toString()}`
+      
+      console.log('fetchUsers: Making request to:', url)
+      
       const response = await smartFetch(url)
+      
+      console.log('fetchUsers: Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      })
       
       if (!response.ok) {
         // Essayer de récupérer le message d'erreur du backend
         try {
           const errorData = await response.json()
+          console.log('fetchUsers: Error response data:', errorData)
+          
           const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+          
+          // Check if this is a token expiration error
+          if (errorMessage.toLowerCase().includes('token expired')) {
+            console.log('fetchUsers: Token expired error detected, smartFetch should have handled refresh')
+            // Debug token state
+            debugTokenRefresh()
+          }
+          
           throw new Error(errorMessage)
         } catch (parseError) {
+          console.log('fetchUsers: Could not parse error response:', parseError)
           // Si on ne peut pas parser le JSON, utiliser le message par défaut
           throw new Error(`Erreur ${response.status}: ${response.statusText}`)
         }
       }
 
       const data = await response.json()
+      console.log('fetchUsers: Success response data structure:', {
+        isArray: Array.isArray(data),
+        hasData: !!data.data,
+        hasResults: !!data.results,
+        dataKeys: Object.keys(data)
+      })
       
       // Gérer différentes structures de réponse
       if (Array.isArray(data)) {
@@ -145,9 +171,15 @@ export default function Customers() {
         setTotalPages(0)
       }
     } catch (err) {
-      console.error("Error fetching users:", err)
+      console.error("fetchUsers: Error fetching users:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des utilisateurs"
       setError(errorMessage)
+      
+      // If it's a token-related error, debug the token state
+      if (errorMessage.toLowerCase().includes('token')) {
+        console.log('fetchUsers: Token-related error detected, debugging token state')
+        debugTokenRefresh()
+      }
     } finally {
       setLoading(false)
     }
