@@ -7,10 +7,17 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { ArrowLeft, User, CreditCard, Settings, Shield, Globe, Calendar, DollarSign, Loader2, AlertCircle } from "lucide-react"
+import { ArrowLeft, User, CreditCard, Settings, Shield, Globe, Calendar, DollarSign, Loader2, AlertCircle, FileText, Download } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+
+// Interface pour les données utilisateur (depuis l'API users)
+interface UserData {
+  id: string
+  gerant_doc: string | null
+  trade_commerce: string | null
+}
 
 // Interface pour les données client détaillées
 interface CustomerDetails {
@@ -53,6 +60,7 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
   
   // États pour la gestion des données
   const [customer, setCustomer] = useState<CustomerDetails | null>(null)
+  const [userData, setUserData] = useState<UserData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -90,8 +98,8 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
           const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
           throw new Error(errorMessage)
         } catch (parseError) {
-        throw new Error(`Erreur ${response.status}: ${response.statusText}`)
-      }
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+        }
       }
 
       const data = await response.json()
@@ -112,10 +120,54 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
       console.error("Error fetching customer details:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des détails du client"
       setError(errorMessage)
-      } finally {
-        setLoading(false)
-      }
+    } finally {
+      setLoading(false)
     }
+  }
+
+  // Fonction pour récupérer les données utilisateur depuis l'API users
+  const fetchUserData = async () => {
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      // Fetch user data from the users API
+      const response = await smartFetch(`${baseUrl}/v1/api/users`)
+      
+      if (!response.ok) {
+        console.warn('Could not fetch user data:', response.status)
+        return
+      }
+
+      const data = await response.json()
+      
+      // Handle different response structures
+      let users: any[] = []
+      if (Array.isArray(data)) {
+        users = data
+      } else if (data && Array.isArray(data.data)) {
+        users = data.data
+      } else if (data && Array.isArray(data.results)) {
+        users = data.results
+      }
+
+      // Find the user with matching ID
+      const foundUser = users.find((user: any) => user.id === customerId)
+      
+      if (foundUser) {
+        setUserData({
+          id: foundUser.id,
+          gerant_doc: foundUser.gerant_doc || null,
+          trade_commerce: foundUser.trade_commerce || null
+        })
+      }
+    } catch (err) {
+      console.error("Error fetching user data:", err)
+      // Don't throw error, just log it as this is optional data
+    }
+  }
 
   // Fonction pour mettre à jour les informations du client
   const updateCustomer = async () => {
@@ -187,9 +239,33 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
     }))
   }
 
+  // Fonction pour ouvrir un document
+  const openDocument = (url: string | null) => {
+    if (!url) return
+    
+    // Si c'est une URL complète, l'ouvrir directement
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      window.open(url, '_blank')
+    } else {
+      // Sinon, construire l'URL complète avec le baseUrl
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (baseUrl) {
+        const fullUrl = url.startsWith('/') 
+          ? `${baseUrl}${url}` 
+          : `${baseUrl}/${url}`
+        window.open(fullUrl, '_blank')
+      } else {
+        window.open(url, '_blank')
+      }
+    }
+  }
+
   // Charger les détails du client au montage
   useEffect(() => {
-    fetchCustomerDetails()
+    fetchCustomerDetails().then(() => {
+      // Fetch user data after customer details are loaded
+      fetchUserData()
+    })
   }, [customerId])
 
   if (loading) {
@@ -385,6 +461,74 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                    </div>
             </CardContent>
           </Card>
+
+            {/* Documents */}
+            {(userData?.gerant_doc || userData?.trade_commerce) && (
+              <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+                <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
+                  <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                    <FileText className="h-5 w-5 mr-2 text-crimson-600" />
+                    Documents
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6">
+                  <div className="space-y-4">
+                    {userData.gerant_doc && (
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-crimson-600" />
+                          <div>
+                            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                              Document du Gérant
+                            </label>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                              {userData.gerant_doc.length > 50 
+                                ? `${userData.gerant_doc.substring(0, 50)}...` 
+                                : userData.gerant_doc}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openDocument(userData.gerant_doc)}
+                          className="border-slate-200 dark:border-neutral-700"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Voir
+                        </Button>
+                      </div>
+                    )}
+                    {userData.trade_commerce && (
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <FileText className="h-5 w-5 text-crimson-600" />
+                          <div>
+                            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                              Registre de Commerce
+                            </label>
+                            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+                              {userData.trade_commerce.length > 50 
+                                ? `${userData.trade_commerce.substring(0, 50)}...` 
+                                : userData.trade_commerce}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openDocument(userData.trade_commerce)}
+                          className="border-slate-200 dark:border-neutral-700"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Voir
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Configuration des frais */}
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
