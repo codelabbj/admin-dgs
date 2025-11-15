@@ -159,12 +159,17 @@ export function DashboardContent() {
   }
 
   interface TopCustomersData {
-    customers: Array<{
+    period_days: number
+    top_customers: Array<{
       customer_id: string
-      customer_name: string
-      total_transactions: number
-      total_amount: number
-      success_rate: number
+      transaction_count: number
+      total_volume: number
+      total_fees: number
+      payin_volume: number
+      payout_volume: number
+      email: string
+      entreprise_name: string
+      phone: string
     }>
   }
 
@@ -886,7 +891,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{globalStats.total_transactions.toLocaleString()}</p>
-                    <p className="text-sm text-blue-700 dark:text-blue-300">Total Transactions</p>
+                    <p className="text-sm text-blue-700 dark:text-blue-300">Nombre de Transactions</p>
                   </div>
                 </div>
               </CardHeader>
@@ -900,7 +905,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-green-900 dark:text-green-100">{globalStats.total_payin.count.toLocaleString()}</p>
-                    <p className="text-sm text-green-700 dark:text-green-300">Total Payin</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">Total des Retraits</p>
                     <p className="text-xs text-green-600 dark:text-green-400">
                       {formatCurrency(globalStats.total_payin.amount)}
                     </p>
@@ -917,7 +922,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{globalStats.total_payout.count.toLocaleString()}</p>
-                    <p className="text-sm text-purple-700 dark:text-purple-300">Total Payout</p>
+                    <p className="text-sm text-purple-700 dark:text-purple-300">Total des dépôts</p>
                     <p className="text-xs text-purple-600 dark:text-purple-400">
                       {formatCurrency(globalStats.total_payout.amount)}
                     </p>
@@ -934,7 +939,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(globalStats.total_commissions)}</p>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">Total Commissions</p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">Total des commissions</p>
                   </div>
                 </div>
               </CardHeader>
@@ -948,7 +953,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(globalStats.unpaid_commissions)}</p>
-                    <p className="text-sm text-red-700 dark:text-red-300">Unpaid Commissions</p>
+                    <p className="text-sm text-red-700 dark:text-red-300">Commissions payables</p>
                   </div>
                 </div>
               </CardHeader>
@@ -962,7 +967,7 @@ export function DashboardContent() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">{globalStats.month_transactions.count.toLocaleString()}</p>
-                    <p className="text-sm text-indigo-700 dark:text-indigo-300">This Month</p>
+                    <p className="text-sm text-indigo-700 dark:text-indigo-300">Ce mois</p>
                     <p className="text-xs text-indigo-600 dark:text-indigo-400">
                       {formatCurrency(globalStats.month_transactions.amount)}
                     </p>
@@ -1169,7 +1174,7 @@ export function DashboardContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Transactions</h4>
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Nombre de Transactions</h4>
                     <BarChart3 className="h-4 w-4 text-blue-600" />
                   </div>
                   <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{dailyReport.summary.total_transactions}</p>
@@ -1182,7 +1187,7 @@ export function DashboardContent() {
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   </div>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-100">{dailyReport.summary.completed_transactions}</p>
-                  <p className="text-xs text-green-700 dark:text-green-300">Volume: {formatCurrency(dailyReport.payin.volume + dailyReport.payout.volume)}</p>
+                  <p className="text-xs text-green-700 dark:text-green-300">Volume de Transactions: {formatCurrency(dailyReport.payin.volume + dailyReport.payout.volume)}</p>
                 </div>
 
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
@@ -1191,7 +1196,7 @@ export function DashboardContent() {
                     <TrendingUp className="h-4 w-4 text-purple-600" />
                   </div>
                   <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{dailyReport.payin.count}</p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300">Volume: {formatCurrency(dailyReport.payin.volume)}</p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">Volume de Transactions: {formatCurrency(dailyReport.payin.volume)}</p>
                   <p className="text-xs text-purple-600 dark:text-purple-400">Frais: {formatCurrency(dailyReport.payin.fees_collected)}</p>
                 </div>
 
@@ -1201,14 +1206,17 @@ export function DashboardContent() {
                     <TrendingDown className="h-4 w-4 text-orange-600" />
                   </div>
                   <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{dailyReport.payout.count}</p>
-                  <p className="text-xs text-orange-700 dark:text-orange-300">Volume: {formatCurrency(dailyReport.payout.volume)}</p>
+                  <p className="text-xs text-orange-700 dark:text-orange-300">Volume de Transactions: {formatCurrency(dailyReport.payout.volume)}</p>
                   <p className="text-xs text-orange-600 dark:text-orange-400">Frais: {formatCurrency(dailyReport.payout.fees_collected)}</p>
                 </div>
               </div>
 
               <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Total des Frais</h4>
+                  <div>
+                    <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Total des Frais</h4>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">(Frais totaux payés aujourd'hui par vos utilisateurs)</p>
+                  </div>
                   <p className="text-2xl font-bold text-neutral-900 dark:text-white">{formatCurrency(dailyReport.total_fees)}</p>
                 </div>
               </div>
@@ -1289,7 +1297,7 @@ export function DashboardContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Total Commissions</h4>
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Nombre de commissions</h4>
                     <DollarSign className="h-4 w-4 text-blue-600" />
                   </div>
                   <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{commissionReport.summary.total_count}</p>
@@ -1306,7 +1314,7 @@ export function DashboardContent() {
 
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
                   <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100">Frais Agrégateur</h4>
+                    <h4 className="text-sm font-medium text-purple-900 dark:text-purple-100">Vos commissions</h4>
                     <Activity className="h-4 w-4 text-purple-600" />
                   </div>
                   <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">{formatCurrency(commissionReport.summary.total_aggregator_fees)}</p>
@@ -1336,7 +1344,7 @@ export function DashboardContent() {
                         <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(operator.total_operator_fee)}</p>
                       </div>
                       <div>
-                        <p className="text-neutral-600 dark:text-neutral-400">Frais Agrégateur</p>
+                        <p className="text-neutral-600 dark:text-neutral-400">Vos commissions</p>
                         <p className="font-semibold text-neutral-900 dark:text-white">{formatCurrency(operator.total_aggregator_fee)}</p>
                       </div>
                     </div>
@@ -1354,7 +1362,7 @@ export function DashboardContent() {
                       <Pie
                         data={[
                           { name: 'Frais Opérateurs', value: commissionReport.summary.total_operator_fees, color: '#10b981' },
-                          { name: 'Frais Agrégateur', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
+                          { name: 'Vos commissions', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
                         ]}
                         cx="50%"
                         cy="50%"
@@ -1366,7 +1374,7 @@ export function DashboardContent() {
                       >
                         {[
                           { name: 'Frais Opérateurs', value: commissionReport.summary.total_operator_fees, color: '#10b981' },
-                          { name: 'Frais Agrégateur', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
+                          { name: 'Vos commissions', value: commissionReport.summary.total_aggregator_fees, color: '#3b82f6' }
                         ].map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
@@ -1392,7 +1400,7 @@ export function DashboardContent() {
                         formatter={(value) => [formatCurrency(Number(value)), 'Montant']}
                       />
                       <Bar dataKey="operatorFee" stackId="a" fill="#10b981" name="Frais Opérateur" />
-                      <Bar dataKey="aggregatorFee" stackId="a" fill="#3b82f6" name="Frais Agrégateur" />
+                      <Bar dataKey="aggregatorFee" stackId="a" fill="#3b82f6" name="Vos commissions" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1421,7 +1429,7 @@ export function DashboardContent() {
                     <TrendingUp className="h-4 w-4 text-green-600" />
                   </div>
                   <p className="text-2xl font-bold text-green-900 dark:text-green-100">{reconciliationReport.payin.count}</p>
-                  <p className="text-xs text-green-700 dark:text-green-300">Volume: {formatCurrency(reconciliationReport.payin.volume)}</p>
+                  <p className="text-xs text-green-700 dark:text-green-300">Volume de Transactions: {formatCurrency(reconciliationReport.payin.volume)}</p>
                   <p className="text-xs text-green-600 dark:text-green-400">Frais: {formatCurrency(reconciliationReport.payin.fees_collected)}</p>
                 </div>
 
@@ -1431,7 +1439,7 @@ export function DashboardContent() {
                     <TrendingDown className="h-4 w-4 text-red-600" />
                   </div>
                   <p className="text-2xl font-bold text-red-900 dark:text-red-100">{reconciliationReport.payout.count}</p>
-                  <p className="text-xs text-red-700 dark:text-red-300">Volume: {formatCurrency(reconciliationReport.payout.volume)}</p>
+                  <p className="text-xs text-red-700 dark:text-red-300">Volume de Transactions: {formatCurrency(reconciliationReport.payout.volume)}</p>
                   <p className="text-xs text-red-600 dark:text-red-400">Frais: {formatCurrency(reconciliationReport.payout.fees_collected)}</p>
                 </div>
 
@@ -2001,7 +2009,7 @@ export function DashboardContent() {
                     </h4>
                     <div className="space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions:</span>
+                        <span className="text-sm text-neutral-600 dark:text-neutral-400">Nombre de Transactions:</span>
                         <span className="font-medium">{operator.total_transactions}</span>
                       </div>
                       <div className="flex justify-between">

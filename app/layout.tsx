@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "DGS Admin Dashboard",
   description: "Admin dashboard for management of the DGS platform",
-    // generator: 'v0.dev'
+   
 }
 
 export default function RootLayout({

@@ -14,15 +14,22 @@ import { smartFetch } from "@/utils/auth"
 
 // Interfaces for commission data
 interface Commission {
-  id: string
   uid: string
-  transaction_id: string
-  operator_code: string
+  transaction_reference: string
+  customer_id: string
   operator_name: string
-  amount: number
-  operator_fee: number
-  aggregator_fee: number
+  operator_code?: string
+  type_trans: string
+  transaction_amount: number
+  operator_fee_rate: string
+  operator_fee_amount: number
+  aggregator_fee_rate: string
+  aggregator_fee_amount: number
+  total_fees: number
+  net_amount: number
   status: string
+  status_display: string
+  withdrawn_at: string | null
   created_at: string
   paid_at?: string
 }
@@ -52,14 +59,16 @@ export function CommissionManagementContent() {
   // States for data
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [unpaidCommissions, setUnpaidCommissions] = useState<Commission[]>([])
+  const [unpaidSummary, setUnpaidSummary] = useState({ count: 0, total_amount: 0 })
   const [commissionBatches, setCommissionBatches] = useState<CommissionBatch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
   // States for filters
   const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("confirmed")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [operatorFilter, setOperatorFilter] = useState("all")
+  const [refreshKey, setRefreshKey] = useState(0)
   
   // States for pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -69,6 +78,7 @@ export function CommissionManagementContent() {
   
   // States for withdrawal modal
   const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false)
+  const [withdrawAllModalOpen, setWithdrawAllModalOpen] = useState(false)
   const [selectedCommissions, setSelectedCommissions] = useState<string[]>([])
   const [withdrawalRequest, setWithdrawalRequest] = useState<WithdrawalRequest>({
     commission_ids: [],
@@ -81,7 +91,7 @@ export function CommissionManagementContent() {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
   // Fetch commissions
-  const fetchCommissions = async (query: string = "", page: number = 1, status: string = "confirmed", operator: string = "all") => {
+  const fetchCommissions = async (query: string = "", page: number = 1, status: string = "", operator: string = "all") => {
     try {
       setLoading(true)
       setError(null)
@@ -90,7 +100,7 @@ export function CommissionManagementContent() {
       if (query) {
         params.append('search', query)
       }
-      if (status) {
+      if (status && status !== "all" && status !== "") {
         params.append('status', status)
       }
       if (operator && operator !== "all") {
@@ -146,9 +156,36 @@ export function CommissionManagementContent() {
       }
 
       const data = await response.json()
-      setUnpaidCommissions(Array.isArray(data) ? data : data.results || [])
+      
+      // Handle the new response structure with count and total_amount
+      if (data && typeof data === 'object' && 'count' in data && 'total_amount' in data) {
+        setUnpaidSummary({
+          count: data.count || 0,
+          total_amount: data.total_amount || 0
+        })
+        setUnpaidCommissions(Array.isArray(data.commissions) ? data.commissions : [])
+      } else if (Array.isArray(data)) {
+        // Fallback for old response format
+        setUnpaidCommissions(data)
+        setUnpaidSummary({
+          count: data.length,
+          total_amount: data.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0)
+        })
+      } else if (data && Array.isArray(data.results)) {
+        const results = data.results as Commission[]
+        setUnpaidCommissions(results)
+        setUnpaidSummary({
+          count: results.length,
+          total_amount: results.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0)
+        })
+      } else {
+        setUnpaidCommissions([])
+        setUnpaidSummary({ count: 0, total_amount: 0 })
+      }
     } catch (err) {
       console.error("Error fetching unpaid commissions:", err)
+      setUnpaidCommissions([])
+      setUnpaidSummary({ count: 0, total_amount: 0 })
     }
   }
 
@@ -197,7 +234,7 @@ export function CommissionManagementContent() {
       })
       
       // Refresh data
-      await fetchCommissions(searchTerm, currentPage, statusFilter, operatorFilter)
+      setRefreshKey(prev => prev + 1)
       await fetchUnpaidCommissions(operatorFilter)
       await fetchCommissionBatches()
       
@@ -219,7 +256,7 @@ export function CommissionManagementContent() {
       if (searchTerm) {
         params.append('search', searchTerm)
       }
-      if (statusFilter) {
+      if (statusFilter && statusFilter !== "all" && statusFilter !== "") {
         params.append('status', statusFilter)
       }
       if (operatorFilter && operatorFilter !== "all") {
@@ -247,27 +284,17 @@ export function CommissionManagementContent() {
     }
   }
 
-  // Load data on component mount
+  // Load data on component mount and when filters change
   useEffect(() => {
-    fetchCommissions("", 1, statusFilter, operatorFilter)
+    const filterValue = statusFilter === "all" ? "" : statusFilter
+    fetchCommissions(searchTerm, currentPage, filterValue, operatorFilter)
+  }, [currentPage, searchTerm, statusFilter, operatorFilter, refreshKey])
+
+  // Load unpaid commissions and batches on mount and when operator filter changes
+  useEffect(() => {
     fetchUnpaidCommissions(operatorFilter)
     fetchCommissionBatches()
-  }, [])
-
-  // Load data when filters change
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setCurrentPage(1)
-      fetchCommissions(searchTerm, 1, statusFilter, operatorFilter)
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, operatorFilter])
-
-  // Load data when page changes
-  useEffect(() => {
-    fetchCommissions(searchTerm, currentPage, statusFilter, operatorFilter)
-  }, [currentPage])
+  }, [operatorFilter])
 
   // Pagination functions
   const handlePageChange = (page: number) => {
@@ -302,8 +329,8 @@ export function CommissionManagementContent() {
       return
     }
     
-    const selectedCommissionsData = commissions.filter(c => selectedCommissions.includes(c.id))
-    const operatorCode = selectedCommissionsData[0]?.operator_code || ""
+    const selectedCommissionsData = commissions.filter(c => selectedCommissions.includes(c.uid))
+    const operatorCode = selectedCommissionsData[0]?.operator_code || selectedCommissionsData[0]?.operator_name || ""
     
     setWithdrawalRequest({
       commission_ids: selectedCommissions,
@@ -314,20 +341,78 @@ export function CommissionManagementContent() {
     setWithdrawalModalOpen(true)
   }
 
+  // Open withdraw all unpaid commissions modal
+  const openWithdrawAllModal = () => {
+    if (unpaidSummary.count === 0 || unpaidSummary.total_amount === 0) {
+      setError("Aucune commission impayée disponible")
+      return
+    }
+    
+    setWithdrawalRequest({
+      commission_ids: [], // Empty array means withdraw all
+      operator_code: operatorFilter !== "all" ? operatorFilter : "",
+      payment_method: "mobile_money",
+      notes: ""
+    })
+    setWithdrawAllModalOpen(true)
+  }
+
+  // Create withdrawal for all unpaid commissions
+  const createWithdrawAllCommission = async () => {
+    try {
+      setWithdrawalLoading(true)
+      
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/commissions/withdraw-all/`, {
+        method: "POST",
+        body: JSON.stringify({
+          operator_code: withdrawalRequest.operator_code || null,
+          payment_method: withdrawalRequest.payment_method,
+          notes: withdrawalRequest.notes
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      setWithdrawAllModalOpen(false)
+      setWithdrawalRequest({
+        commission_ids: [],
+        operator_code: "",
+        payment_method: "mobile_money",
+        notes: ""
+      })
+      
+      // Refresh data
+      setRefreshKey(prev => prev + 1)
+      await fetchUnpaidCommissions(operatorFilter)
+      await fetchCommissionBatches()
+      
+    } catch (err) {
+      console.error("Error creating withdraw all commission:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la création du retrait"
+      setError(errorMessage)
+    } finally {
+      setWithdrawalLoading(false)
+    }
+  }
+
   // Calculate stats
   const calculateStats = () => {
-    const totalCommissionsAmount = commissions.reduce((sum, c) => sum + c.amount, 0)
-    const totalOperatorFees = commissions.reduce((sum, c) => sum + c.operator_fee, 0)
-    const totalAggregatorFees = commissions.reduce((sum, c) => sum + c.aggregator_fee, 0)
-    const unpaidAmount = unpaidCommissions.reduce((sum, c) => sum + c.amount, 0)
+    const totalCommissionsAmount = commissions.reduce((sum, c) => sum + c.net_amount, 0)
+    const totalOperatorFees = commissions.reduce((sum, c) => sum + c.operator_fee_amount, 0)
+    const totalAggregatorFees = commissions.reduce((sum, c) => sum + c.aggregator_fee_amount, 0)
     
     return {
       totalCommissionsAmount,
       totalOperatorFees,
       totalAggregatorFees,
-      unpaidAmount,
+      unpaidAmount: unpaidSummary.total_amount,
       totalCommissions: commissions.length,
-      unpaidCount: unpaidCommissions.length
+      unpaidCount: unpaidSummary.count
     }
   }
 
@@ -524,8 +609,18 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.unpaidAmount.toLocaleString()} FCFA</div>
-            <p className="text-xs text-muted-foreground">{stats.unpaidCount} commissions</p>
+            <div className="text-2xl font-bold text-red-600">{unpaidSummary.total_amount.toLocaleString()} FCFA</div>
+            <p className="text-xs text-muted-foreground">{unpaidSummary.count} commissions</p>
+            {unpaidSummary.count > 0 && (
+              <Button
+                size="sm"
+                onClick={openWithdrawAllModal}
+                className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                <DollarSign className="h-3 w-3 mr-1" />
+                Retirer Tout
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -553,6 +648,7 @@ export function CommissionManagementContent() {
                 <SelectValue placeholder="Statut" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="confirmed">Confirmé</SelectItem>
                 <SelectItem value="pending">En Attente</SelectItem>
                 <SelectItem value="paid">Payé</SelectItem>
@@ -595,7 +691,7 @@ export function CommissionManagementContent() {
                   <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
                 </div>
                 <Button 
-                  onClick={() => fetchCommissions(searchTerm, currentPage, statusFilter, operatorFilter)} 
+                  onClick={() => setRefreshKey(prev => prev + 1)} 
                   className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   🔄 Réessayer
@@ -612,18 +708,18 @@ export function CommissionManagementContent() {
           ) : (
             <div className="space-y-4">
               {commissions.map((commission) => (
-                <div key={commission.id || Math.random()} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                <div key={commission.uid || Math.random()} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                   <div className="flex items-center space-x-4">
                     <Checkbox
-                      checked={selectedCommissions.includes(commission.id)}
-                      onCheckedChange={(checked) => handleCommissionSelect(commission.id, checked as boolean)}
+                      checked={selectedCommissions.includes(commission.uid)}
+                      onCheckedChange={(checked) => handleCommissionSelect(commission.uid, checked as boolean)}
                     />
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-white">
-                        Commission {commission.id?.slice(0, 8) || 'N/A'}
+                        Commission {commission.uid?.slice(0, 8) || 'N/A'}
                       </p>
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        Transaction: {commission.transaction_id || 'N/A'}
+                        Transaction: {commission.transaction_reference || 'N/A'}
                       </p>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge variant="outline" className="text-xs">
@@ -636,13 +732,16 @@ export function CommissionManagementContent() {
                   
                   <div className="text-right">
                     <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                      {commission.amount?.toLocaleString() || '0'} FCFA
+                      {commission.net_amount?.toLocaleString() || '0'} FCFA
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Opérateur: {commission.operator_fee?.toLocaleString() || '0'} FCFA
+                      Opérateur: {commission.operator_fee_amount?.toLocaleString() || '0'} FCFA ({commission.operator_fee_rate}%)
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Agrégateur: {commission.aggregator_fee?.toLocaleString() || '0'} FCFA
+                      Agrégateur: {commission.aggregator_fee_amount?.toLocaleString() || '0'} FCFA ({commission.aggregator_fee_rate}%)
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Total: {commission.total_fees?.toLocaleString() || '0'} FCFA
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       {commission.created_at ? new Date(commission.created_at).toLocaleDateString() : 'N/A'}
@@ -733,6 +832,122 @@ export function CommissionManagementContent() {
                 <>
                   <DollarSign className="h-4 w-4 mr-2" />
                   Créer le Retrait
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw All Unpaid Commissions Modal */}
+      <Dialog open={withdrawAllModalOpen} onOpenChange={setWithdrawAllModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+              Retirer Toutes les Commissions Impayées
+            </DialogTitle>
+            <DialogDescription className="text-neutral-600 dark:text-neutral-400">
+              Créer un retrait pour toutes les commissions impayées
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Nombre de commissions</p>
+                  <p className="font-medium text-neutral-900 dark:text-white text-lg">{unpaidSummary.count}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant total</p>
+                  <p className="font-medium text-green-600 text-lg">{unpaidSummary.total_amount.toLocaleString()} FCFA</p>
+                </div>
+              </div>
+              {operatorFilter !== "all" && (
+                <div className="mt-3">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Opérateur</p>
+                  <p className="font-medium text-neutral-900 dark:text-white">{operatorFilter}</p>
+                </div>
+              )}
+            </div>
+
+            {operatorFilter === "all" && (
+              <div>
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                  Opérateur (optionnel)
+                </label>
+                <Select 
+                  value={withdrawalRequest.operator_code || "all"} 
+                  onValueChange={(value) => setWithdrawalRequest(prev => ({ ...prev, operator_code: value === "all" ? "" : value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Tous les opérateurs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les opérateurs</SelectItem>
+                    <SelectItem value="wave">Wave</SelectItem>
+                    <SelectItem value="orange">Orange Money</SelectItem>
+                    <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Méthode de Paiement
+              </label>
+              <Select 
+                value={withdrawalRequest.payment_method} 
+                onValueChange={(value) => setWithdrawalRequest(prev => ({ ...prev, payment_method: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une méthode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mobile_money">Mobile Money</SelectItem>
+                  <SelectItem value="bank_transfer">Virement Bancaire</SelectItem>
+                  <SelectItem value="cash">Espèces</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                Notes (optionnel)
+              </label>
+              <Input
+                placeholder="Ajouter des notes..."
+                value={withdrawalRequest.notes}
+                onChange={(e) => setWithdrawalRequest(prev => ({ ...prev, notes: e.target.value }))}
+                className="rounded-xl border-slate-200 dark:border-neutral-700"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setWithdrawAllModalOpen(false)}
+              className="rounded-xl"
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={createWithdrawAllCommission}
+              disabled={withdrawalLoading}
+              className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
+            >
+              {withdrawalLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Création...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Retirer Tout ({unpaidSummary.total_amount.toLocaleString()} FCFA)
                 </>
               )}
             </Button>

@@ -65,6 +65,9 @@ export function TransactionsContent() {
   const [webhookLogsModalOpen, setWebhookLogsModalOpen] = useState(false)
   const [webhookLogs, setWebhookLogs] = useState<any[]>([])
   const [webhookLogsLoading, setWebhookLogsLoading] = useState(false)
+  const [syncLoading, setSyncLoading] = useState<Record<string, boolean>>({})
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [syncSuccess, setSyncSuccess] = useState<string | null>(null)
   
   // États pour les erreurs
   const [statusChangeError, setStatusChangeError] = useState<string | null>(null)
@@ -516,6 +519,70 @@ export function TransactionsContent() {
       setStatusVerificationModalOpen(true)
     } finally {
       setStatusLoading((prev) => ({ ...prev, [reference]: false }))
+    }
+  }
+
+  // Fonction pour synchroniser une transaction
+  const handleSyncTransaction = async (transaction: any) => {
+    const transactionUid = transaction.uid || transaction.transaction_uid || transaction.id
+    if (!transactionUid) {
+      setSyncError("UID de transaction introuvable")
+      return
+    }
+
+    setSyncLoading((prev) => ({ ...prev, [transactionUid]: true }))
+    setSyncError(null)
+    setSyncSuccess(null)
+
+    try {
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/transactions/${transactionUid}/sync`, {
+        method: "POST"
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      setSyncSuccess("Transaction synchronisée avec succès")
+      
+      // Refresh transaction details if modal is open
+      if (transactionDetailsModalOpen && selectedTransactionDetails?.id === transactionUid) {
+        const updatedDetails = await fetchTransactionDetails(transactionUid)
+        setSelectedTransactionDetails(updatedDetails)
+      }
+      
+      // Refresh transactions list
+      await fetchTransactions({
+        search: searchTerm,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        method: methodFilter !== "all" ? methodFilter : undefined,
+        user: userFilter || undefined,
+        start_date: startDate || undefined,
+        end_date: endDate || undefined
+      }, currentPage)
+
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        setSyncSuccess(null)
+      }, 3000)
+    } catch (err) {
+      console.error("Error syncing transaction:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors de la synchronisation de la transaction"
+      setSyncError(errorMessage)
+      
+      // Clear error message after 5 seconds
+      setTimeout(() => {
+        setSyncError(null)
+      }, 5000)
+    } finally {
+      setSyncLoading((prev) => ({ ...prev, [transactionUid]: false }))
     }
   }
 
@@ -1101,6 +1168,38 @@ export function TransactionsContent() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Sync Messages */}
+      {syncError && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+          <div className="flex items-center justify-between">
+            <p className="text-red-800 dark:text-red-200">{syncError}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSyncError(null)}
+              className="h-6 w-6 p-0 text-red-800 dark:text-red-200"
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+      {syncSuccess && (
+        <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+          <div className="flex items-center justify-between">
+            <p className="text-green-800 dark:text-green-200">{syncSuccess}</p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSyncSuccess(null)}
+              className="h-6 w-6 p-0 text-green-800 dark:text-green-200"
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -1348,6 +1447,25 @@ export function TransactionsContent() {
                           >
                             <Eye className="h-3 w-3" />
                             <span>View Details</span>
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSyncTransaction(transaction)}
+                            disabled={syncLoading[transaction.uid || transaction.transaction_uid || transaction.id]}
+                            className="flex items-center space-x-1"
+                          >
+                            {syncLoading[transaction.uid || transaction.transaction_uid || transaction.id] ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                                <span>Syncing...</span>
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3" />
+                                <span>Sync</span>
+                              </>
+                            )}
                           </Button>
                           {/* <Button
                             variant="outline"
@@ -1756,6 +1874,29 @@ export function TransactionsContent() {
             )}
           </div>
           <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (selectedTransactionDetails) {
+                  handleSyncTransaction(selectedTransactionDetails)
+                }
+              }}
+              disabled={syncLoading[selectedTransactionDetails?.uid || selectedTransactionDetails?.transaction_uid || selectedTransactionDetails?.id]}
+              className="flex items-center space-x-2"
+            >
+              {syncLoading[selectedTransactionDetails?.uid || selectedTransactionDetails?.transaction_uid || selectedTransactionDetails?.id] ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Synchronisation...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  <span>Synchroniser</span>
+                </>
+              )}
+            </Button>
             <Button
               type="button"
               variant="outline"

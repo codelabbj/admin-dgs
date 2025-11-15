@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
@@ -16,15 +18,22 @@ import { useLanguage } from "@/contexts/language-context"
 import { useToast } from "@/hooks/use-toast"
 
 interface PaymentSettings {
-  id?: number
-  minimum_payin: number
-  minimum_payout: number
-  max_payin: number
-  max_payout: number
-  payin_fee: string
-  payout_fee: string
-  defaul_success_url: string
-  default_cancel_url: string
+  customer_id?: string
+  uid?: string
+  is_active?: boolean
+  webhook_url: string | null
+  payin_fee_rate: string
+  payout_fee_rate: string
+  use_fixed_fees: boolean
+  payin_fee_fixed: number | null
+  payout_fee_fixed: number | null
+  daily_payin_limit: number | null
+  daily_payout_limit: number | null
+  monthly_payin_limit: number | null
+  monthly_payout_limit: number | null
+  ip_whitelist: string[]
+  require_ip_whitelist: boolean
+  notes: string
 }
 
 export default function Profile() {
@@ -42,6 +51,7 @@ export default function Profile() {
     country: "",
     logo: ""
   })
+  const [customerId, setCustomerId] = useState<string | null>(null)
   
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -71,14 +81,19 @@ export default function Profile() {
 
   // Payment settings state
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>({
-    minimum_payin: 50,
-    minimum_payout: 50,
-    max_payin: 50,
-    max_payout: 50,
-    payin_fee: "1.75",
-    payout_fee: "1.00",
-    defaul_success_url: "",
-    default_cancel_url: ""
+    webhook_url: null,
+    payin_fee_rate: "1.30",
+    payout_fee_rate: "1.60",
+    use_fixed_fees: false,
+    payin_fee_fixed: null,
+    payout_fee_fixed: null,
+    daily_payin_limit: null,
+    daily_payout_limit: null,
+    monthly_payin_limit: null,
+    monthly_payout_limit: null,
+    ip_whitelist: [],
+    require_ip_whitelist: false,
+    notes: ""
   })
   const [isLoadingSettings, setIsLoadingSettings] = useState(false)
   const [isSavingSettings, setIsSavingSettings] = useState(false)
@@ -86,8 +101,14 @@ export default function Profile() {
   // Fetch user details on component mount
   useEffect(() => {
     fetchUserDetails()
-    fetchSettings()
   }, [])
+
+  // Fetch settings when customerId is available
+  useEffect(() => {
+    if (customerId) {
+      fetchSettings()
+    }
+  }, [customerId])
 
   const fetchUserDetails = async () => {
     try {
@@ -106,6 +127,11 @@ export default function Profile() {
       }
 
       const userDetails = await response.json()
+      
+      // Store customer_id if available
+      if (userDetails.id || userDetails.customer_id || userDetails.uid) {
+        setCustomerId(userDetails.id || userDetails.customer_id || userDetails.uid)
+      }
       
       // Update profile data with fetched information
       setProfileData({
@@ -233,28 +259,35 @@ export default function Profile() {
         })
       }
 
-      // 3. Save Settings
-      const settingsResponse = await smartFetch(`https://api.dgs-pay.com/prod/v1/api/setting`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          minimum_payin: paymentSettings.minimum_payin,
-          minimum_payout: paymentSettings.minimum_payout,
-          max_payin: paymentSettings.max_payin,
-          max_payout: paymentSettings.max_payout,
-          payin_fee: paymentSettings.payin_fee,
-          payout_fee: paymentSettings.payout_fee,
-          defaul_success_url: paymentSettings.defaul_success_url,
-          default_cancel_url: paymentSettings.default_cancel_url
+      // 3. Save Settings (only if customerId is available)
+      if (customerId) {
+        const settingsResponse = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            webhook_url: paymentSettings.webhook_url,
+            payin_fee_rate: paymentSettings.payin_fee_rate,
+            payout_fee_rate: paymentSettings.payout_fee_rate,
+            use_fixed_fees: paymentSettings.use_fixed_fees,
+            payin_fee_fixed: paymentSettings.payin_fee_fixed,
+            payout_fee_fixed: paymentSettings.payout_fee_fixed,
+            daily_payin_limit: paymentSettings.daily_payin_limit,
+            daily_payout_limit: paymentSettings.daily_payout_limit,
+            monthly_payin_limit: paymentSettings.monthly_payin_limit,
+            monthly_payout_limit: paymentSettings.monthly_payout_limit,
+            ip_whitelist: paymentSettings.ip_whitelist,
+            require_ip_whitelist: paymentSettings.require_ip_whitelist,
+            notes: paymentSettings.notes
+          })
         })
-      })
 
-      if (!settingsResponse.ok) {
-        const errorData = await settingsResponse.json()
-        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${settingsResponse.status}`
-        throw new Error(`Erreur sauvegarde paramètres: ${errorMessage}`)
+        if (!settingsResponse.ok) {
+          const errorData = await settingsResponse.json()
+          const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${settingsResponse.status}`
+          throw new Error(`Erreur sauvegarde paramètres: ${errorMessage}`)
+        }
       }
 
       const result = await profileResponse.json()
@@ -447,9 +480,24 @@ export default function Profile() {
   }
 
   const fetchSettings = async () => {
+    if (!customerId) {
+      console.error("Customer ID not available")
+      toast({
+        title: "Erreur",
+        description: "ID client non disponible",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsLoadingSettings(true)
     try {
-      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`)
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/`)
       if (response.ok) {
         const data = await response.json()
         setPaymentSettings(data)
@@ -475,22 +523,42 @@ export default function Profile() {
   }
 
   const saveSettings = async () => {
+    if (!customerId) {
+      console.error("Customer ID not available")
+      toast({
+        title: "Erreur",
+        description: "ID client non disponible",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsSavingSettings(true)
     try {
-      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/prod/v1/api/setting`, {
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          minimum_payin: paymentSettings.minimum_payin,
-          minimum_payout: paymentSettings.minimum_payout,
-          max_payin: paymentSettings.max_payin,
-          max_payout: paymentSettings.max_payout,
-          payin_fee: paymentSettings.payin_fee,
-          payout_fee: paymentSettings.payout_fee,
-          defaul_success_url: paymentSettings.defaul_success_url,
-          default_cancel_url: paymentSettings.default_cancel_url
+          webhook_url: paymentSettings.webhook_url,
+          payin_fee_rate: paymentSettings.payin_fee_rate,
+          payout_fee_rate: paymentSettings.payout_fee_rate,
+          use_fixed_fees: paymentSettings.use_fixed_fees,
+          payin_fee_fixed: paymentSettings.payin_fee_fixed,
+          payout_fee_fixed: paymentSettings.payout_fee_fixed,
+          daily_payin_limit: paymentSettings.daily_payin_limit,
+          daily_payout_limit: paymentSettings.daily_payout_limit,
+          monthly_payin_limit: paymentSettings.monthly_payin_limit,
+          monthly_payout_limit: paymentSettings.monthly_payout_limit,
+          ip_whitelist: paymentSettings.ip_whitelist,
+          require_ip_whitelist: paymentSettings.require_ip_whitelist,
+          notes: paymentSettings.notes
         })
       })
 
@@ -520,7 +588,7 @@ export default function Profile() {
     }
   }
 
-  const handleSettingsInputChange = (field: keyof PaymentSettings, value: string | number) => {
+  const handleSettingsInputChange = (field: keyof PaymentSettings, value: string | number | boolean | null | string[]) => {
     setPaymentSettings(prev => ({
       ...prev,
       [field]: value
@@ -1034,54 +1102,20 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-6">
-                  {/* Limites de Paiement */}
+                  {/* Webhook URL */}
                   <div className="space-y-4">
-                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Limites de Paiement</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="minimum_payin">Minimum Payin (FCFA)</Label>
-                        <Input
-                          id="minimum_payin"
-                          type="number"
-                          value={paymentSettings.minimum_payin}
-                          onChange={(e) => handleSettingsInputChange('minimum_payin', parseInt(e.target.value) || 0)}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                          disabled={isLoadingSettings}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="minimum_payout">Minimum Payout (FCFA)</Label>
-                        <Input
-                          id="minimum_payout"
-                          type="number"
-                          value={paymentSettings.minimum_payout}
-                          onChange={(e) => handleSettingsInputChange('minimum_payout', parseInt(e.target.value) || 0)}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                          disabled={isLoadingSettings}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="max_payin">Maximum Payin (FCFA)</Label>
-                        <Input
-                          id="max_payin"
-                          type="number"
-                          value={paymentSettings.max_payin}
-                          onChange={(e) => handleSettingsInputChange('max_payin', parseInt(e.target.value) || 0)}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                          disabled={isLoadingSettings}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="max_payout">Maximum Payout (FCFA)</Label>
-                        <Input
-                          id="max_payout"
-                          type="number"
-                          value={paymentSettings.max_payout}
-                          onChange={(e) => handleSettingsInputChange('max_payout', parseInt(e.target.value) || 0)}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                          disabled={isLoadingSettings}
-                        />
-                      </div>
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Webhook</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor="webhook_url">URL Webhook</Label>
+                      <Input
+                        id="webhook_url"
+                        type="url"
+                        value={paymentSettings.webhook_url || ""}
+                        onChange={(e) => handleSettingsInputChange('webhook_url', e.target.value || null)}
+                        className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        disabled={isLoadingSettings}
+                        placeholder="https://example.com/webhook"
+                      />
                     </div>
                   </div>
 
@@ -1092,27 +1126,101 @@ export default function Profile() {
                     <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Frais de Paiement</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="payin_fee">Frais Payin (%)</Label>
+                        <Label htmlFor="payin_fee_rate">Taux de Frais Payin (%)</Label>
                         <Input
-                          id="payin_fee"
+                          id="payin_fee_rate"
                           type="text"
-                          value={paymentSettings.payin_fee}
-                          onChange={(e) => handleSettingsInputChange('payin_fee', e.target.value)}
+                          value={paymentSettings.payin_fee_rate}
+                          onChange={(e) => handleSettingsInputChange('payin_fee_rate', e.target.value)}
                           className="rounded-xl border-slate-200 dark:border-neutral-700"
                           disabled={isLoadingSettings}
-                          placeholder="1.75"
+                          placeholder="1.30"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="payout_fee">Frais Payout (%)</Label>
+                        <Label htmlFor="payout_fee_rate">Taux de Frais Payout (%)</Label>
                         <Input
-                          id="payout_fee"
+                          id="payout_fee_rate"
                           type="text"
-                          value={paymentSettings.payout_fee}
-                          onChange={(e) => handleSettingsInputChange('payout_fee', e.target.value)}
+                          value={paymentSettings.payout_fee_rate}
+                          onChange={(e) => handleSettingsInputChange('payout_fee_rate', e.target.value)}
                           className="rounded-xl border-slate-200 dark:border-neutral-700"
                           disabled={isLoadingSettings}
-                          placeholder="1.00"
+                          placeholder="1.60"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="use_fixed_fees"
+                        checked={paymentSettings.use_fixed_fees}
+                        onCheckedChange={(checked) => handleSettingsInputChange('use_fixed_fees', checked as boolean)}
+                        disabled={isLoadingSettings}
+                      />
+                      <Label htmlFor="use_fixed_fees" className="cursor-pointer">
+                        Utiliser des frais fixes
+                      </Label>
+                    </div>
+
+                    {paymentSettings.use_fixed_fees && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label htmlFor="payin_fee_fixed">Frais Payin Fixe (FCFA)</Label>
+                          <Input
+                            id="payin_fee_fixed"
+                            type="number"
+                            value={paymentSettings.payin_fee_fixed || ""}
+                            onChange={(e) => handleSettingsInputChange('payin_fee_fixed', e.target.value ? parseInt(e.target.value) : null)}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                            disabled={isLoadingSettings}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="payout_fee_fixed">Frais Payout Fixe (FCFA)</Label>
+                          <Input
+                            id="payout_fee_fixed"
+                            type="number"
+                            value={paymentSettings.payout_fee_fixed || ""}
+                            onChange={(e) => handleSettingsInputChange('payout_fee_fixed', e.target.value ? parseInt(e.target.value) : null)}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                            disabled={isLoadingSettings}
+                            placeholder="0"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Limites Quotidiennes */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Limites Quotidiennes</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="daily_payin_limit">Limite Payin Quotidienne (FCFA)</Label>
+                        <Input
+                          id="daily_payin_limit"
+                          type="number"
+                          value={paymentSettings.daily_payin_limit || ""}
+                          onChange={(e) => handleSettingsInputChange('daily_payin_limit', e.target.value ? parseInt(e.target.value) : null)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoadingSettings}
+                          placeholder="Aucune limite"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="daily_payout_limit">Limite Payout Quotidienne (FCFA)</Label>
+                        <Input
+                          id="daily_payout_limit"
+                          type="number"
+                          value={paymentSettings.daily_payout_limit || ""}
+                          onChange={(e) => handleSettingsInputChange('daily_payout_limit', e.target.value ? parseInt(e.target.value) : null)}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          disabled={isLoadingSettings}
+                          placeholder="Aucune limite"
                         />
                       </div>
                     </div>
@@ -1120,34 +1228,86 @@ export default function Profile() {
 
                   <Separator />
 
-                  {/* URLs par Défaut */}
+                  {/* Limites Mensuelles */}
                   <div className="space-y-4">
-                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">URLs par Défaut</h4>
-                    <div className="grid grid-cols-1 gap-6">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Limites Mensuelles</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="default_success_url">URL de Succès par Défaut</Label>
+                        <Label htmlFor="monthly_payin_limit">Limite Payin Mensuelle (FCFA)</Label>
                         <Input
-                          id="default_success_url"
-                          type="url"
-                          value={paymentSettings.defaul_success_url}
-                          onChange={(e) => handleSettingsInputChange('defaul_success_url', e.target.value)}
+                          id="monthly_payin_limit"
+                          type="number"
+                          value={paymentSettings.monthly_payin_limit || ""}
+                          onChange={(e) => handleSettingsInputChange('monthly_payin_limit', e.target.value ? parseInt(e.target.value) : null)}
                           className="rounded-xl border-slate-200 dark:border-neutral-700"
                           disabled={isLoadingSettings}
-                          placeholder="https://example.com/success"
+                          placeholder="Aucune limite"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="default_cancel_url">URL d'Annulation par Défaut</Label>
+                        <Label htmlFor="monthly_payout_limit">Limite Payout Mensuelle (FCFA)</Label>
                         <Input
-                          id="default_cancel_url"
-                          type="url"
-                          value={paymentSettings.default_cancel_url}
-                          onChange={(e) => handleSettingsInputChange('default_cancel_url', e.target.value)}
+                          id="monthly_payout_limit"
+                          type="number"
+                          value={paymentSettings.monthly_payout_limit || ""}
+                          onChange={(e) => handleSettingsInputChange('monthly_payout_limit', e.target.value ? parseInt(e.target.value) : null)}
                           className="rounded-xl border-slate-200 dark:border-neutral-700"
                           disabled={isLoadingSettings}
-                          placeholder="https://example.com/cancel"
+                          placeholder="Aucune limite"
                         />
                       </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* IP Whitelist */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Liste Blanche IP</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="require_ip_whitelist"
+                          checked={paymentSettings.require_ip_whitelist}
+                          onCheckedChange={(checked) => handleSettingsInputChange('require_ip_whitelist', checked as boolean)}
+                          disabled={isLoadingSettings}
+                        />
+                        <Label htmlFor="require_ip_whitelist" className="cursor-pointer">
+                          Exiger la liste blanche IP
+                        </Label>
+                      </div>
+                      <Label htmlFor="ip_whitelist">Adresses IP (séparées par des virgules)</Label>
+                      <Input
+                        id="ip_whitelist"
+                        type="text"
+                        value={paymentSettings.ip_whitelist.join(", ")}
+                        onChange={(e) => {
+                          const ips = e.target.value.split(",").map(ip => ip.trim()).filter(ip => ip.length > 0)
+                          handleSettingsInputChange('ip_whitelist', ips)
+                        }}
+                        className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        disabled={isLoadingSettings}
+                        placeholder="192.168.1.1, 10.0.0.1"
+                      />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Notes */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Notes</h4>
+                    <div className="space-y-2">
+                      <Label htmlFor="notes">Notes (optionnel)</Label>
+                      <Textarea
+                        id="notes"
+                        value={paymentSettings.notes}
+                        onChange={(e) => handleSettingsInputChange('notes', e.target.value)}
+                        className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        disabled={isLoadingSettings}
+                        placeholder="Ajoutez des notes ici..."
+                        rows={4}
+                      />
                     </div>
                   </div>
                 </div>

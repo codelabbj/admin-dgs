@@ -62,6 +62,7 @@ export default function Customers() {
   const [isCustomerConfigModalOpen, setIsCustomerConfigModalOpen] = useState(false)
   const [selectedUserForConfig, setSelectedUserForConfig] = useState<User | null>(null)
   const [configLoading, setConfigLoading] = useState(false)
+  const [configFetching, setConfigFetching] = useState(false)
   const [configMessage, setConfigMessage] = useState("")
   
   // États pour le formulaire de configuration client
@@ -382,9 +383,59 @@ export default function Customers() {
     }
   }
 
-  // Fonction pour ouvrir le modal de configuration client
-  const openCustomerConfigModal = (user: User) => {
-    setSelectedUserForConfig(user)
+  // Fonction pour récupérer la configuration client existante
+  const fetchCustomerConfig = async (customerId: string) => {
+    try {
+      setConfigFetching(true)
+      setError(null)
+      
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) {
+        throw new Error("Base URL not configured")
+      }
+
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/`)
+      
+      if (!response.ok) {
+        try {
+          const errorData = await response.json()
+          const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+          throw new Error(errorMessage)
+        } catch (parseError) {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`)
+        }
+      }
+
+      const data = await response.json()
+      
+      // Populate the form with fetched data
+      setConfigForm({
+        is_active: data.is_active || false,
+        webhook_url: data.webhook_url || "",
+        payin_fee_rate: parseFloat(data.payin_fee_rate) || 1.3,
+        payout_fee_rate: parseFloat(data.payout_fee_rate) || 1.6,
+        use_fixed_fees: data.use_fixed_fees || false,
+        payin_fee_fixed: data.payin_fee_fixed || "",
+        payout_fee_fixed: data.payout_fee_fixed || "",
+        daily_payin_limit: data.daily_payin_limit || "",
+        daily_payout_limit: data.daily_payout_limit || "",
+        monthly_payin_limit: data.monthly_payin_limit || "",
+        monthly_payout_limit: data.monthly_payout_limit || "",
+        require_ip_whitelist: data.require_ip_whitelist || false,
+        ip_whitelist: data.ip_whitelist && Array.isArray(data.ip_whitelist) 
+          ? data.ip_whitelist.join(", ") 
+          : "",
+        notes: data.notes || "",
+        auto_create_account: true,
+        grant_default_operators: false
+      })
+      
+      return data
+    } catch (err) {
+      console.error("Error fetching customer config:", err)
+      const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement de la configuration"
+      setError(errorMessage)
+      // Set default values if fetch fails
     setConfigForm({
       is_active: true,
       webhook_url: "",
@@ -403,8 +454,25 @@ export default function Customers() {
       auto_create_account: true,
       grant_default_operators: false
     })
+      throw err
+    } finally {
+      setConfigFetching(false)
+    }
+  }
+
+  // Fonction pour ouvrir le modal de configuration client
+  const openCustomerConfigModal = async (user: User) => {
+    setSelectedUserForConfig(user)
     setConfigMessage("")
     setIsCustomerConfigModalOpen(true)
+    
+    // Fetch existing customer config
+    try {
+      await fetchCustomerConfig(user.id)
+    } catch (err) {
+      // Error already handled in fetchCustomerConfig
+      console.error("Failed to fetch customer config:", err)
+    }
   }
 
   // Charger les utilisateurs au montage du composant
@@ -1131,7 +1199,17 @@ export default function Customers() {
                 </div>
               )}
 
+              {/* Loading state while fetching config */}
+              {configFetching && (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+                  <span className="ml-2 text-neutral-600 dark:text-neutral-400">Chargement de la configuration...</span>
+                </div>
+              )}
+
               {/* Formulaire de configuration */}
+              {!configFetching && (
+                <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Configuration de base */}
                 <div className="space-y-4">
@@ -1308,6 +1386,7 @@ export default function Customers() {
               </div>
 
               {/* Actions */}
+              {!configFetching && (
               <div className="flex justify-end space-x-3">
                 <Button
                   variant="outline"
@@ -1335,6 +1414,9 @@ export default function Customers() {
                   )}
                 </Button>
               </div>
+              )}
+                </>
+              )}
             </div>
           )}
         </DialogContent>

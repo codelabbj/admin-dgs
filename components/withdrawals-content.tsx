@@ -39,6 +39,7 @@ export function WithdrawalsContent() {
   const [selectedWithdrawal, setSelectedWithdrawal] = useState<Withdrawal | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
   
   // États pour les modals
   const [approveModalOpen, setApproveModalOpen] = useState(false)
@@ -69,7 +70,7 @@ export function WithdrawalsContent() {
       if (query) {
         params.append('search', query)
       }
-      if (status) {
+      if (status && status !== "all" && status !== "") {
         params.append('status', status)
       }
       params.append('page', page.toString())
@@ -137,7 +138,7 @@ export function WithdrawalsContent() {
       setActionMessage(result.message || "Retrait approuvé avec succès")
       
       // Rafraîchir la liste des retraits
-      await fetchWithdrawals(searchTerm, currentPage, statusFilter)
+      setRefreshKey(prev => prev + 1)
       
     } catch (err) {
       console.error("Error approving withdrawal:", err)
@@ -173,7 +174,7 @@ export function WithdrawalsContent() {
       setActionMessage(result.message || "Retrait rejeté avec succès")
       
       // Rafraîchir la liste des retraits
-      await fetchWithdrawals(searchTerm, currentPage, statusFilter)
+      setRefreshKey(prev => prev + 1)
       
     } catch (err) {
       console.error("Error rejecting withdrawal:", err)
@@ -184,29 +185,24 @@ export function WithdrawalsContent() {
     }
   }
 
-  // Charger les retraits au montage du composant
+  // Charger les retraits au montage et quand les filtres changent
   useEffect(() => {
-    fetchWithdrawals("", 1, "")
-  }, [])
-
-  // Charger les retraits quand la page change
-  useEffect(() => {
-    fetchWithdrawals(searchTerm, currentPage, statusFilter)
-  }, [currentPage])
+    const filterValue = statusFilter === "all" ? "" : statusFilter
+    fetchWithdrawals(searchTerm, currentPage, filterValue)
+  }, [currentPage, searchTerm, statusFilter, refreshKey])
 
   // Fonction pour gérer la recherche avec debounce
   const handleSearch = (query: string) => {
     setSearchTerm(query)
     setCurrentPage(1)
-    fetchWithdrawals(query, 1, statusFilter)
+    // Le useEffect se déclenchera automatiquement quand searchTerm change
   }
 
   // Fonction pour gérer le filtre de statut
   const handleStatusFilter = (status: string) => {
-    const filterValue = status === "all" ? "" : status
     setStatusFilter(status)
     setCurrentPage(1)
-    fetchWithdrawals(searchTerm, 1, filterValue)
+    // Le useEffect se déclenchera automatiquement quand statusFilter change
   }
 
   // Fonctions de pagination
@@ -337,7 +333,7 @@ export function WithdrawalsContent() {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => fetchWithdrawals(searchTerm, currentPage, statusFilter)}>
+          <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
           </Button>
@@ -357,7 +353,7 @@ export function WithdrawalsContent() {
             </div>
             <div className="flex-shrink-0">
               <Button 
-                onClick={() => fetchWithdrawals(searchTerm, currentPage, statusFilter)} 
+                onClick={() => setRefreshKey(prev => prev + 1)} 
                 size="sm"
                 className="bg-red-600 hover:bg-red-700 text-white"
               >

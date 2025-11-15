@@ -51,7 +51,26 @@ interface CustomerDetails {
     total_payin: number
     total_payout: number
     total_fees_paid: number
+    paid_commission?: number
+    unpaid_commission?: number
   }
+}
+
+// Fonction pour traduire le statut du compte
+const translateAccountStatus = (status: string | undefined): string => {
+  if (!status) return "Non spécifié"
+  
+  const statusMap: Record<string, string> = {
+    'ACTIVE': 'Actif',
+    'VERIFY': 'Vérifié',
+    'PENDING': 'En attente',
+    'INACTIVE': 'Inactif',
+    'SUSPENDED': 'Suspendu',
+    'BLOCKED': 'Bloqué',
+    'CANCELLED': 'Annulé',
+  }
+  
+  return statusMap[status.toUpperCase()] || status
 }
 
 export default function CustomerDetails({ params }: { params: { id: string } }) {
@@ -400,67 +419,65 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                       {customer.notes || "Aucune note"}
                     </p>
                   </div>
+                  
+                  {/* Informations GRPC */}
+                  <div className="md:col-span-2 border-t border-slate-200 dark:border-neutral-700 pt-6 mt-2">
+                    {/* <h4 className="text-md font-semibold text-neutral-900 dark:text-white mb-4 flex items-center">
+                      <Globe className="h-4 w-4 mr-2 text-crimson-600" />
+                      Informations GRPC
+                    </h4> */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
+                        <p className="text-neutral-900 dark:text-white text-sm">{customer.grpc_info?.email || "Non spécifié"}</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Entreprise</label>
+                        <p className="text-neutral-900 dark:text-white text-sm">
+                          {customer.grpc_info?.entreprise_name || "Non spécifié"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Téléphone</label>
+                        <p className="text-neutral-900 dark:text-white text-sm">
+                          {customer.grpc_info?.phone || "Non spécifié"}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Statut du compte</label>
+                        <div className="mt-1">
+                          <Badge className={
+                            customer.grpc_info?.account_status?.toUpperCase() === 'ACTIVE' || customer.grpc_info?.account_status?.toUpperCase() === 'VERIFY' ? "bg-green-100 text-green-800" :
+                            customer.grpc_info?.account_status?.toUpperCase() === 'PENDING' ? "bg-yellow-100 text-yellow-800" :
+                            customer.grpc_info?.account_status?.toUpperCase() === 'BLOCKED' || customer.grpc_info?.account_status?.toUpperCase() === 'SUSPENDED' ? "bg-red-100 text-red-800" :
+                            customer.grpc_info?.account_status?.toUpperCase() === 'INACTIVE' ? "bg-gray-100 text-gray-800" :
+                            "bg-gray-100 text-gray-800"
+                          }>
+                            {translateAccountStatus(customer.grpc_info?.account_status)}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Vérifié</label>
+                        <div className="mt-1">
+                          <Badge className={customer.grpc_info?.is_verify ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
+                            {customer.grpc_info?.is_verify ? "Oui" : "Non"}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Bloqué</label>
+                        <div className="mt-1">
+                          <Badge className={customer.grpc_info?.is_block ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
+                            {customer.grpc_info?.is_block ? "Oui" : "Non"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
             </div>
           </CardContent>
         </Card>
-
-            {/* Informations GRPC */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-              <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                  <Globe className="h-5 w-5 mr-2 text-crimson-600" />
-                  Informations GRPC
-                </CardTitle>
-            </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">{customer.grpc_info?.email || "Non spécifié"}</p>
-                </div>
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Entreprise</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">
-                      {customer.grpc_info?.entreprise_name || "Non spécifié"}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Téléphone</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">
-                      {customer.grpc_info?.phone || "Non spécifié"}
-                    </p>
-                  </div>
-                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Statut du compte</label>
-                    <div className="mt-1">
-                      <Badge className={
-                        customer.grpc_info?.account_status === 'VERIFY' ? "bg-green-100 text-green-800" :
-                        customer.grpc_info?.account_status === 'PENDING' ? "bg-yellow-100 text-yellow-800" :
-                        "bg-gray-100 text-gray-800"
-                      }>
-                        {customer.grpc_info?.account_status || "Non spécifié"}
-                      </Badge>
-                   </div>
-                 </div>
-                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Vérifié</label>
-                    <div className="mt-1">
-                      <Badge className={customer.grpc_info?.is_verify ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                        {customer.grpc_info?.is_verify ? "Oui" : "Non"}
-                      </Badge>
-                   </div>
-                 </div>
-                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Bloqué</label>
-                    <div className="mt-1">
-                      <Badge className={customer.grpc_info?.is_block ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}>
-                        {customer.grpc_info?.is_block ? "Oui" : "Non"}
-                      </Badge>
-                   </div>
-                 </div>
-                   </div>
-            </CardContent>
-          </Card>
 
             {/* Documents */}
             {(userData?.gerant_doc || userData?.trade_commerce) && (
@@ -683,6 +700,24 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                       {customer.account?.total_fees_paid?.toLocaleString() || "0"} FCFA
                     </p>
                        </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions encaissées</label>
+                    <p className="text-lg font-semibold text-green-600 dark:text-green-400">
+                      {customer.account?.paid_commission?.toLocaleString() || "0"} FCFA
+                    </p>
+                       </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions à encaisser</label>
+                    <p className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
+                      {customer.account?.unpaid_commission?.toLocaleString() || "0"} FCFA
+                    </p>
+                       </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions Total</label>
+                    <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                      {((customer.account?.paid_commission || 0) + (customer.account?.unpaid_commission || 0)).toLocaleString()} FCFA
+                    </p>
+                       </div>
                        </div>
               </CardContent>
             </Card>
@@ -711,14 +746,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                   <Shield className="h-4 w-4 mr-2" />
                   Gérer les Permissions
                 </Button>
-                <Button 
+                {/* <Button 
                   variant="outline" 
                   className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700"
                   onClick={() => router.push(`/customers/${customerId}/refunds`)}
                 >
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Demandes de Remboursement
-                </Button>
+                </Button> */}
               </CardContent>
             </Card>
                      </div>
