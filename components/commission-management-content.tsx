@@ -362,7 +362,7 @@ export function CommissionManagementContent() {
     try {
       setWithdrawalLoading(true)
       
-      const response = await smartFetch(`${baseUrl}/api/v2/admin/commissions/withdraw-all/`, {
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/commissions/withdraw/`, {
         method: "POST",
         body: JSON.stringify({
           operator_code: withdrawalRequest.operator_code || null,
