@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Search, Download, ChevronLeft, ChevronRight, Loader2, DollarSign, Users, TrendingUp, CalendarDays } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { smartFetch } from "@/utils/auth"
@@ -87,6 +88,7 @@ export function CommissionManagementContent() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [operatorFilter, setOperatorFilter] = useState("all")
   const [refreshKey, setRefreshKey] = useState(0)
+  const [activeTab, setActiveTab] = useState("commissions")
   
   // States for pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -356,7 +358,12 @@ export function CommissionManagementContent() {
   }
 
   // Handle commission selection for withdrawal
-  const handleCommissionSelect = (commissionId: string, checked: boolean) => {
+  const handleCommissionSelect = (commissionId: string, checked: boolean, status: string) => {
+    // Only allow selection of pending commissions
+    if (status !== "pending") {
+      return
+    }
+    
     if (checked) {
       setSelectedCommissions(prev => [...prev, commissionId])
     } else {
@@ -667,58 +674,67 @@ export function CommissionManagementContent() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtres</CardTitle>
-          <CardDescription>Filtrez les commissions selon vos critères</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par ID de transaction ou opérateur..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder="Statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="confirmed">Confirmé</SelectItem>
-                <SelectItem value="pending">En Attente</SelectItem>
-                <SelectItem value="paid">Payé</SelectItem>
-                <SelectItem value="cancelled">Annulé</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={operatorFilter} onValueChange={setOperatorFilter}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder="Tous les opérateurs" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous</SelectItem>
-                {operators
-                  .filter(op => op.is_active)
-                  .map((operator) => (
-                    <SelectItem key={operator.uid} value={operator.operator_code}>
-                      {operator.operator_name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="commissions">Commissions</TabsTrigger>
+          <TabsTrigger value="batches">Lots de Commissions</TabsTrigger>
+        </TabsList>
 
-      {/* Commissions Table */}
-      <Card>
+        {/* Commissions Tab */}
+        <TabsContent value="commissions" className="space-y-6">
+          {/* Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Filtres</CardTitle>
+              <CardDescription>Filtrez les commissions selon vos critères</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par ID de transaction ou opérateur..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-40">
+                    <SelectValue placeholder="Statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les statuts</SelectItem>
+                    <SelectItem value="confirmed">Confirmé</SelectItem>
+                    <SelectItem value="pending">En Attente</SelectItem>
+                    <SelectItem value="paid">Payé</SelectItem>
+                    <SelectItem value="cancelled">Annulé</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                  <SelectTrigger className="w-full md:w-40">
+                    <SelectValue placeholder="Tous les opérateurs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous</SelectItem>
+                    {operators
+                      .filter(op => op.is_active)
+                      .map((operator) => (
+                        <SelectItem key={operator.uid} value={operator.operator_code}>
+                          {operator.operator_name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Commissions Table */}
+          <Card>
         <CardHeader>
           <CardTitle>Commissions</CardTitle>
           <CardDescription>Liste des commissions avec possibilité de sélection pour retrait</CardDescription>
@@ -753,12 +769,22 @@ export function CommissionManagementContent() {
             </div>
           ) : (
             <div className="space-y-4">
-              {commissions.map((commission) => (
-                <div key={commission.uid || Math.random()} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+              {commissions.map((commission) => {
+                const isPending = commission.status === "pending"
+                const isSelected = selectedCommissions.includes(commission.uid)
+                
+                return (
+                <div 
+                  key={commission.uid || Math.random()} 
+                  className={`flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 transition-all ${
+                    !isPending ? 'opacity-40 grayscale blur-[1px] pointer-events-none' : ''
+                  }`}
+                >
                   <div className="flex items-center space-x-4">
                     <Checkbox
-                      checked={selectedCommissions.includes(commission.uid)}
-                      onCheckedChange={(checked) => handleCommissionSelect(commission.uid, checked as boolean)}
+                      checked={isSelected}
+                      disabled={!isPending}
+                      onCheckedChange={(checked) => handleCommissionSelect(commission.uid, checked as boolean, commission.status)}
                     />
                     <div>
                       <p className="font-semibold text-neutral-900 dark:text-white">
@@ -794,12 +820,97 @@ export function CommissionManagementContent() {
                     </p>
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
           <PaginationComponent />
         </CardContent>
       </Card>
+        </TabsContent>
+
+        {/* Commission Batches Tab */}
+        <TabsContent value="batches" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lots de Commissions</CardTitle>
+              <CardDescription>Historique des lots de commissions créés</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-2 text-neutral-600 dark:text-neutral-400">Chargement des lots...</span>
+                </div>
+              ) : commissionBatches.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <DollarSign className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+                    <p className="text-neutral-600 dark:text-neutral-400">Aucun lot de commission trouvé</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {commissionBatches.map((batch) => (
+                    <div 
+                      key={batch.uid || batch.id} 
+                      className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <p className="font-semibold text-neutral-900 dark:text-white">
+                            Lot {batch.uid?.slice(0, 8) || batch.id?.slice(0, 8) || 'N/A'}
+                          </p>
+                          {getStatusBadge(batch.status)}
+                          <Badge variant="outline" className="text-xs">
+                            {batch.operator_name || batch.operator_code || 'N/A'}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+                          <div>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400">Nombre de commissions</p>
+                            <p className="text-sm font-medium text-neutral-900 dark:text-white">{batch.commission_count}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400">Montant total</p>
+                            <p className="text-sm font-medium text-green-600">{batch.total_amount?.toLocaleString() || '0'} FCFA</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-neutral-600 dark:text-neutral-400">Créé le</p>
+                            <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                              {batch.created_at ? new Date(batch.created_at).toLocaleDateString('fr-FR', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : 'N/A'}
+                            </p>
+                          </div>
+                          {batch.paid_at && (
+                            <div>
+                              <p className="text-xs text-neutral-600 dark:text-neutral-400">Payé le</p>
+                              <p className="text-sm font-medium text-green-600">
+                                {new Date(batch.paid_at).toLocaleDateString('fr-FR', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Withdrawal Modal */}
       <Dialog open={withdrawalModalOpen} onOpenChange={setWithdrawalModalOpen}>
