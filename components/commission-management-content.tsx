@@ -53,6 +53,23 @@ interface WithdrawalRequest {
   notes: string
 }
 
+interface Operator {
+  uid: string
+  operator_name: string
+  operator_code: string
+  operator_payin_rate: string
+  operator_payout_rate: string
+  min_payin_amount: number
+  max_payin_amount: number
+  min_payout_amount: number
+  max_payout_amount: number
+  is_active: boolean
+  api_base_url: string
+  supports_smartlink: boolean
+  supports_callback: boolean
+  created_at: string
+}
+
 export function CommissionManagementContent() {
   const router = useRouter()
   
@@ -61,6 +78,7 @@ export function CommissionManagementContent() {
   const [unpaidCommissions, setUnpaidCommissions] = useState<Commission[]>([])
   const [unpaidSummary, setUnpaidSummary] = useState({ count: 0, total_amount: 0 })
   const [commissionBatches, setCommissionBatches] = useState<CommissionBatch[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
@@ -89,6 +107,25 @@ export function CommissionManagementContent() {
   const [withdrawalLoading, setWithdrawalLoading] = useState(false)
   
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+
+  // Fetch operators
+  const fetchOperators = async () => {
+    try {
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/operators/`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
+        throw new Error(errorMessage)
+      }
+
+      const data = await response.json()
+      setOperators(Array.isArray(data) ? data : data.results || [])
+    } catch (err) {
+      console.error("Error fetching operators:", err)
+      setOperators([])
+    }
+  }
 
   // Fetch commissions
   const fetchCommissions = async (query: string = "", page: number = 1, status: string = "", operator: string = "all") => {
@@ -283,6 +320,11 @@ export function CommissionManagementContent() {
       console.error('Erreur lors de l\'export CSV des commissions:', error)
     }
   }
+
+  // Load operators on component mount
+  useEffect(() => {
+    fetchOperators()
+  }, [])
 
   // Load data on component mount and when filters change
   useEffect(() => {
@@ -662,9 +704,13 @@ export function CommissionManagementContent() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous</SelectItem>
-                <SelectItem value="wave">Wave</SelectItem>
-                <SelectItem value="orange">Orange Money</SelectItem>
-                <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                {operators
+                  .filter(op => op.is_active)
+                  .map((operator) => (
+                    <SelectItem key={operator.uid} value={operator.operator_code}>
+                      {operator.operator_name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
@@ -886,9 +932,13 @@ export function CommissionManagementContent() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous les opérateurs</SelectItem>
-                    <SelectItem value="wave">Wave</SelectItem>
-                    <SelectItem value="orange">Orange Money</SelectItem>
-                    <SelectItem value="mtn">MTN Mobile Money</SelectItem>
+                    {operators
+                      .filter(op => op.is_active)
+                      .map((operator) => (
+                        <SelectItem key={operator.uid} value={operator.operator_code}>
+                          {operator.operator_name}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
