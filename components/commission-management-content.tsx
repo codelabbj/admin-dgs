@@ -359,8 +359,8 @@ export function CommissionManagementContent() {
 
   // Handle commission selection for withdrawal
   const handleCommissionSelect = (commissionId: string, checked: boolean, status: string) => {
-    // Only allow selection of pending commissions
-    if (status !== "pending") {
+    // Only allow selection of confirmed commissions
+    if (status !== "confirmed") {
       return
     }
     
@@ -678,7 +678,7 @@ export function CommissionManagementContent() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="commissions">Commissions</TabsTrigger>
-          <TabsTrigger value="batches">Lots de Commissions</TabsTrigger>
+          <TabsTrigger value="batches">Liste des retraits</TabsTrigger>
         </TabsList>
 
         {/* Commissions Tab */}
@@ -770,20 +770,18 @@ export function CommissionManagementContent() {
           ) : (
             <div className="space-y-4">
               {commissions.map((commission) => {
-                const isPending = commission.status === "pending"
+                const isConfirmed = commission.status === "confirmed"
                 const isSelected = selectedCommissions.includes(commission.uid)
                 
                 return (
                 <div 
                   key={commission.uid || Math.random()} 
-                  className={`flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 transition-all ${
-                    !isPending ? 'opacity-40 grayscale blur-[1px] pointer-events-none' : ''
-                  }`}
+                  className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 transition-all"
                 >
                   <div className="flex items-center space-x-4">
                     <Checkbox
                       checked={isSelected}
-                      disabled={!isPending}
+                      disabled={!isConfirmed}
                       onCheckedChange={(checked) => handleCommissionSelect(commission.uid, checked as boolean, commission.status)}
                     />
                     <div>
@@ -833,8 +831,8 @@ export function CommissionManagementContent() {
         <TabsContent value="batches" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Lots de Commissions</CardTitle>
-              <CardDescription>Historique des lots de commissions créés</CardDescription>
+              <CardTitle>Liste des retraits</CardTitle>
+              <CardDescription>Historique de mes retraits de commission</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
