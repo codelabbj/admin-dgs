@@ -716,7 +716,7 @@ export function CommissionManagementContent() {
                 
                 <Select value={operatorFilter} onValueChange={setOperatorFilter}>
                   <SelectTrigger className="w-full md:w-40">
-                    <SelectValue placeholder="Tous les opérateurs" />
+                    <SelectValue placeholder="Choisissez l'opérateur" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Tous</SelectItem>

@@ -13,6 +13,16 @@ import { smartFetch } from "@/utils/auth"
 import { useRouter } from "next/navigation"
 
 // Interface pour les données de recharge
+interface UserInfo {
+  customer_id: string
+  email: string
+  entreprise_name: string
+  phone: string
+  is_verify: boolean
+  is_block: boolean
+  account_status: string
+}
+
 interface Recharge {
   uid: string
   reference: string
@@ -28,6 +38,7 @@ interface Recharge {
   rejection_reason: string
   created_at: string
   approved_at: string | null
+  user_info: UserInfo
 }
 
 export function RechargesContent() {
@@ -301,6 +312,31 @@ export function RechargesContent() {
     }
   }
 
+  const translateAccountStatus = (status: string | undefined): string => {
+    if (!status) return "N/A"
+    
+    // Remove "AccountStatusEnum." prefix if present
+    const statusValue = status.replace("AccountStatusEnum.", "").toLowerCase()
+    
+    switch (statusValue) {
+      case "verify":
+      case "verified":
+        return "Vérifié"
+      case "pending":
+        return "En attente"
+      case "rejected":
+        return "Rejeté"
+      case "blocked":
+        return "Bloqué"
+      case "active":
+        return "Actif"
+      case "inactive":
+        return "Inactif"
+      default:
+        return status
+    }
+  }
+
   // Calculer les statistiques
   const stats = {
     total: recharges.length,
@@ -481,6 +517,7 @@ export function RechargesContent() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Référence</TableHead>
+                  <TableHead>Client</TableHead>
                   <TableHead>Montant</TableHead>
                   <TableHead>Méthode de Paiement</TableHead>
                   <TableHead>Statut</TableHead>
@@ -491,7 +528,7 @@ export function RechargesContent() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center">
+                    <TableCell colSpan={7} className="text-center">
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                         <span className="ml-2 text-neutral-600 dark:text-neutral-400">Chargement des recharges...</span>
@@ -500,7 +537,7 @@ export function RechargesContent() {
                   </TableRow>
                 ) : recharges.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       <div className="text-center">
                         <DollarSign className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
                         <p className="text-neutral-600 dark:text-neutral-400">Aucune demande de recharge trouvée</p>
@@ -513,6 +550,12 @@ export function RechargesContent() {
                       <TableCell className="font-medium">
                         <div className="font-mono text-sm">
                           {recharge.reference}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{recharge.user_info?.entreprise_name || "N/A"}</div>
+                          <div className="text-xs text-muted-foreground">{recharge.user_info?.email || "N/A"}</div>
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-green-600">
@@ -806,6 +849,48 @@ export function RechargesContent() {
                   <p className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded">{selectedRecharge.rejection_reason}</p>
                 </div>
               )}
+
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">Informations Client</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email</label>
+                    <p className="text-sm">{selectedRecharge.user_info?.email || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Nom de l'Entreprise</label>
+                    <p className="text-sm">{selectedRecharge.user_info?.entreprise_name || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
+                    <p className="text-sm">{selectedRecharge.user_info?.phone || "N/A"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Vérifié</label>
+                    <p className="text-sm">
+                      {selectedRecharge.user_info?.is_verify ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Oui</Badge>
+                      ) : (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Non</Badge>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Bloqué</label>
+                    <p className="text-sm">
+                      {selectedRecharge.user_info?.is_block ? (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">Oui</Badge>
+                      ) : (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Non</Badge>
+                      )}
+                    </p>
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-muted-foreground">Statut du Compte</label>
+                    <p className="text-sm">{translateAccountStatus(selectedRecharge.user_info?.account_status)}</p>
+                  </div>
+                </div>
+              </div>
 
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Dates</h4>
