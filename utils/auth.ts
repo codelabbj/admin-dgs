@@ -339,14 +339,9 @@ export async function refreshAccessTokenInBackground(): Promise<boolean> {
         // Don't throw error immediately - let the server decide
       }
 
-      // Check if refresh token is expired - but be more lenient
-      const refreshExpired = isRefreshTokenExpired()
-      console.log('refreshAccessTokenInBackground: Refresh token expiration check:', { refreshExpired })
-      
-      if (refreshExpired) {
-        console.error('refreshAccessTokenInBackground: Refresh token has expired')
-        throw new Error("Refresh token has expired")
-      }
+      // Don't check if refresh token is expired - let the server decide
+      // The server will reject it if it's truly expired
+      console.log('refreshAccessTokenInBackground: Skipping refresh token expiration check, letting server validate')
 
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
@@ -532,10 +527,13 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
 
   // Check for token expiration in response body (for non-401 responses)
   let isTokenExpired = false
+  let responseBodyRead = false
+  let clonedResponse = response.clone()
+  
   if (!response.ok) {
     try {
-      const responseClone = response.clone()
-      const errorData = await responseClone.json()
+      const errorData = await clonedResponse.json()
+      responseBodyRead = true
       console.log('smartFetch: Error response data:', errorData)
       
       // Check if the error message indicates token expiration
@@ -554,50 +552,79 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
   }
 
   // If we get 401, 403 or token expired error, try to refresh token and retry once
-  const shouldRefresh = (response.status === 401 || response.status === 403 || isTokenExpired) && 
-                       refreshToken && 
-                       !isRefreshTokenExpired()
+  const is403or401 = response.status === 401 || response.status === 403
+  const shouldRefresh = (is403or401 || isTokenExpired) && refreshToken
+  
+  console.log('smartFetch: Checking if refresh needed', {
+    status: response.status,
+    is403or401,
+    isTokenExpired,
+    hasRefreshToken: !!refreshToken,
+    shouldRefresh
+  })
   
   if (shouldRefresh) {
     console.log('smartFetch: Token expired, 401 or 403 error, attempting token refresh...', {
       status: response.status,
       isTokenExpired,
-      hasRefreshToken: !!refreshToken,
-      refreshTokenExpired: isRefreshTokenExpired()
+      hasRefreshToken: !!refreshToken
     })
     
-    const refreshed = await refreshAccessTokenInBackground()
-    if (refreshed) {
-      const newAccessToken = getAccessToken()
-      if (newAccessToken) {
-        const retryHeaders = {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${newAccessToken}`,
-          ...options.headers,
+    try {
+      const refreshed = await refreshAccessTokenInBackground()
+      console.log('smartFetch: Token refresh result:', { refreshed })
+      
+      if (refreshed) {
+        const newAccessToken = getAccessToken()
+        console.log('smartFetch: Got new access token after refresh:', { 
+          newAccessToken: !!newAccessToken 
+        })
+        
+        if (newAccessToken) {
+          const retryHeaders = {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${newAccessToken}`,
+            ...options.headers,
+          }
+          
+          console.log('smartFetch: Retrying request with new token')
+          const retryResponse = await fetch(url, {
+            ...options,
+            headers: retryHeaders,
+          })
+          
+          console.log('smartFetch: Retry response received', { 
+            url, 
+            status: retryResponse.status, 
+            statusText: retryResponse.statusText 
+          })
+          
+          return retryResponse
+        } else {
+          console.error('smartFetch: Failed to get new access token after refresh')
         }
-        
-        console.log('smartFetch: Retrying request with new token')
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers: retryHeaders,
-        })
-        
-        console.log('smartFetch: Retry response received', { 
-          url, 
-          status: retryResponse.status, 
-          statusText: retryResponse.statusText 
-        })
-        
-        return retryResponse
+      } else {
+        // Refresh failed, redirect to login
+        console.log('smartFetch: Token refresh failed, redirecting to login')
+        clearAuthData()
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
       }
-    } else {
-      // Refresh failed, redirect to login
-      console.log('smartFetch: Token refresh failed, redirecting to login')
+    } catch (refreshError) {
+      console.error('smartFetch: Error during token refresh:', refreshError)
       clearAuthData()
       if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
         window.location.href = '/login'
       }
     }
+  } else if ((is403or401 || isTokenExpired) && !refreshToken) {
+    console.warn('smartFetch: 403/401 or token expired but no refresh token available', {
+      status: response.status,
+      is403or401,
+      isTokenExpired,
+      hasRefreshToken: !!refreshToken
+    })
   }
 
   return response
