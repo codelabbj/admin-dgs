@@ -27,9 +27,19 @@ interface CustomerPermission {
 // Interface pour les opérateurs
 interface Operator {
   uid: string
-  name: string
-  code: string
+  operator_name: string
+  operator_code: string
   is_active: boolean
+  operator_payin_rate: string
+  operator_payout_rate: string
+  min_payin_amount: number
+  max_payin_amount: number
+  min_payout_amount: number
+  max_payout_amount: number
+  api_base_url: string
+  supports_smartlink: boolean
+  supports_callback: boolean
+  created_at: string
 }
 
 export default function CustomerPermissions({ params }: { params: { id: string } }) {
@@ -105,7 +115,9 @@ export default function CustomerPermissions({ params }: { params: { id: string }
       }
 
       const data = await response.json()
-      setOperators(data.results || data)
+      // Handle both array and object responses with results property
+      const operatorsList = Array.isArray(data) ? data : (data.results || data)
+      setOperators(operatorsList)
     } catch (err) {
       console.error("Error fetching operators:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des opérateurs"
@@ -223,7 +235,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
           <div className="flex items-center space-x-4">
             <Button
               onClick={openGrantModal}
-              className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
+              className=" rounded-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
               Accorder une Permission
@@ -411,7 +423,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                   <option value="">Sélectionner un opérateur</option>
                   {operators.map((operator) => (
                     <option key={operator.uid} value={operator.uid}>
-                      {operator.name} ({operator.code})
+                      {operator.operator_name} ({operator.operator_code})
                     </option>
                   ))}
                 </select>
