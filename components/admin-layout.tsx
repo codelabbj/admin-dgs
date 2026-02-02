@@ -62,17 +62,17 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [showSystemStats, setShowSystemStats] = useState(false)
   const router = useRouter()
-  
+
   // Load user profile
   useEffect(() => {
     const timer = setTimeout(() => {
       console.log('Admin layout: Starting to load user profile after delay')
       loadUserProfile()
     }, 1000)
-    
+
     return () => clearTimeout(timer)
   }, [])
-  
+
   const loadUserProfile = async () => {
     try {
       const userData = getUserData()
@@ -82,7 +82,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       try {
         const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/v1/api/user-details`)
-        
+
         if (response.ok) {
           const data = await response.json()
           setUserProfile(data)
@@ -97,7 +97,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       setIsLoadingProfile(false)
     }
   }
-  
+
   const handleLogout = async () => {
     try {
       // Clear local storage and redirect
@@ -110,14 +110,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       console.error('Logout error:', error)
     }
   }
-  
+
   const getUserInitials = () => {
     if (!userProfile) return "A"
     const firstName = userProfile.first_name || ""
     const lastName = userProfile.last_name || ""
     return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
   }
-  
+
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [isLiveMode, setIsLiveMode] = useState(true)
@@ -153,9 +153,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-80 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-xl border-r border-slate-200 dark:border-neutral-700 shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-24 px-8 border-b border-slate-200 dark:border-neutral-700 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-neutral-800 dark:to-neutral-900 flex-shrink-0">
@@ -187,11 +186,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center justify-between px-6 py-4 mx-2 rounded-xl text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/25 scale-105"
-                      : "text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-neutral-800 hover:scale-105"
-                  }`}
+                  className={`group flex items-center justify-between px-6 py-4 mx-2 rounded-xl text-sm font-medium transition-all duration-300 ${isActive
+                    ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/25 scale-105"
+                    : "text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-neutral-800 hover:scale-105"
+                    }`}
                   onClick={() => setSidebarOpen(false)}
                 >
                   <div className="flex items-center space-x-4">
@@ -201,13 +199,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <span className="font-semibold">{item.name}</span>
                   </div>
                   {item.badge && (
-                    <Badge 
+                    <Badge
                       variant={isActive ? "secondary" : "outline"}
-                      className={`${
-                        isActive 
-                          ? "bg-white/20 text-white border-white/30" 
-                          : "bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400"
-                      } text-xs font-medium`}
+                      className={`${isActive
+                        ? "bg-white/20 text-white border-white/30"
+                        : "bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400"
+                        } text-xs font-medium`}
                     >
                       {item.badge}
                     </Badge>
@@ -255,7 +252,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
         {/* Top navbar - Fixed */}
-        <header className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700 h-24 flex items-center justify-between px-8 shadow-sm flex-shrink-0 z-30">
+        <header className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700 h-24 flex items-center justify-between px-4 md:px-8 shadow-sm flex-shrink-0 z-30">
           <div className="flex items-center space-x-8">
             <Button
               variant="ghost"
@@ -272,10 +269,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-4 md:space-x-8">
             {/* System Status Toggle */}
-            <div className="flex items-center space-x-4 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-6 py-3 border border-slate-200 dark:border-neutral-600">
-              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+            <div className="flex items-center space-x-2 md:space-x-4 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-3 md:px-6 py-2 md:py-3 border border-slate-200 dark:border-neutral-600">
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400 hidden sm:inline">
                 System Stats
               </span>
               <Switch
@@ -294,8 +291,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
 
             {/* Live/Sandbox Toggle */}
-            <div className="flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-4 py-2 border border-slate-200 dark:border-neutral-600">
-              <span className={`text-sm font-medium ${!isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
+            <div className="flex items-center space-x-2 md:space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-3 md:px-4 py-2 border border-slate-200 dark:border-neutral-600">
+              <span className={`text-sm font-medium hidden lg:inline ${!isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
                 Sandbox
               </span>
               <Switch
@@ -303,11 +300,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 onCheckedChange={setIsLiveMode}
                 className="data-[state=checked]:bg-blue-600"
               />
-              <span className={`text-sm font-medium ${isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
+              <span className={`text-sm font-medium hidden lg:inline ${isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
                 Live
               </span>
               {isLiveMode && (
-                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white ml-2 font-medium">
+                <Badge className="bg-emerald-600 hover:bg-emerald-600 text-white ml-0 md:ml-2 font-medium">
                   LIVE
                 </Badge>
               )}
@@ -391,7 +388,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Page content - Scrollable */}
         <main className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-neutral-950">
-          <div className="p-8 h-full">
+          <div className="p-4 md:p-8 h-full">
             {children}
           </div>
         </main>

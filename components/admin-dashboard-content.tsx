@@ -78,7 +78,7 @@ export function AdminDashboardContent() {
       console.log('Admin dashboard: Starting to fetch stats after delay')
       fetchStats()
     }, 1000)
-    
+
     return () => clearTimeout(timer)
   }, [])
 
@@ -86,7 +86,7 @@ export function AdminDashboardContent() {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Vérifier que nous avons un token valide avant de faire l'appel
       const accessToken = localStorage.getItem("access")
       if (!accessToken) {
@@ -94,35 +94,35 @@ export function AdminDashboardContent() {
         setError("Authentication token missing")
         return
       }
-      
+
       // Construire l'URL avec les paramètres de date
       let url = `${baseUrl}/prod/v1/api/statistic`
       const params = new URLSearchParams()
-      
+
       if (startDate) {
         params.append('start_date', startDate.toISOString().split('T')[0])
       }
       if (endDate) {
         params.append('end_date', endDate.toISOString().split('T')[0])
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`
       }
-      
+
       const res = await smartFetch(url)
-      
+
       if (res.ok) {
         const data = await res.json()
         setStats(data)
       } else {
         const errorText = await res.text()
         console.error(`Statistics API error: ${res.status} - ${errorText}`)
-        
+
         if (res.status === 401) {
           setError("Invalid or expired authentication token")
-      } else {
-        setError(`Failed to fetch stats: ${res.status}`)
+        } else {
+          setError(`Failed to fetch stats: ${res.status}`)
         }
       }
     } catch (error) {
@@ -208,12 +208,12 @@ export function AdminDashboardContent() {
     <div className="h-full overflow-y-auto">
       <div className="space-y-8 p-6 pb-20">
         {/* Header */}
-        <div className="flex items-center justify-between sticky top-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md z-10 py-6 -mx-6 px-6 border-b border-slate-200 dark:border-neutral-700">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between sticky top-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md z-10 py-4 md:py-6 -mx-4 md:-mx-6 px-4 md:px-6 border-b border-slate-200 dark:border-neutral-700 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">Admin Dashboard</h1>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">System Overview & Management</p>
+            <h1 className="text-2xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1 md:mb-2">Admin Dashboard</h1>
+            <p className="text-slate-600 dark:text-slate-400 text-base md:text-lg">System Overview & Management</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4">
             <DateFilter
               startDate={startDate}
               endDate={endDate}
@@ -223,22 +223,23 @@ export function AdminDashboardContent() {
             />
             <Button
               variant="outline"
-              size="lg"
-              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+              size="sm"
+              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent h-10 px-4"
               onClick={() => setShowSystemStats(!showSystemStats)}
             >
               {showSystemStats ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
-              {showSystemStats ? "Hide System Stats" : "Show System Stats"}
+              <span className="hidden sm:inline">{showSystemStats ? "Hide System Stats" : "Show System Stats"}</span>
+              <span className="sm:hidden">{showSystemStats ? "Hide" : "Stats"}</span>
             </Button>
             <Button
               variant="outline"
-              size="lg"
-              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+              size="sm"
+              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent h-10 px-4"
               onClick={refreshData}
               disabled={isRefreshing}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
         </div>
@@ -440,7 +441,7 @@ export function AdminDashboardContent() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="name" stroke="#64748b" />
                   <YAxis stroke="#64748b" />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: "white",
                       border: "1px solid #e2e8f0",
@@ -468,11 +469,10 @@ export function AdminDashboardContent() {
               <div className="space-y-4">
                 {systemAlerts.map((alert) => (
                   <div key={alert.id} className="flex items-start space-x-3 p-3 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                    <div className={`p-2 rounded-lg ${
-                      alert.type === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
-                      alert.type === 'info' ? 'bg-blue-100 dark:bg-blue-900/20' :
-                      'bg-emerald-100 dark:bg-emerald-900/20'
-                    }`}>
+                    <div className={`p-2 rounded-lg ${alert.type === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                        alert.type === 'info' ? 'bg-blue-100 dark:bg-blue-900/20' :
+                          'bg-emerald-100 dark:bg-emerald-900/20'
+                      }`}>
                       {alert.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
                       {alert.type === 'info' && <Bell className="h-4 w-4 text-blue-600" />}
                       {alert.type === 'success' && <CheckCircle className="h-4 w-4 text-emerald-600" />}
@@ -503,11 +503,10 @@ export function AdminDashboardContent() {
                 {recentActivity.map((activity) => (
                   <div key={activity.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-2 rounded-lg ${
-                        activity.status === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/20' :
-                        activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
-                        'bg-blue-100 dark:bg-blue-900/20'
-                      }`}>
+                      <div className={`p-2 rounded-lg ${activity.status === 'success' ? 'bg-emerald-100 dark:bg-emerald-900/20' :
+                          activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/20' :
+                            'bg-blue-100 dark:bg-blue-900/20'
+                        }`}>
                         {activity.status === 'success' && <CheckCircle className="h-4 w-4 text-emerald-600" />}
                         {activity.status === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-600" />}
                         {activity.status === 'info' && <Bell className="h-4 w-4 text-blue-600" />}
@@ -519,13 +518,12 @@ export function AdminDashboardContent() {
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-slate-500 dark:text-slate-400">{activity.time}</p>
-                      <Badge 
-                        variant="outline" 
-                        className={`text-xs ${
-                          activity.status === 'success' ? 'border-emerald-200 text-emerald-700' :
-                          activity.status === 'warning' ? 'border-yellow-200 text-yellow-700' :
-                          'border-blue-200 text-blue-700'
-                        }`}
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${activity.status === 'success' ? 'border-emerald-200 text-emerald-700' :
+                            activity.status === 'warning' ? 'border-yellow-200 text-yellow-700' :
+                              'border-blue-200 text-blue-700'
+                          }`}
                       >
                         {activity.status}
                       </Badge>

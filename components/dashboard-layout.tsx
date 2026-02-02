@@ -84,11 +84,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           //     setBalance(balanceData.balance)
           //   }
           // }
-      }
-    } catch (error) {
+        }
+      } catch (error) {
         console.error("Error fetching user data:", error)
         router.push("/login")
-    } finally {
+      } finally {
         setIsLoading(false)
       }
     }
@@ -128,7 +128,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-neutral-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-crimson-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-neutral-600 dark:text-neutral-400">{t("loading")}</p>
         </div>
       </div>
@@ -147,56 +147,53 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-crimson-600 to-crimson-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <div className="flex h-screen flex-col">
           {/* Logo */}
-          <div className="flex-shrink-0 flex h-16 items-center justify-between px-6 border-b border-crimson-500/20">
-          <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-neutral-700">
+            <div className="flex items-center space-x-3">
               {/* <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center">
                 <Shield className="h-5 w-5 text-crimson-600" />
               </div> */}
               <div className="w-12 h-12 flex items-center justify-center">
-              <img 
-                src={theme === "dark" ? "/logo_dark1.png" : "/logo_light11.png"} 
-                alt="Logo" 
-                className="w-10 h-10 object-contain"
-              />
-            </div>
+                <img
+                  src={theme === "dark" ? "/logo_dark1.png" : "/logo_light11.png"}
+                  alt="Logo"
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
               <span className="text-xl font-bold text-black dark:text-white">Admin DGS</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="icon"
-              className="lg:hidden text-white hover:bg-crimson-500/20"
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800"
               onClick={() => setIsSidebarOpen(false)}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent text-black dark:text-white">
+          <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent text-slate-700 dark:text-slate-300">
             {navigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
-                    item.current
-                      ? "bg-white/20 text-black dark:text-white shadow-lg"
-                      : "text-crimson-100 hover:bg-white/10 hover:text-black/100 dark:hover:text-white/100"
-                  }`}
+                  className={`group flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${item.current
+                    ? "bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-neutral-800/50 hover:text-slate-900 dark:hover:text-white"
+                    }`}
                 >
-                  <Icon className={`h-5 w-5 ${
-                    item.current ? "text-black dark:text-white" : "text-crimson-200 group-hover:text-black dark:group-hover:text-white"
-                  }`} />
+                  <Icon className={`h-5 w-5 ${item.current ? "text-primary" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                    }`} />
                   <span>{item.name}</span>
                   {item.current && (
-                    <div className="ml-auto h-2 w-2 rounded-full bg-black dark:bg-white"></div>
+                    <div className="ml-auto h-2 w-2 rounded-full bg-primary"></div>
                   )}
                 </Link>
               )
@@ -204,24 +201,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </nav>
 
           {/* User section */}
-          <div className="flex-shrink-0 border-t border-crimson-500/20 p-4">
-              <div className="flex items-center space-x-3">
+          <div className="flex-shrink-0 border-t border-slate-200 dark:border-neutral-700 p-4">
+            <div className="flex items-center space-x-3">
               <Avatar className="h-10 w-10 ring-2 ring-white/20">
                 <AvatarImage src={userData?.avatar || "/placeholder-user.jpg"} />
-                                  <AvatarFallback className="bg-white/20 text-white font-semibold">
-                    {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <AvatarFallback className="bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400 font-semibold">
+                  {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-black dark:text-white truncate">
                   {userData?.name || t("companyShortName")}
                 </p>
-                <p className="text-xs text-crimson-200 truncate">
+                <p className="text-xs text-slate-500 dark:text-slate-500 truncate">
                   {userData?.email || "user@example.com"}
-                  </p>
-                </div>
+                </p>
               </div>
             </div>
+          </div>
         </div>
       </div>
 
@@ -229,17 +226,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="lg:ml-64 flex-1 flex flex-col min-w-0">
         {/* Top navbar */}
         <div className="sticky top-0 z-30 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700">
-          <div className="flex h-16 items-center justify-between px-6">
+          <div className="flex h-16 items-center justify-between px-4 md:px-6">
             {/* Left side */}
             <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
+              <Button
+                variant="ghost"
+                size="icon"
                 className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                 onClick={() => setIsSidebarOpen(true)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
 
               {/* Balance display */}
               {/* <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-4 py-2">
@@ -258,19 +255,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   </Button>
                 </div>
               </div> */}
-          </div>
+            </div>
 
             {/* Right side */}
-          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4">
 
-            {/* Notifications */}
+              {/* Notifications */}
               {/* <Button
               variant="ghost"
               size="icon"
                 className="relative text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
             >
               <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-crimson-600 text-xs text-white p-0 flex items-center justify-center">
+                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-xs text-primary-foreground p-0 flex items-center justify-center">
                   3
                 </Badge>
               </Button> */}
@@ -284,8 +281,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={userData?.avatar || "/placeholder-user.jpg"} />
-                                      <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300 text-sm">
-                    {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
+                    <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300 text-sm">
+                      {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                   <span className="hidden md:block text-sm font-medium">
@@ -303,7 +300,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     >
                       <User className="h-4 w-4" />
                       <span>{t("profile")}</span>
-                </Link>
+                    </Link>
                     <Link
                       href="/profile"
                       className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-700"
@@ -311,10 +308,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     >
                       <Settings className="h-4 w-4" />
                       <span>{t("settings")}</span>
-                </Link>
+                    </Link>
                     <div className="border-t border-slate-200 dark:border-neutral-700 my-2" />
                     <button
-                  onClick={handleLogout}
+                      onClick={handleLogout}
                       className="flex w-full items-center space-x-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       <LogOut className="h-4 w-4" />
@@ -325,11 +322,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
           </div>
-          </div>
+        </div>
 
         {/* Page content */}
-        <main className="flex-1 p-6">
-            {children}
+        <main className="flex-1 p-4 md:p-6">
+          {children}
         </main>
       </div>
     </div>

@@ -8,11 +8,19 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check, Loader2, RefreshCw, Zap } from "lucide-react"
+import { Search, Download, Eye, Settings, ChevronLeft, ChevronRight, Copy, Check, Loader2, RefreshCw, Zap, MoreVertical } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { useLanguage } from "@/contexts/language-context"
 import { smartFetch, getAccessToken } from "@/utils/auth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // Transaction status constants
 const TRANSACTION_STATUS = [
@@ -68,29 +76,29 @@ export function TransactionsContent() {
   const [syncLoading, setSyncLoading] = useState<Record<string, boolean>>({})
   const [syncError, setSyncError] = useState<string | null>(null)
   const [syncSuccess, setSyncSuccess] = useState<string | null>(null)
-  
+
   // États pour les erreurs
   const [statusChangeError, setStatusChangeError] = useState<string | null>(null)
   const [refundError, setRefundError] = useState<string | null>(null)
-  
+
   // États pour le modal de création de webhook
   const [webhookModalOpen, setWebhookModalOpen] = useState(false)
   const [webhookLoading, setWebhookLoading] = useState(false)
   const [webhookSuccess, setWebhookSuccess] = useState<string | null>(null)
   const [webhookError, setWebhookError] = useState<string | null>(null)
-  
+
   // États pour le formulaire de webhook
   const [transactionId, setTransactionId] = useState("")
   const [webhookStatus, setWebhookStatus] = useState("")
   const [webhookAmount, setWebhookAmount] = useState("")
   const [webhookPhone, setWebhookPhone] = useState("")
-  
+
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalTransactions, setTotalTransactions] = useState(0)
-  
+
   const { t } = useLanguage()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
@@ -106,21 +114,21 @@ export function TransactionsContent() {
 
   useEffect(() => {
     fetchTransactions({}, 1)
-    
+
     // Setup WebSocket connection
     setupWebSocket()
-    
+
     // Add health check interval for WebSocket
     const healthCheckInterval = setInterval(() => {
       const now = Date.now()
       const minutesSinceLastMessage = (now - wsHealth.current.lastMessageTime) / (1000 * 60)
-      
+
       if (wsHealth.current.lastMessageTime > 0 && minutesSinceLastMessage > 5) {
         console.warn('Aucun message WebSocket reçu depuis 5 minutes, reconnexion...')
         setupWebSocket() // Force reconnection
       }
     }, 60000) // Check every minute
-    
+
     // Cleanup function
     return () => {
       clearInterval(healthCheckInterval)
@@ -179,7 +187,7 @@ export function TransactionsContent() {
     try {
       // Build query parameters
       const queryParams = new URLSearchParams()
-      
+
       if (filters?.search) {
         queryParams.append('search', filters.search)
       }
@@ -198,18 +206,18 @@ export function TransactionsContent() {
       if (filters?.end_date) {
         queryParams.append('date_to', filters.end_date)
       }
-      
+
       // Add pagination parameters
       queryParams.append('page', page.toString())
       queryParams.append('page_size', pageSize.toString())
-      
+
       const queryString = queryParams.toString()
       const url = `${baseUrl}/api/v2/admin/transactions/?${queryString}`
-      
+
       console.log('Fetching transactions with filters and pagination:', { filters, page, url })
-      
+
       const res = await smartFetch(url)
-      
+
       if (res.ok) {
         const data = await res.json()
         // Ensure data is an array, handle different response structures
@@ -218,13 +226,13 @@ export function TransactionsContent() {
           if (page === 1) {
             transactionsMapRef.current.clear()
           }
-          
+
           // Add each transaction to the map
           data.forEach((tx: any) => {
             const key = getTransactionKey(tx)
             transactionsMapRef.current.set(key, tx)
           })
-          
+
           setTransactions(data)
           setTotalTransactions(data.length)
           setTotalPages(Math.ceil(data.length / pageSize))
@@ -233,13 +241,13 @@ export function TransactionsContent() {
           if (page === 1) {
             transactionsMapRef.current.clear()
           }
-          
+
           // Add each transaction to the map
           data.data.forEach((tx: any) => {
             const key = getTransactionKey(tx)
             transactionsMapRef.current.set(key, tx)
           })
-          
+
           setTransactions(data.data)
           setTotalTransactions(data.total || data.data.length)
           setTotalPages(data.total_pages || Math.ceil((data.total || data.data.length) / pageSize))
@@ -248,13 +256,13 @@ export function TransactionsContent() {
           if (page === 1) {
             transactionsMapRef.current.clear()
           }
-          
+
           // Add each transaction to the map
           data.results.forEach((tx: any) => {
             const key = getTransactionKey(tx)
             transactionsMapRef.current.set(key, tx)
           })
-          
+
           setTransactions(data.results)
           setTotalTransactions(data.count || data.results.length)
           setTotalPages(Math.ceil((data.count || data.results.length) / pageSize))
@@ -269,7 +277,7 @@ export function TransactionsContent() {
       }
     } catch (error) {
       console.error('Erreur lors de la récupération des transactions:', error)
-              setError('Échec de la récupération des transactions')
+      setError('Échec de la récupération des transactions')
     } finally {
       setLoading(false)
     }
@@ -300,7 +308,7 @@ export function TransactionsContent() {
       // Replace with your actual WebSocket URL when API is available
       const wsUrl = `${baseUrl?.replace('http', 'ws')}/ws/transactions?token=${encodeURIComponent(token)}`
       console.log('Tentative de connexion au WebSocket:', wsUrl)
-      
+
       webSocketRef.current = new WebSocket(wsUrl)
 
       // Set connection timeout
@@ -331,7 +339,7 @@ export function TransactionsContent() {
 
     } catch (error) {
       console.error('Échec de la configuration WebSocket:', error)
-              handleConnectionFailure('Échec de l\'initialisation du WebSocket')
+      handleConnectionFailure('Échec de l\'initialisation du WebSocket')
     }
   }
 
@@ -367,8 +375,8 @@ export function TransactionsContent() {
   }
 
   const handleConnectionFailure = (message: string) => {
-            console.error('Message d\'erreur:', message)
-    
+    console.error('Message d\'erreur:', message)
+
     // Implement exponential backoff
     const backoffDelay = Math.min(1000 * Math.pow(2, webSocketReconnectAttempts.current), 30000)
     webSocketReconnectAttempts.current++
@@ -386,7 +394,7 @@ export function TransactionsContent() {
         messageCount: wsHealth.current.messageCount + 1
       }
 
-              console.log('Message WebSocket reçu:', data)
+      console.log('Message WebSocket reçu:', data)
 
       switch (data.type) {
         case 'transaction_update':
@@ -419,9 +427,9 @@ export function TransactionsContent() {
 
   const handleWebSocketClose = (event: CloseEvent) => {
     cleanupWebSocket()
-    
+
     const reason = getCloseReason(event.code)
-          console.log(`WebSocket fermé: ${reason}`)
+    console.log(`WebSocket fermé: ${reason}`)
 
     if (event.code !== 1000) {
       handleConnectionFailure(reason)
@@ -430,21 +438,21 @@ export function TransactionsContent() {
 
   const getCloseReason = (code: number): string => {
     const closeReasons: Record<number, string> = {
-          1000: 'Fermeture normale',
-    1001: 'Départ',
-    1002: 'Erreur de protocole',
-    1003: 'Données non supportées',
-    1005: 'Aucun statut reçu',
-    1006: 'Fermeture anormale',
-    1007: 'Données de trame invalides',
-    1008: 'Violation de politique',
-    1009: 'Message trop volumineux',
-    1010: 'Extension obligatoire',
-    1011: 'Erreur interne du serveur',
-    1012: 'Redémarrage du service',
-    1013: 'Réessayer plus tard',
-    1014: 'Passerelle défaillante',
-    1015: 'Poignée de main TLS'
+      1000: 'Fermeture normale',
+      1001: 'Départ',
+      1002: 'Erreur de protocole',
+      1003: 'Données non supportées',
+      1005: 'Aucun statut reçu',
+      1006: 'Fermeture anormale',
+      1007: 'Données de trame invalides',
+      1008: 'Violation de politique',
+      1009: 'Message trop volumineux',
+      1010: 'Extension obligatoire',
+      1011: 'Erreur interne du serveur',
+      1012: 'Redémarrage du service',
+      1013: 'Réessayer plus tard',
+      1014: 'Passerelle défaillante',
+      1015: 'Poignée de main TLS'
     }
 
     return closeReasons[code] || `Unknown reason (${code})`
@@ -453,26 +461,26 @@ export function TransactionsContent() {
   // Handle new transaction from WebSocket
   const handleNewTransaction = (transaction: any) => {
     const key = getTransactionKey(transaction)
-    
+
     // Check if we already have this transaction
     if (!transactionsMapRef.current.has(key)) {
       // Add to our map
       transactionsMapRef.current.set(key, transaction)
-      
+
       // Add to state (at the beginning)
       setTransactions(prev => [transaction, ...prev])
-              console.log('Nouvelle transaction ajoutée via WebSocket:', transaction)
+      console.log('Nouvelle transaction ajoutée via WebSocket:', transaction)
     }
   }
-  
+
   // Handle transaction updates from WebSocket
   const handleTransactionUpdate = (updatedTransaction: any) => {
     const key = getTransactionKey(updatedTransaction)
-    
-            console.log('Mise à jour reçue pour la transaction:', key, updatedTransaction)
-    
+
+    console.log('Mise à jour reçue pour la transaction:', key, updatedTransaction)
+
     // Update the transaction in our state
-    setTransactions(prev => 
+    setTransactions(prev =>
       prev.map(item => {
         if (getTransactionKey(item) === key) {
           // Update the transaction with new data
@@ -481,7 +489,7 @@ export function TransactionsContent() {
         return item
       })
     )
-    
+
     // Update the transaction in our map
     if (transactionsMapRef.current.has(key)) {
       const existingItem = transactionsMapRef.current.get(key)
@@ -490,15 +498,15 @@ export function TransactionsContent() {
         transactionsMapRef.current.set(key, updatedItem)
       }
     }
-    
-            console.log('Transaction mise à jour via WebSocket:', updatedTransaction)
+
+    console.log('Transaction mise à jour via WebSocket:', updatedTransaction)
   }
 
   const handleCheckStatus = async (reference: string) => {
     setStatusLoading((prev) => ({ ...prev, [reference]: true }))
     try {
       const res = await smartFetch(`${baseUrl}/prod/v1/api/transaction-status?reference=${reference}`)
-      
+
       if (res.ok) {
         const data = await res.json()
         setStatusVerificationData(data)
@@ -551,13 +559,13 @@ export function TransactionsContent() {
 
       const data = await response.json()
       setSyncSuccess("Transaction synchronisée avec succès")
-      
+
       // Refresh transaction details if modal is open
       if (transactionDetailsModalOpen && selectedTransactionDetails?.id === transactionUid) {
         const updatedDetails = await fetchTransactionDetails(transactionUid)
         setSelectedTransactionDetails(updatedDetails)
       }
-      
+
       // Refresh transactions list
       await fetchTransactions({
         search: searchTerm,
@@ -576,7 +584,7 @@ export function TransactionsContent() {
       console.error("Error syncing transaction:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la synchronisation de la transaction"
       setSyncError(errorMessage)
-      
+
       // Clear error message after 5 seconds
       setTimeout(() => {
         setSyncError(null)
@@ -594,7 +602,7 @@ export function TransactionsContent() {
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/transactions/${transactionUid}/`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -618,7 +626,7 @@ export function TransactionsContent() {
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/transactions/${transactionUid}/webhook-logs/`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -644,22 +652,22 @@ export function TransactionsContent() {
 
   const handleChangeStatus = async () => {
     if (!selectedTransaction || !selectedStatus) return
-    
+
     // If customer_refund is selected, show confirmation modal
     if (selectedStatus === "customer_refund") {
       setRefundModalOpen(true)
       return
     }
-    
+
     // Get the transaction ID using the same logic as other functions
     const transactionId = selectedTransaction.id || selectedTransaction.uid || selectedTransaction.transaction_uid || selectedTransaction.reference
-    
+
     if (!transactionId) {
       console.error('No transaction ID found for status change:', selectedTransaction)
       alert('Erreur: Impossible de trouver l\'ID de la transaction')
       return
     }
-    
+
     setChangeStatusLoading(true)
     setStatusChangeError(null) // Clear any previous errors
     try {
@@ -668,7 +676,7 @@ export function TransactionsContent() {
         status: selectedStatus,
         transaction: selectedTransaction
       })
-      
+
       const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
         method: 'POST',
         headers: {
@@ -679,15 +687,15 @@ export function TransactionsContent() {
           id: transactionId
         })
       })
-      
+
       if (res.ok) {
         const data = await res.json()
         // Update the transaction in the local state using the transaction key
-        setTransactions(prev => 
+        setTransactions(prev =>
           prev.map(tx => {
             const txKey = getTransactionKey(tx)
             const selectedTxKey = getTransactionKey(selectedTransaction)
-            return txKey === selectedTxKey 
+            return txKey === selectedTxKey
               ? { ...tx, status: selectedStatus, ...data }
               : tx
           })
@@ -706,7 +714,7 @@ export function TransactionsContent() {
             errorData,
             errorKeys: Object.keys(errorData)
           })
-          
+
           // Create detailed error message
           let errorMessage = `Erreur ${res.status}: `
           if (errorData.detail) {
@@ -726,7 +734,7 @@ export function TransactionsContent() {
           } else {
             errorMessage += res.statusText || 'Erreur inconnue'
           }
-          
+
           setStatusChangeError(errorMessage)
         } catch (parseError) {
           console.error('Could not parse error response:', parseError)
@@ -759,7 +767,7 @@ export function TransactionsContent() {
           return [] // No transitions for unknown statuses
       }
     }
-    
+
     // Special handling for payout transactions
     if (transactionType === "payout") {
       switch (currentStatus) {
@@ -778,7 +786,7 @@ export function TransactionsContent() {
           return [] // No transitions for unknown statuses
       }
     }
-    
+
     // Regular transaction status transitions
     switch (currentStatus) {
       case "success":
@@ -824,16 +832,16 @@ export function TransactionsContent() {
 
   const handleRefundConfirmation = async () => {
     if (!selectedTransaction) return
-    
+
     // Get the transaction ID using the same logic as other functions
     const transactionId = selectedTransaction.id || selectedTransaction.uid || selectedTransaction.transaction_uid || selectedTransaction.reference
-    
+
     if (!transactionId) {
       console.error('No transaction ID found for refund:', selectedTransaction)
       alert('Erreur: Impossible de trouver l\'ID de la transaction')
       return
     }
-    
+
     setRefundLoading(true)
     setRefundError(null) // Clear any previous errors
     try {
@@ -841,7 +849,7 @@ export function TransactionsContent() {
         transactionId,
         transaction: selectedTransaction
       })
-      
+
       const res = await smartFetch(`${baseUrl}/prod/v1/api/change-trans-status`, {
         method: 'POST',
         headers: {
@@ -852,15 +860,15 @@ export function TransactionsContent() {
           id: transactionId
         })
       })
-      
+
       if (res.ok) {
         const data = await res.json()
         // Update the transaction in the local state using the transaction key
-        setTransactions(prev => 
+        setTransactions(prev =>
           prev.map(tx => {
             const txKey = getTransactionKey(tx)
             const selectedTxKey = getTransactionKey(selectedTransaction)
-            return txKey === selectedTxKey 
+            return txKey === selectedTxKey
               ? { ...tx, status: "customer_refund", ...data }
               : tx
           })
@@ -880,7 +888,7 @@ export function TransactionsContent() {
             errorData,
             errorKeys: Object.keys(errorData)
           })
-          
+
           // Create detailed error message
           let errorMessage = `Erreur ${res.status}: `
           if (errorData.detail) {
@@ -900,7 +908,7 @@ export function TransactionsContent() {
           } else {
             errorMessage += res.statusText || 'Erreur inconnue'
           }
-          
+
           setRefundError(errorMessage)
         } catch (parseError) {
           console.error('Could not parse refund error response:', parseError)
@@ -970,7 +978,7 @@ export function TransactionsContent() {
     try {
       let url = `${baseUrl}/api/v2/admin/reports/export-transactions/`
       const params = new URLSearchParams()
-      
+
       if (searchTerm) {
         params.append('search', searchTerm)
       }
@@ -983,11 +991,11 @@ export function TransactionsContent() {
       if (endDate) {
         params.append('end_date', endDate)
       }
-      
+
       if (params.toString()) {
         url += `?${params.toString()}`
       }
-      
+
       const res = await smartFetch(url)
       if (res.ok) {
         const blob = await res.blob()
@@ -1011,7 +1019,7 @@ export function TransactionsContent() {
       setWebhookLoading(true)
       setWebhookError(null)
       setWebhookSuccess(null)
-      
+
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
@@ -1030,7 +1038,7 @@ export function TransactionsContent() {
         },
         body: JSON.stringify(payload)
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -1039,13 +1047,13 @@ export function TransactionsContent() {
 
       const result = await response.json()
       setWebhookSuccess(result.message || "Webhook créé avec succès")
-      
+
       // Reset form
       setTransactionId("")
       setWebhookStatus("")
       setWebhookAmount("")
       setWebhookPhone("")
-      
+
     } catch (err) {
       console.error("Error creating webhook:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la création du webhook"
@@ -1092,13 +1100,16 @@ export function TransactionsContent() {
     }
 
     return (
-      <div className="flex items-center justify-between px-2 py-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-2 py-4">
         <div className="flex items-center text-sm text-muted-foreground">
-          <span>
+          <span className="hidden sm:inline">
             Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalTransactions)} sur {totalTransactions} transactions
           </span>
+          <span className="sm:hidden">
+            {((currentPage - 1) * pageSize) + 1}-{Math.min(currentPage * pageSize, totalTransactions)} / {totalTransactions}
+          </span>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
@@ -1109,7 +1120,7 @@ export function TransactionsContent() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
+
           {getPageNumbers().map((page) => (
             <Button
               key={page}
@@ -1121,7 +1132,7 @@ export function TransactionsContent() {
               {page}
             </Button>
           ))}
-          
+
           <Button
             variant="outline"
             size="sm"
@@ -1201,50 +1212,49 @@ export function TransactionsContent() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t("transactions")}</h1>
-          <p className="text-muted-foreground">{t("manageAndTrackPayments")}</p>
+          <h1 className="text-2xl md:text-3xl font-bold">{t("transactions")}</h1>
+          <p className="text-muted-foreground text-sm md:text-base">{t("manageAndTrackPayments")}</p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* WebSocket Status Indicator */}
           <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800">
-            <div className={`w-2 h-2 rounded-full ${
-              webSocketRef.current?.readyState === WebSocket.OPEN 
-                ? 'bg-green-500' 
-                : webSocketRef.current?.readyState === WebSocket.CONNECTING 
-                ? 'bg-yellow-500' 
+            <div className={`w-2 h-2 rounded-full ${webSocketRef.current?.readyState === WebSocket.OPEN
+              ? 'bg-green-500'
+              : webSocketRef.current?.readyState === WebSocket.CONNECTING
+                ? 'bg-yellow-500'
                 : 'bg-red-500'
-            }`}></div>
+              }`}></div>
             <span className="text-xs text-slate-600 dark:text-slate-400">
-              {webSocketRef.current?.readyState === WebSocket.OPEN 
-                ? 'En Direct' 
-                : webSocketRef.current?.readyState === WebSocket.CONNECTING 
-                ? 'Connexion...' 
-                : 'Hors Ligne'
+              {webSocketRef.current?.readyState === WebSocket.OPEN
+                ? 'En Direct'
+                : webSocketRef.current?.readyState === WebSocket.CONNECTING
+                  ? 'Connexion...'
+                  : 'Hors Ligne'
               }
             </span>
           </div>
-          
-          <Button variant="outline" onClick={() => window.location.href = '/refunds'}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Gestion des Remboursements
+
+          <Button variant="outline" size="sm" onClick={() => window.location.href = '/refunds'} className="h-10">
+            <RefreshCw className="h-4 w-4 md:mr-2" />
+            <span className="hidden md:inline">Gestion des Remboursements</span>
           </Button>
-          
-          <Button variant="outline" onClick={handleExportPDF}>
-            <Download className="h-4 w-4 mr-2" />
-            {t("export")} PDF
+
+          <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-10">
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">{t("export")} PDF</span>
           </Button>
-          
-          <Button variant="outline" onClick={handleExportCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            {t("export")} CSV
+
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="h-10">
+            <Download className="h-4 w-4 md:mr-2" />
+            <span className="hidden sm:inline">{t("export")} CSV</span>
           </Button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{t("totalTransactions")}</CardTitle>
@@ -1291,8 +1301,8 @@ export function TransactionsContent() {
           <CardDescription>{t("viewAndFilterHistory")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t("searchPlaceholder")}
@@ -1301,7 +1311,7 @@ export function TransactionsContent() {
                 className="pl-10"
               />
             </div>
-            <div className="relative flex-1">
+            <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Filtrer par utilisateur (email/username)"
@@ -1311,7 +1321,7 @@ export function TransactionsContent() {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-40">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder={t("status")} />
               </SelectTrigger>
               <SelectContent>
@@ -1323,54 +1333,41 @@ export function TransactionsContent() {
                 <SelectItem value="reject">Rejeté</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex gap-2">
-              <Input
-                type="date"
-                placeholder="Date de début"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                max={endDate || undefined}
-                className="w-full md:w-40"
-              />
-              <Input
-                type="date"
-                placeholder="Date de fin"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || undefined}
-                className="w-full md:w-40"
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setStartDate("")
-                  setEndDate("")
-                  setSearchTerm("")
-                  setUserFilter("")
-                  setStatusFilter("all")
-                  setMethodFilter("all")
-                }}
-                className="whitespace-nowrap"
-              >
-                Effacer les filtres
-              </Button>
-            </div>
-            {/* <Select value={methodFilter} onValueChange={setMethodFilter}>
-              <SelectTrigger className="w-full md:w-40">
-                <SelectValue placeholder={t("method")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("allMethods")}</SelectItem>
-                <SelectItem value="Mobile Money">{t("mobileMoney")}</SelectItem>
-                <SelectItem value="Credit Card">{t("creditCard")}</SelectItem>
-                <SelectItem value="Bank Account">{t("bankAccount")}</SelectItem>
-              </SelectContent>
-            </Select> */}
+            <Input
+              type="date"
+              placeholder="Date de début"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              max={endDate || undefined}
+              className="w-full"
+            />
+            <Input
+              type="date"
+              placeholder="Date de fin"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate || undefined}
+              className="w-full"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setStartDate("")
+                setEndDate("")
+                setSearchTerm("")
+                setUserFilter("")
+                setStatusFilter("all")
+                setMethodFilter("all")
+              }}
+              className="w-full sm:w-auto whitespace-nowrap h-10"
+            >
+              Effacer les filtres
+            </Button>
           </div>
 
           {/* Transactions Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -1438,71 +1435,40 @@ export function TransactionsContent() {
                       </TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
-                        <div className="flex flex-col space-y-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openTransactionDetailsModal(transaction)}
-                            className="flex items-center space-x-1"
-                          >
-                            <Eye className="h-3 w-3" />
-                            <span>View Details</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleSyncTransaction(transaction)}
-                            disabled={syncLoading[transaction.uid || transaction.transaction_uid || transaction.id]}
-                            className="flex items-center space-x-1"
-                          >
-                            {syncLoading[transaction.uid || transaction.transaction_uid || transaction.id] ? (
-                              <>
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                                <span>Syncing...</span>
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="h-3 w-3" />
-                                <span>Sync</span>
-                              </>
-                            )}
-                          </Button>
-                          {/* <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openWebhookLogsModal(transaction)}
-                            className="flex items-center space-x-1"
-                          >
-                            <Download className="h-3 w-3" />
-                            <span>Webhook Logs</span>
-                          </Button> */}
-                          {/* <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleCheckStatus(transaction.reference)}
-                            disabled={statusLoading[transaction.reference]}
-                          >
-                            {statusLoading[transaction.reference] ? t("checking") : t("checkStatus")}
-                          </Button> */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openChangeStatusModal(transaction)}
-                            className="flex items-center space-x-1"
-                          >
-                            <Settings className="h-3 w-3" />
-                            <span>Change Status</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openWebhookModalForTransaction(transaction)}
-                            className="flex items-center space-x-1"
-                          >
-                            <Zap className="h-3 w-3" />
-                            <span>Create Webhook</span>
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openTransactionDetailsModal(transaction)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              <span>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSyncTransaction(transaction)}
+                              disabled={syncLoading[transaction.uid || transaction.transaction_uid || transaction.id]}
+                            >
+                              {syncLoading[transaction.uid || transaction.transaction_uid || transaction.id] ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                              )}
+                              <span>Sync</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openChangeStatusModal(transaction)}>
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>Change Status</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openWebhookModalForTransaction(transaction)}>
+                              <Zap className="mr-2 h-4 w-4" />
+                              <span>Create Webhook</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
@@ -1527,7 +1493,7 @@ export function TransactionsContent() {
               </span>
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Error Display */}
           {statusChangeError && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
@@ -1540,8 +1506,8 @@ export function TransactionsContent() {
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{statusChangeError}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <Button 
-                    onClick={() => setStatusChangeError(null)} 
+                  <Button
+                    onClick={() => setStatusChangeError(null)}
                     size="sm"
                     variant="outline"
                     className="border-red-200 text-red-800 hover:bg-red-100"
@@ -1552,14 +1518,14 @@ export function TransactionsContent() {
               </div>
             </div>
           )}
-          
+
           <div className="grid gap-4 py-4">
             {(() => {
               const allowedTransitions = getAllowedStatusTransitions(
-                selectedTransaction?.status || "", 
+                selectedTransaction?.status || "",
                 selectedTransaction?.type_trans
               )
-              
+
               if (allowedTransitions.length === 0) {
                 return (
                   <div className="text-center py-4">
@@ -1574,7 +1540,7 @@ export function TransactionsContent() {
                   </div>
                 )
               }
-              
+
               return (
                 <div className="grid grid-cols-4 items-center gap-4">
                   <label htmlFor="status" className="text-right">
@@ -1707,7 +1673,7 @@ export function TransactionsContent() {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Montant</label>
                     <p className="text-lg font-semibold text-green-600">
-                      {selectedTransactionDetails.amount?.toLocaleString?.() || selectedTransactionDetails.amount || "-"} 
+                      {selectedTransactionDetails.amount?.toLocaleString?.() || selectedTransactionDetails.amount || "-"}
                       {selectedTransactionDetails.currency ? ` ${selectedTransactionDetails.currency}` : " FCFA"}
                     </p>
                   </div>
@@ -1824,11 +1790,10 @@ export function TransactionsContent() {
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Pour Compte Client</label>
                       <p className="text-sm">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          selectedTransactionDetails.for_customer_account 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs ${selectedTransactionDetails.for_customer_account
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                          }`}>
                           {selectedTransactionDetails.for_customer_account ? 'Oui' : 'Non'}
                         </span>
                       </p>
@@ -1853,8 +1818,8 @@ export function TransactionsContent() {
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                       <p className="text-sm">
-                        {selectedTransactionDetails.created_at 
-                          ? new Date(selectedTransactionDetails.created_at).toLocaleString() 
+                        {selectedTransactionDetails.created_at
+                          ? new Date(selectedTransactionDetails.created_at).toLocaleString()
                           : "-"
                         }
                       </p>
@@ -1862,8 +1827,8 @@ export function TransactionsContent() {
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Date de Mise à Jour</label>
                       <p className="text-sm">
-                        {selectedTransactionDetails.updated_at 
-                          ? new Date(selectedTransactionDetails.updated_at).toLocaleString() 
+                        {selectedTransactionDetails.updated_at
+                          ? new Date(selectedTransactionDetails.updated_at).toLocaleString()
                           : "-"
                         }
                       </p>
@@ -1929,7 +1894,7 @@ export function TransactionsContent() {
               </span>
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Error Display */}
           {refundError && (
             <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl mb-4">
@@ -1942,8 +1907,8 @@ export function TransactionsContent() {
                   <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{refundError}</p>
                 </div>
                 <div className="flex-shrink-0">
-                  <Button 
-                    onClick={() => setRefundError(null)} 
+                  <Button
+                    onClick={() => setRefundError(null)}
                     size="sm"
                     variant="outline"
                     className="border-red-200 text-red-800 hover:bg-red-100"
@@ -1954,7 +1919,7 @@ export function TransactionsContent() {
               </div>
             </div>
           )}
-          
+
           <div className="py-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex">
@@ -2044,7 +2009,7 @@ export function TransactionsContent() {
                     </div>
                   </div>
                 </div> */}
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Référence</label>
@@ -2093,8 +2058,8 @@ export function TransactionsContent() {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                     <p className="text-sm">
-                      {statusVerificationData?.created_at 
-                        ? new Date(statusVerificationData.created_at).toLocaleString() 
+                      {statusVerificationData?.created_at
+                        ? new Date(statusVerificationData.created_at).toLocaleString()
                         : "-"
                       }
                     </p>
@@ -2124,7 +2089,7 @@ export function TransactionsContent() {
               Historique des appels webhook pour la transaction {selectedTransactionDetails?.id || selectedTransactionDetails?.transaction_uid}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {webhookLogsLoading ? (
               <div className="flex items-center justify-center py-8">
@@ -2149,18 +2114,17 @@ export function TransactionsContent() {
                       </div>
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Statut HTTP</label>
-                        <p className={`text-sm font-medium ${
-                          log.status_code >= 200 && log.status_code < 300 
-                            ? 'text-green-600' 
-                            : log.status_code >= 400 
-                            ? 'text-red-600' 
+                        <p className={`text-sm font-medium ${log.status_code >= 200 && log.status_code < 300
+                          ? 'text-green-600'
+                          : log.status_code >= 400
+                            ? 'text-red-600'
                             : 'text-yellow-600'
-                        }`}>
+                          }`}>
                           {log.status_code || "N/A"}
                         </p>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Méthode</label>
@@ -2205,7 +2169,7 @@ export function TransactionsContent() {
               </div>
             )}
           </div>
-          
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -2229,7 +2193,7 @@ export function TransactionsContent() {
               Créez un webhook pour une transaction Wave
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             {/* Affichage des messages d'erreur et de succès */}
             {webhookError && (
@@ -2237,7 +2201,7 @@ export function TransactionsContent() {
                 <p className="text-sm text-red-800 dark:text-red-200">{webhookError}</p>
               </div>
             )}
-            
+
             {webhookSuccess && (
               <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                 <p className="text-sm text-green-800 dark:text-green-200">{webhookSuccess}</p>
