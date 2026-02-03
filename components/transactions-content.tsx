@@ -936,30 +936,30 @@ export function TransactionsContent() {
   const handleExportPDF = () => {
     const doc = new jsPDF()
     const tableColumn = [
+      t("customer"),
+      "Référence",
+      "Reference client",
+      "momo reference",
       t("transactionId"),
       t("date"),
       t("time"),
-      t("customer"),
-      t("email"),
       t("amount"),
-      t("method"),
       "Type de Transaction",
       t("status"),
-      t("reference"),
     ]
     const tableRows = filteredTransactions.map((transaction) => {
       const dateObj = transaction.created_at ? new Date(transaction.created_at) : null
       return [
+        `${transaction.customer?.username || transaction.customer?.email || "-"} (ID: ${transaction.customer_id || "-"})`,
+        transaction.reference || "-",
+        transaction.client_reference || "-",
+        transaction.external_id || "-",
         transaction.id || "-",
         dateObj ? dateObj.toLocaleDateString() : "-",
         dateObj ? dateObj.toLocaleTimeString() : "-",
-        transaction.customer?.username || transaction.customer?.email || "-",
-        transaction.customer?.email || "-",
         transaction.amount?.toLocaleString?.() || transaction.amount || "-",
-        transaction.network || "-",
         TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-",
         transaction.status || "-",
-        transaction.reference || "-",
       ]
     })
     autoTable(doc, {
@@ -1360,14 +1360,14 @@ export function TransactionsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>{t("customer")}</TableHead>
                   <TableHead>Référence</TableHead>
+                  <TableHead>Reference client</TableHead>
+                  <TableHead>momo reference</TableHead>
                   {/* <TableHead>{t("transactionId")}</TableHead> */}
                   <TableHead>{t("dateAndTime")}</TableHead>
-                  <TableHead>{t("customer")}</TableHead>
                   <TableHead>{t("amount")}</TableHead>
-                  <TableHead>{t("method")}</TableHead>
                   <TableHead>Type de Transaction</TableHead>
-                  <TableHead>Reference client</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{t("actions")}</TableHead>
                 </TableRow>
@@ -1384,6 +1384,32 @@ export function TransactionsContent() {
                 ) : (
                   filteredTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{transaction.customer?.username || transaction.customer?.email || "-"}</div>
+                          <div className="text-sm text-muted-foreground">{transaction.customer?.email || "-"}</div>
+                          {transaction.customer_id && (
+                            <div className="flex items-center gap-1 mt-1 text-[11px] font-mono text-muted-foreground bg-slate-50 px-1 rounded border border-slate-100 w-fit">
+                              <span>ID: {transaction.customer_id}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(transaction.customer_id, `cust_id-${transaction.id}`);
+                                }}
+                                className="h-4 w-4 p-0"
+                              >
+                                {copiedFields[`cust_id-${transaction.id}`] ? (
+                                  <Check className="h-2 w-2 text-green-600" />
+                                ) : (
+                                  <Copy className="h-2 w-2" />
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <span>{transaction.reference || "-"}</span>
@@ -1403,26 +1429,6 @@ export function TransactionsContent() {
                           )}
                         </div>
                       </TableCell>
-                      {/* <TableCell className="font-medium">{transaction.id}</TableCell> */}
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{transaction.created_at ? new Date(transaction.created_at).toLocaleDateString() : "-"}</div>
-                          <div className="text-sm text-muted-foreground">{transaction.created_at ? new Date(transaction.created_at).toLocaleTimeString() : "-"}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{transaction.customer?.username || transaction.customer?.email || "-"}</div>
-                          <div className="text-sm text-muted-foreground">{transaction.customer?.email || "-"}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{transaction.amount?.toLocaleString?.() || transaction.amount || "-"} {transaction.currency || ""}</TableCell>
-                      <TableCell>{transaction.network || "-"}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-"}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <span>{transaction.client_reference || "-"}</span>
@@ -1441,6 +1447,38 @@ export function TransactionsContent() {
                             </Button>
                           )}
                         </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{transaction.external_id || "-"}</span>
+                          {transaction.external_id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(transaction.external_id, `external_id-${transaction.id}`)}
+                              className="h-6 w-6 p-0"
+                            >
+                              {copiedFields[`external_id-${transaction.id}`] ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      {/* <TableCell className="font-medium">{transaction.id}</TableCell> */}
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{transaction.created_at ? new Date(transaction.created_at).toLocaleDateString() : "-"}</div>
+                          <div className="text-sm text-muted-foreground">{transaction.created_at ? new Date(transaction.created_at).toLocaleTimeString() : "-"}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">{transaction.amount?.toLocaleString?.() || transaction.amount || "-"} {transaction.currency || ""}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-"}
+                        </Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
@@ -1691,6 +1729,28 @@ export function TransactionsContent() {
                           className="h-8 w-8 p-0"
                         >
                           {copiedFields['clientReference'] ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Momo Reference (external_id) */}
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">momo reference</label>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.external_id || "-"}</p>
+                      {selectedTransactionDetails.external_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(selectedTransactionDetails.external_id, 'externalId')}
+                          className="h-8 w-8 p-0"
+                        >
+                          {copiedFields['externalId'] ? (
                             <Check className="h-4 w-4 text-green-600" />
                           ) : (
                             <Copy className="h-4 w-4" />
