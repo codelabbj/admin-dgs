@@ -8,6 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight, Settings } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination"
 import { smartFetch, debugTokenRefresh } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -44,7 +54,7 @@ interface User {
 
 export default function Customers() {
   const router = useRouter()
-  
+
   // États pour la gestion des données
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,14 +67,14 @@ export default function Customers() {
   const [verificationUser, setVerificationUser] = useState<User | null>(null)
   const [verificationStatus, setVerificationStatus] = useState<"verify" | "rejected">("verify")
   const [verificationReason, setVerificationReason] = useState("")
-  
+
   // États pour le modal de création de configuration client
   const [isCustomerConfigModalOpen, setIsCustomerConfigModalOpen] = useState(false)
   const [selectedUserForConfig, setSelectedUserForConfig] = useState<User | null>(null)
   const [configLoading, setConfigLoading] = useState(false)
   const [configFetching, setConfigFetching] = useState(false)
   const [configMessage, setConfigMessage] = useState("")
-  
+
   // États pour le formulaire de configuration client
   const [configForm, setConfigForm] = useState({
     is_active: true,
@@ -84,10 +94,10 @@ export default function Customers() {
     auto_create_account: true,
     grant_default_operators: false
   })
-  
+
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize] = useState(10)
+  const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalUsers, setTotalUsers] = useState(0)
 
@@ -96,7 +106,7 @@ export default function Customers() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
@@ -109,34 +119,34 @@ export default function Customers() {
       }
       params.append('page', page.toString())
       params.append('page_size', pageSize.toString())
-      
+
       const url = `${baseUrl}/v1/api/users?${params.toString()}`
-      
+
       console.log('fetchUsers: Making request to:', url)
-      
+
       const response = await smartFetch(url)
-      
+
       console.log('fetchUsers: Response received:', {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok
       })
-      
+
       if (!response.ok) {
         // Essayer de récupérer le message d'erreur du backend
         try {
           const errorData = await response.json()
           console.log('fetchUsers: Error response data:', errorData)
-          
+
           const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
-          
+
           // Check if this is a token expiration error
           if (errorMessage.toLowerCase().includes('token expired')) {
             console.log('fetchUsers: Token expired error detected, smartFetch should have handled refresh')
             // Debug token state
             debugTokenRefresh()
           }
-          
+
           throw new Error(errorMessage)
         } catch (parseError) {
           console.log('fetchUsers: Could not parse error response:', parseError)
@@ -152,21 +162,27 @@ export default function Customers() {
         hasResults: !!data.results,
         dataKeys: Object.keys(data)
       })
-      
+
       // Gérer différentes structures de réponse
-      if (Array.isArray(data)) {
+      if (data && Array.isArray(data.results)) {
+        // Structure standard Django Rest Framework
+        setUsers(data.results)
+        const totalCount = data.count || data.results.length
+        setTotalUsers(totalCount)
+        setTotalPages(Math.ceil(totalCount / pageSize))
+      } else if (data && Array.isArray(data.data)) {
+        // Structure personnalisée { data: [], total: X, total_pages: Y }
+        setUsers(data.data)
+        const totalCount = data.total || data.data.length
+        setTotalUsers(totalCount)
+        setTotalPages(data.total_pages || Math.ceil(totalCount / pageSize))
+      } else if (Array.isArray(data)) {
+        // Structure simple [{}, {}]
         setUsers(data)
         setTotalUsers(data.length)
         setTotalPages(Math.ceil(data.length / pageSize))
-      } else if (data && Array.isArray(data.data)) {
-        setUsers(data.data)
-        setTotalUsers(data.total || data.data.length)
-        setTotalPages(data.total_pages || Math.ceil((data.total || data.data.length) / pageSize))
-      } else if (data && Array.isArray(data.results)) {
-        setUsers(data.results)
-        setTotalUsers(data.count || data.results.length)
-        setTotalPages(Math.ceil((data.count || data.results.length) / pageSize))
       } else {
+        console.warn('fetchUsers: Unexpected data structure:', data)
         setUsers([])
         setTotalUsers(0)
         setTotalPages(0)
@@ -175,7 +191,7 @@ export default function Customers() {
       console.error("fetchUsers: Error fetching users:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement des utilisateurs"
       setError(errorMessage)
-      
+
       // If it's a token-related error, debug the token state
       if (errorMessage.toLowerCase().includes('token')) {
         console.log('fetchUsers: Token-related error detected, debugging token state')
@@ -195,7 +211,7 @@ export default function Customers() {
       }
 
       const response = await smartFetch(`${baseUrl}/v1/api/user-details`)
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -216,7 +232,7 @@ export default function Customers() {
     try {
       setVerifying(true)
       setVerificationMessage("")
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
@@ -232,7 +248,7 @@ export default function Customers() {
         method: "POST",
         body: JSON.stringify(payload)
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -241,10 +257,10 @@ export default function Customers() {
 
       const result = await response.json()
       setVerificationMessage(result.message || "Vérification effectuée avec succès")
-      
+
       // Rafraîchir la liste des utilisateurs
       await fetchUsers(searchQuery, currentPage)
-      
+
     } catch (err) {
       console.error("Error verifying account:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la vérification"
@@ -266,11 +282,11 @@ export default function Customers() {
   // Fonction pour soumettre la vérification depuis le modal
   const submitVerificationFromModal = async () => {
     if (!verificationUser) return
-    
+
     try {
       setVerifying(true)
       setVerificationMessage("")
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
@@ -288,7 +304,7 @@ export default function Customers() {
         method: "POST",
         body: JSON.stringify(payload)
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -297,11 +313,11 @@ export default function Customers() {
 
       const result = await response.json()
       setVerificationMessage(result.message || "Vérification effectuée avec succès")
-      
+
       // Fermer le modal et rafraîchir la liste
       setIsVerificationModalOpen(false)
       await fetchUsers(searchQuery, currentPage)
-      
+
     } catch (err) {
       console.error("Error verifying account:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la vérification"
@@ -314,12 +330,12 @@ export default function Customers() {
   // Fonction pour mettre à jour une configuration client
   const updateCustomerConfig = async () => {
     if (!selectedUserForConfig) return
-    
+
     try {
       setConfigLoading(true)
       setConfigMessage("")
       setError(null)
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
@@ -360,7 +376,7 @@ export default function Customers() {
         },
         body: JSON.stringify(payload)
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -369,11 +385,11 @@ export default function Customers() {
 
       const result = await response.json()
       setConfigMessage(result.message || "Configuration client mise à jour avec succès")
-      
+
       // Fermer le modal et rafraîchir la liste
       setIsCustomerConfigModalOpen(false)
       await fetchUsers(searchQuery, currentPage)
-      
+
     } catch (err) {
       console.error("Error updating customer config:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la mise à jour de la configuration"
@@ -388,14 +404,14 @@ export default function Customers() {
     try {
       setConfigFetching(true)
       setError(null)
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/`)
-      
+
       if (!response.ok) {
         try {
           const errorData = await response.json()
@@ -407,7 +423,7 @@ export default function Customers() {
       }
 
       const data = await response.json()
-      
+
       // Populate the form with fetched data
       setConfigForm({
         is_active: data.is_active || false,
@@ -422,38 +438,38 @@ export default function Customers() {
         monthly_payin_limit: data.monthly_payin_limit || "",
         monthly_payout_limit: data.monthly_payout_limit || "",
         require_ip_whitelist: data.require_ip_whitelist || false,
-        ip_whitelist: data.ip_whitelist && Array.isArray(data.ip_whitelist) 
-          ? data.ip_whitelist.join(", ") 
+        ip_whitelist: data.ip_whitelist && Array.isArray(data.ip_whitelist)
+          ? data.ip_whitelist.join(", ")
           : "",
         notes: data.notes || "",
         auto_create_account: true,
         grant_default_operators: false
       })
-      
+
       return data
     } catch (err) {
       console.error("Error fetching customer config:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors du chargement de la configuration"
       setError(errorMessage)
       // Set default values if fetch fails
-    setConfigForm({
-      is_active: true,
-      webhook_url: "",
-      payin_fee_rate: 1.3,
-      payout_fee_rate: 1.6,
-      use_fixed_fees: false,
-      payin_fee_fixed: "",
-      payout_fee_fixed: "",
-      daily_payin_limit: "",
-      daily_payout_limit: "",
-      monthly_payin_limit: "",
-      monthly_payout_limit: "",
-      require_ip_whitelist: false,
-      ip_whitelist: "",
-      notes: "",
-      auto_create_account: true,
-      grant_default_operators: false
-    })
+      setConfigForm({
+        is_active: true,
+        webhook_url: "",
+        payin_fee_rate: 1.3,
+        payout_fee_rate: 1.6,
+        use_fixed_fees: false,
+        payin_fee_fixed: "",
+        payout_fee_fixed: "",
+        daily_payin_limit: "",
+        daily_payout_limit: "",
+        monthly_payin_limit: "",
+        monthly_payout_limit: "",
+        require_ip_whitelist: false,
+        ip_whitelist: "",
+        notes: "",
+        auto_create_account: true,
+        grant_default_operators: false
+      })
       throw err
     } finally {
       setConfigFetching(false)
@@ -465,7 +481,7 @@ export default function Customers() {
     setSelectedUserForConfig(user)
     setConfigMessage("")
     setIsCustomerConfigModalOpen(true)
-    
+
     // Fetch existing customer config
     try {
       await fetchCustomerConfig(user.id)
@@ -480,10 +496,10 @@ export default function Customers() {
     fetchUsers("", 1)
   }, [])
 
-  // Charger les utilisateurs quand la page change
+  // Charger les utilisateurs quand la page ou la taille de la page change
   useEffect(() => {
     fetchUsers(searchQuery, currentPage)
-  }, [currentPage])
+  }, [currentPage, pageSize])
 
   // Fonction pour gérer la recherche avec debounce
   const debouncedSearch = useCallback(
@@ -505,6 +521,11 @@ export default function Customers() {
     debouncedSearch(query)
   }
 
+  const handlePageSizeChange = (size: string) => {
+    setPageSize(parseInt(size))
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
+
   // Fonctions de pagination
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -524,7 +545,35 @@ export default function Customers() {
 
   // Composant de pagination
   const PaginationComponent = () => {
-    if (totalPages <= 1) return null
+    if (totalPages <= 1 && pageSize >= 10) {
+      return (
+        <div className="flex items-center justify-between px-2 py-4 border-t border-slate-200 dark:border-neutral-700">
+          <div className="flex items-center text-sm text-muted-foreground">
+            <span>
+              Affichage de {Math.min(1, users.length)} à {users.length} sur {totalUsers} utilisateurs
+            </span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Lignes par page</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize.toString()} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 50, 100].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )
+    }
 
     const getPageNumbers = () => {
       const pages = []
@@ -542,46 +591,107 @@ export default function Customers() {
       return pages
     }
 
+    const pageNumbers = getPageNumbers()
+    const startPage = pageNumbers[0]
+    const endPage = pageNumbers[pageNumbers.length - 1]
+
     return (
-      <div className="flex items-center justify-between px-2 py-4">
-        <div className="flex items-center text-sm text-muted-foreground">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4 border-t border-slate-200 dark:border-neutral-700">
+        <div className="flex items-center text-sm text-muted-foreground order-2 sm:order-1">
           <span>
             Affichage de {((currentPage - 1) * pageSize) + 1} à {Math.min(currentPage * pageSize, totalUsers)} sur {totalUsers} utilisateurs
           </span>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePreviousPage}
-            disabled={currentPage === 1}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          
-          {getPageNumbers().map((page) => (
-            <Button
-              key={page}
-              variant={currentPage === page ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePageChange(page)}
-              className="h-8 w-8 p-0"
+
+        <div className="flex flex-wrap items-center justify-center gap-2 order-1 sm:order-2">
+          <div className="flex items-center space-x-2 mr-4">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Lignes</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={handlePageSizeChange}
             >
-              {page}
-            </Button>
-          ))}
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className="h-8 w-8 p-0"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pageSize.toString()} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 50, 100].map((size) => (
+                  <SelectItem key={size} value={size.toString()}>
+                    {size}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Pagination className="w-auto mx-0">
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handlePreviousPage}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+
+              {startPage > 1 && (
+                <>
+                  <PaginationItem>
+                    <PaginationLink
+                      className="h-8 w-8 cursor-pointer"
+                      onClick={() => handlePageChange(1)}
+                      isActive={currentPage === 1}
+                    >
+                      1
+                    </PaginationLink>
+                  </PaginationItem>
+                  {startPage > 2 && <PaginationEllipsis />}
+                </>
+              )}
+
+              {pageNumbers.map((page) => (
+                <PaginationItem key={page}>
+                  <PaginationLink
+                    className="h-8 w-8 cursor-pointer"
+                    onClick={() => handlePageChange(page)}
+                    isActive={currentPage === page}
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+
+              {endPage < totalPages && (
+                <>
+                  {endPage < totalPages - 1 && <PaginationEllipsis />}
+                  <PaginationItem>
+                    <PaginationLink
+                      className="h-8 w-8 cursor-pointer"
+                      onClick={() => handlePageChange(totalPages)}
+                      isActive={currentPage === totalPages}
+                    >
+                      {totalPages}
+                    </PaginationLink>
+                  </PaginationItem>
+                </>
+              )}
+
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages || totalPages === 0}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     )
@@ -592,7 +702,7 @@ export default function Customers() {
     const totalUsers = users.length
     const activeUsers = users.filter(user => user.is_active).length
     const partners = users.filter(user => user.is_partner).length
-    
+
     // Calculer les nouveaux utilisateurs ce mois-ci
     const currentMonth = new Date().getMonth()
     const currentYear = new Date().getFullYear()
@@ -612,7 +722,7 @@ export default function Customers() {
   // Calculer les meilleures localisations
   const calculateTopLocations = () => {
     const countryCount: { [key: string]: number } = {}
-    
+
     users.forEach(user => {
       const country = user.country || 'Non spécifié'
       if (country) {
@@ -647,13 +757,13 @@ export default function Customers() {
   const allCustomers = users
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .map(user => {
-      const status = user.account_status === 'active' ? 'Actif' : 
-                    user.account_status === 'verify' ? 'Vérifié' :
-                    user.account_status === 'pending' ? 'En Attente' : 
-                    user.account_status === 'rejected' ? 'Rejeté' : 'Inactif'
-      
+      const status = user.account_status === 'active' ? 'Actif' :
+        user.account_status === 'verify' ? 'Vérifié' :
+          user.account_status === 'pending' ? 'En Attente' :
+            user.account_status === 'rejected' ? 'Rejeté' : 'Inactif'
+
       console.log(`User ${user.fullname} - account_status: ${user.account_status}, mapped status: ${status}`)
-      
+
       return {
         id: user.id,
         name: user.fullname,
@@ -682,8 +792,8 @@ export default function Customers() {
                 <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{error}</p>
               </div>
               <div className="flex-shrink-0">
-                <Button 
-                  onClick={() => fetchUsers(searchQuery)} 
+                <Button
+                  onClick={() => fetchUsers(searchQuery)}
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -706,8 +816,8 @@ export default function Customers() {
                 <p className="text-sm text-green-700 dark:text-green-300 mt-1">{verificationMessage}</p>
               </div>
               <div className="flex-shrink-0">
-                <Button 
-                  onClick={() => setVerificationMessage("")} 
+                <Button
+                  onClick={() => setVerificationMessage("")}
                   size="sm"
                   variant="outline"
                   className="border-green-200 text-green-800 hover:bg-green-100"
@@ -771,24 +881,24 @@ export default function Customers() {
             </div>
           ) : (
             customerStats.map((stat, index) => (
-            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
-                    <stat.icon className="h-6 w-6 text-white" />
+              <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
+                      <stat.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
+                      <p className="text-sm text-neutral-600 dark:text-neutral-400">{stat.label}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
-                    <p className="text-sm text-neutral-600 dark:text-neutral-400">{stat.label}</p>
+                  <div className="mt-4">
+                    <Badge className={`bg-${stat.color}-100 text-${stat.color}-800 hover:bg-${stat.color}-100 rounded-full text-xs`}>
+                      {stat.change}
+                    </Badge>
                   </div>
-                </div>
-                <div className="mt-4">
-                  <Badge className={`bg-${stat.color}-100 text-${stat.color}-800 hover:bg-${stat.color}-100 rounded-full text-xs`}>
-                    {stat.change}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
@@ -819,13 +929,13 @@ export default function Customers() {
           <div className="lg:col-span-2">
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                                  <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                    <Users className="h-5 w-5 mr-2 text-crimson-600" />
-                    Tous les Clients
-                  </CardTitle>
-                  <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Liste complète de tous les clients ({totalUsers} au total)
-                  </CardDescription>
+                <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                  <Users className="h-5 w-5 mr-2 text-crimson-600" />
+                  Tous les Clients
+                </CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  Liste complète de tous les clients ({totalUsers} au total)
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 {loading ? (
@@ -840,8 +950,8 @@ export default function Customers() {
                         <p className="text-red-800 dark:text-red-200 font-medium mb-2">⚠️ Erreur lors du chargement</p>
                         <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
                       </div>
-                      <Button 
-                        onClick={() => fetchUsers(searchQuery, currentPage)} 
+                      <Button
+                        onClick={() => fetchUsers(searchQuery, currentPage)}
                         className="bg-crimson-600 hover:bg-crimson-700 text-white"
                       >
                         🔄 Réessayer
@@ -858,54 +968,52 @@ export default function Customers() {
                 ) : (
                   <div className="space-y-4">
                     {allCustomers.map((customer) => (
-                    <div key={customer.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-12 w-12">
-                          <AvatarImage src={customer.avatar} />
-                          <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
-                            {customer.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold text-neutral-900 dark:text-white">{customer.name}</p>
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400">{customer.email}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${
-                                customer.type === 'Premium' ? 'border-amber-200 text-amber-700' : 'border-slate-200 text-slate-700'
-                              }`}
-                            >
-                              {customer.type}
-                            </Badge>
-                            <Badge 
-                              className={`text-xs ${
-                                customer.status === 'Vérifié' ? 'bg-emerald-100 text-emerald-800' :
-                                customer.status === 'Actif' ? 'bg-blue-100 text-blue-800' :
-                                customer.status === 'En Attente' ? 'bg-yellow-100 text-yellow-800' :
-                                customer.status === 'Rejeté' ? 'bg-red-100 text-red-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {customer.status}
-                            </Badge>
+                      <div key={customer.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage src={customer.avatar} />
+                            <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
+                              {customer.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-semibold text-neutral-900 dark:text-white">{customer.name}</p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400">{customer.email}</p>
+                            <div className="flex items-center space-x-2 mt-1">
+                              <Badge
+                                variant="outline"
+                                className={`text-xs ${customer.type === 'Premium' ? 'border-amber-200 text-amber-700' : 'border-slate-200 text-slate-700'
+                                  }`}
+                              >
+                                {customer.type}
+                              </Badge>
+                              <Badge
+                                className={`text-xs ${customer.status === 'Vérifié' ? 'bg-emerald-100 text-emerald-800' :
+                                  customer.status === 'Actif' ? 'bg-blue-100 text-blue-800' :
+                                    customer.status === 'En Attente' ? 'bg-yellow-100 text-yellow-800' :
+                                      customer.status === 'Rejeté' ? 'bg-red-100 text-red-800' :
+                                        'bg-gray-100 text-gray-800'
+                                  }`}
+                              >
+                                {customer.status}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <div className="text-right mr-4">
-                          <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-                            <MapPin className="h-3 w-3" />
-                            <span>{customer.location}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Verification Actions */}
+
                         <div className="flex items-center space-x-2">
-                          {customer.status === 'En Attente' && (
-                            <>
-                              {/* <Button 
+                          <div className="text-right mr-4">
+                            <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
+                              <MapPin className="h-3 w-3" />
+                              <span>{customer.location}</span>
+                            </div>
+                          </div>
+
+                          {/* Verification Actions */}
+                          <div className="flex items-center space-x-2">
+                            {customer.status === 'En Attente' && (
+                              <>
+                                {/* <Button 
                                 size="sm" 
                                 className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
                                 onClick={() => verifyAccount(customer.user.id, "approved")}
@@ -924,38 +1032,38 @@ export default function Customers() {
                                 {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
                                 Rejeter
                               </Button> */}
-                              <Button 
-                                size="sm" 
-                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-                                onClick={() => openVerificationModal(customer.user)}
-                                disabled={verifying}
-                              >
-                                <Shield className="h-3 w-3" />
-                                Vérifier
-                              </Button>
-                            </>
-                          )}
-                          <Button 
-                            size="sm" 
-                            className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
-                            onClick={() => openCustomerConfigModal(customer.user)}
-                            disabled={configLoading}
-                          >
-                            <Settings className="h-3 w-3" />
-                            Mettre à jour Config
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="rounded-lg text-crimson-600 hover:text-crimson-700"
-                            onClick={() => router.push(`/customers/${customer.user.id}`)}
-                          >
-                            Voir les Détails
-                          </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                                  onClick={() => openVerificationModal(customer.user)}
+                                  disabled={verifying}
+                                >
+                                  <Shield className="h-3 w-3" />
+                                  Vérifier
+                                </Button>
+                              </>
+                            )}
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                              onClick={() => openCustomerConfigModal(customer.user)}
+                              disabled={configLoading}
+                            >
+                              <Settings className="h-3 w-3" />
+                              Mettre à jour Config
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="rounded-lg text-crimson-600 hover:text-crimson-700"
+                              onClick={() => router.push(`/customers/${customer.user.id}`)}
+                            >
+                              Voir les Détails
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                   </div>
                 )}
                 <PaginationComponent />
@@ -968,13 +1076,13 @@ export default function Customers() {
             {/* Meilleures Localisations */}
             <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                                  <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-                    <Globe className="h-5 w-5 mr-2 text-crimson-600" />
-                    Meilleures Localisations
-                  </CardTitle>
-                  <CardDescription className="text-neutral-600 dark:text-neutral-400">
-                    Répartition des clients par pays
-                  </CardDescription>
+                <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
+                  <Globe className="h-5 w-5 mr-2 text-crimson-600" />
+                  Meilleures Localisations
+                </CardTitle>
+                <CardDescription className="text-neutral-600 dark:text-neutral-400">
+                  Répartition des clients par pays
+                </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="space-y-4">
@@ -1040,7 +1148,7 @@ export default function Customers() {
               Vérifiez le compte utilisateur avec les détails personnalisés
             </DialogDescription>
           </DialogHeader>
-          
+
           {verificationUser && (
             <div className="space-y-6">
               {/* Informations utilisateur */}
@@ -1134,11 +1242,10 @@ export default function Customers() {
                 <Button
                   onClick={submitVerificationFromModal}
                   disabled={verifying}
-                  className={`rounded-xl ${
-                    verificationStatus === "verify" 
-                      ? "bg-green-600 hover:bg-green-700" 
-                      : "bg-red-600 hover:bg-red-700"
-                  } text-white`}
+                  className={`rounded-xl ${verificationStatus === "verify"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700"
+                    } text-white`}
                 >
                   {verifying ? (
                     <>
@@ -1152,8 +1259,8 @@ export default function Customers() {
                     </>
                   )}
                 </Button>
-        </div>
-      </div>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
@@ -1170,7 +1277,7 @@ export default function Customers() {
               Mettez à jour les paramètres de configuration pour ce client
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedUserForConfig && (
             <div className="space-y-6">
               {/* Informations client */}
@@ -1210,211 +1317,211 @@ export default function Customers() {
               {/* Formulaire de configuration */}
               {!configFetching && (
                 <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Configuration de base */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Configuration de Base</h4>
-                  
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="is_active"
-                      checked={configForm.is_active}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="is_active" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Client actif
-                    </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Configuration de base */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Configuration de Base</h4>
+
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="is_active"
+                          checked={configForm.is_active}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, is_active: e.target.checked }))}
+                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="is_active" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          Client actif
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          URL Webhook
+                        </label>
+                        <Input
+                          placeholder="https://customer.com/webhook"
+                          value={configForm.webhook_url}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, webhook_url: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          Taux de frais Payin (%)
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="1.3"
+                          value={configForm.payin_fee_rate}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_rate: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          Taux de frais Payout (%)
+                        </label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="1.6"
+                          value={configForm.payout_fee_rate}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_rate: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="use_fixed_fees"
+                          checked={configForm.use_fixed_fees}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, use_fixed_fees: e.target.checked }))}
+                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="use_fixed_fees" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          Utiliser des frais fixes
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Limites et IP Whitelist */}
+                    <div className="space-y-4">
+                      <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Limites et Sécurité</h4>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          Limite quotidienne Payin
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="1000000"
+                          value={configForm.daily_payin_limit}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payin_limit: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          Limite quotidienne Payout
+                        </label>
+                        <Input
+                          type="number"
+                          placeholder="1000000"
+                          value={configForm.daily_payout_limit}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payout_limit: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="require_ip_whitelist"
+                          checked={configForm.require_ip_whitelist}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, require_ip_whitelist: e.target.checked }))}
+                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="require_ip_whitelist" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          IP Whitelist requise
+                        </label>
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                          Adresses IP autorisées (séparées par des virgules)
+                        </label>
+                        <Input
+                          placeholder="192.168.1.1, 10.0.0.1"
+                          value={configForm.ip_whitelist}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, ip_whitelist: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      URL Webhook
-                    </label>
-                    <Input
-                      placeholder="https://customer.com/webhook"
-                      value={configForm.webhook_url}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, webhook_url: e.target.value }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
+                  {/* Options avancées */}
+                  <div className="space-y-4">
+                    <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Options Avancées</h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="auto_create_account"
+                          checked={configForm.auto_create_account}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, auto_create_account: e.target.checked }))}
+                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="auto_create_account" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          Créer automatiquement le compte
+                        </label>
+                      </div>
+
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="grant_default_operators"
+                          checked={configForm.grant_default_operators}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, grant_default_operators: e.target.checked }))}
+                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
+                        />
+                        <label htmlFor="grant_default_operators" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          Accorder les opérateurs par défaut
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
+                        Notes
+                      </label>
+                      <textarea
+                        placeholder="Notes sur ce client..."
+                        value={configForm.notes}
+                        onChange={(e) => setConfigForm(prev => ({ ...prev, notes: e.target.value }))}
+                        className="w-full p-3 border border-slate-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
+                        rows={3}
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      Taux de frais Payin (%)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="1.3"
-                      value={configForm.payin_fee_rate}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_rate: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      Taux de frais Payout (%)
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="1.6"
-                      value={configForm.payout_fee_rate}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_rate: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="use_fixed_fees"
-                      checked={configForm.use_fixed_fees}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, use_fixed_fees: e.target.checked }))}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="use_fixed_fees" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Utiliser des frais fixes
-                    </label>
-                  </div>
-                </div>
-
-                {/* Limites et IP Whitelist */}
-                <div className="space-y-4">
-                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Limites et Sécurité</h4>
-                  
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      Limite quotidienne Payin
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="1000000"
-                      value={configForm.daily_payin_limit}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payin_limit: e.target.value }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      Limite quotidienne Payout
-                    </label>
-                    <Input
-                      type="number"
-                      placeholder="1000000"
-                      value={configForm.daily_payout_limit}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, daily_payout_limit: e.target.value }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="require_ip_whitelist"
-                      checked={configForm.require_ip_whitelist}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, require_ip_whitelist: e.target.checked }))}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="require_ip_whitelist" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      IP Whitelist requise
-                    </label>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                      Adresses IP autorisées (séparées par des virgules)
-                    </label>
-                    <Input
-                      placeholder="192.168.1.1, 10.0.0.1"
-                      value={configForm.ip_whitelist}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, ip_whitelist: e.target.value }))}
-                      className="rounded-xl border-slate-200 dark:border-neutral-700"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Options avancées */}
-              <div className="space-y-4">
-                <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Options Avancées</h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="auto_create_account"
-                      checked={configForm.auto_create_account}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, auto_create_account: e.target.checked }))}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="auto_create_account" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Créer automatiquement le compte
-                    </label>
-                  </div>
-
-                  <div className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      id="grant_default_operators"
-                      checked={configForm.grant_default_operators}
-                      onChange={(e) => setConfigForm(prev => ({ ...prev, grant_default_operators: e.target.checked }))}
-                      className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                    />
-                    <label htmlFor="grant_default_operators" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                      Accorder les opérateurs par défaut
-                    </label>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                    Notes
-                  </label>
-                  <textarea
-                    placeholder="Notes sur ce client..."
-                    value={configForm.notes}
-                    onChange={(e) => setConfigForm(prev => ({ ...prev, notes: e.target.value }))}
-                    className="w-full p-3 border border-slate-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white"
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              {/* Actions */}
-              {!configFetching && (
-              <div className="flex justify-end space-x-3">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsCustomerConfigModalOpen(false)}
-                  disabled={configLoading}
-                  className="rounded-xl"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={updateCustomerConfig}
-                  disabled={configLoading}
-                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
-                >
-                  {configLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Mise à jour...
-                    </>
-                  ) : (
-                    <>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Mettre à jour Configuration
-                    </>
+                  {/* Actions */}
+                  {!configFetching && (
+                    <div className="flex justify-end space-x-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsCustomerConfigModalOpen(false)}
+                        disabled={configLoading}
+                        className="rounded-xl"
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        onClick={updateCustomerConfig}
+                        disabled={configLoading}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded-xl"
+                      >
+                        {configLoading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Mise à jour...
+                          </>
+                        ) : (
+                          <>
+                            <Settings className="h-4 w-4 mr-2" />
+                            Mettre à jour Configuration
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   )}
-                </Button>
-              </div>
-              )}
                 </>
               )}
             </div>
