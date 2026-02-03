@@ -54,7 +54,7 @@ export function TransactionsContent() {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [methodFilter, setMethodFilter] = useState("all")
-  const [userFilter, setUserFilter] = useState("")
+
   const [startDate, setStartDate] = useState("")
   const [endDate, setEndDate] = useState("")
   const [statusMap, setStatusMap] = useState<Record<string, string>>({})
@@ -144,14 +144,14 @@ export function TransactionsContent() {
         search: searchTerm,
         status: statusFilter,
         method: methodFilter,
-        user: userFilter,
+
         start_date: startDate,
         end_date: endDate
       }, 1)
     }, 500) // Debounce search by 500ms
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, statusFilter, methodFilter, userFilter, startDate, endDate])
+  }, [searchTerm, statusFilter, methodFilter, startDate, endDate])
 
   // Refetch data when page changes
   useEffect(() => {
@@ -159,7 +159,7 @@ export function TransactionsContent() {
       search: searchTerm,
       status: statusFilter,
       method: methodFilter,
-      user: userFilter,
+
       start_date: startDate,
       end_date: endDate
     }, currentPage)
@@ -197,9 +197,7 @@ export function TransactionsContent() {
       if (filters?.method && filters.method !== 'all') {
         queryParams.append('type', filters.method)
       }
-      if (filters?.user) {
-        queryParams.append('customer_id', filters.user)
-      }
+
       if (filters?.start_date) {
         queryParams.append('date_from', filters.start_date)
       }
@@ -571,7 +569,7 @@ export function TransactionsContent() {
         search: searchTerm,
         status: statusFilter !== "all" ? statusFilter : undefined,
         method: methodFilter !== "all" ? methodFilter : undefined,
-        user: userFilter || undefined,
+        user: undefined,
         start_date: startDate || undefined,
         end_date: endDate || undefined
       }, currentPage)
@@ -1302,21 +1300,12 @@ export function TransactionsContent() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="relative">
+            <div className="relative col-span-1 md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder={t("searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Filtrer par utilisateur (email/username)"
-                value={userFilter}
-                onChange={(e) => setUserFilter(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -1356,7 +1345,7 @@ export function TransactionsContent() {
                 setStartDate("")
                 setEndDate("")
                 setSearchTerm("")
-                setUserFilter("")
+
                 setStatusFilter("all")
                 setMethodFilter("all")
               }}
@@ -1378,6 +1367,7 @@ export function TransactionsContent() {
                   <TableHead>{t("amount")}</TableHead>
                   <TableHead>{t("method")}</TableHead>
                   <TableHead>Type de Transaction</TableHead>
+                  <TableHead>Reference client</TableHead>
                   <TableHead>{t("status")}</TableHead>
                   <TableHead>{t("actions")}</TableHead>
                 </TableRow>
@@ -1432,6 +1422,25 @@ export function TransactionsContent() {
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
                           {TRANSACTION_TYPES.find(t => t.value === transaction.type_trans)?.label || transaction.type_trans || "-"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <span>{transaction.client_reference || "-"}</span>
+                          {transaction.client_reference && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyToClipboard(transaction.client_reference, `client_ref-${transaction.id}`)}
+                              className="h-6 w-6 p-0"
+                            >
+                              {copiedFields[`client_ref-${transaction.id}`] ? (
+                                <Check className="h-3 w-3 text-green-600" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                       <TableCell>
@@ -1647,26 +1656,50 @@ export function TransactionsContent() {
                 </div>
 
                 {/* Transaction Reference */}
-                {selectedTransactionDetails.transac_reference && (
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedTransactionDetails.transac_reference && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">Référence de Transaction</label>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.transac_reference}</p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(selectedTransactionDetails.transac_reference, 'transacReference')}
+                          className="h-8 w-8 p-0"
+                        >
+                          {copiedFields['transacReference'] ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Client Reference */}
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Référence de Transaction</label>
+                    <label className="text-sm font-medium text-muted-foreground">Reference Client</label>
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.transac_reference}</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => copyToClipboard(selectedTransactionDetails.transac_reference, 'transacReference')}
-                        className="h-8 w-8 p-0"
-                      >
-                        {copiedFields['transacReference'] ? (
-                          <Check className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <Copy className="h-4 w-4" />
-                        )}
-                      </Button>
+                      <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.client_reference || "-"}</p>
+                      {selectedTransactionDetails.client_reference && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => copyToClipboard(selectedTransactionDetails.client_reference, 'clientReference')}
+                          className="h-8 w-8 p-0"
+                        >
+                          {copiedFields['clientReference'] ? (
+                            <Check className="h-4 w-4 text-green-600" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
 
                 {/* Amount, Status, and Type */}
                 <div className="grid grid-cols-3 gap-4">
