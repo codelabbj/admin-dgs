@@ -296,7 +296,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
         <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
           <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
             <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
-              <Shield className="h-5 w-5 mr-2 text-crimson-600" />
+              <Shield className="h-5 w-5 mr-2 text-primary" />
               Permissions Accordées
             </CardTitle>
             <CardDescription className="text-neutral-600 dark:text-neutral-400">
@@ -306,7 +306,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
           <CardContent className="p-6">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-crimson-600" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <span className="ml-2 text-neutral-600 dark:text-neutral-400">Chargement des permissions...</span>
               </div>
             ) : error ? (
@@ -318,7 +318,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                   </div>
                   <Button
                     onClick={() => fetchPermissions()}
-                    className="bg-crimson-600 hover:bg-crimson-700 text-white"
+                    className="bg-primary hover:bg-primary/90 text-white"
                   >
                     🔄 Réessayer
                   </Button>
@@ -340,7 +340,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                   <div key={permission.uid} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-slate-200 dark:bg-neutral-700 rounded-xl">
-                        <Shield className="h-6 w-6 text-crimson-600" />
+                        <Shield className="h-6 w-6 text-primary" />
                       </div>
                       <div>
                         <p className="font-semibold text-neutral-900 dark:text-white">
@@ -402,7 +402,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle className="text-xl font-bold text-neutral-900 dark:text-white flex items-center">
-                <Plus className="h-5 w-5 mr-2 text-crimson-600" />
+                <Plus className="h-5 w-5 mr-2 text-primary" />
                 Accorder une Permission
               </DialogTitle>
               <DialogDescription className="text-neutral-600 dark:text-neutral-400">
@@ -443,7 +443,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                     setIsGrantModalOpen(false)
                   }}
                   disabled={!selectedOperator || actionLoading}
-                  className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
+                  className="bg-primary hover:bg-primary/90 text-white rounded-xl"
                 >
                   {actionLoading ? (
                     <>
