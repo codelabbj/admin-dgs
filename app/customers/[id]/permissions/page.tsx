@@ -45,17 +45,17 @@ interface Operator {
 export default function CustomerPermissions({ params }: { params: { id: string } }) {
   const router = useRouter()
   const customerId = params.id
-  
+
   // États pour la gestion des données
   const [permissions, setPermissions] = useState<CustomerPermission[]>([])
   const [operators, setOperators] = useState<Operator[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   // États pour les modals
   const [isGrantModalOpen, setIsGrantModalOpen] = useState(false)
   const [selectedOperator, setSelectedOperator] = useState("")
-  
+
   // États pour les actions
   const [actionLoading, setActionLoading] = useState(false)
   const [actionMessage, setActionMessage] = useState("")
@@ -65,14 +65,14 @@ export default function CustomerPermissions({ params }: { params: { id: string }
     try {
       setLoading(true)
       setError(null)
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/permissions/`)
-      
+
       if (!response.ok) {
         try {
           const errorData = await response.json()
@@ -103,7 +103,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/operators/`)
-      
+
       if (!response.ok) {
         try {
           const errorData = await response.json()
@@ -130,17 +130,17 @@ export default function CustomerPermissions({ params }: { params: { id: string }
     try {
       setActionLoading(true)
       setActionMessage("")
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
       }
 
-      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers/${customerId}/permissions/`, {
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/customers-config/${customerId}/permissions/`, {
         method: "POST",
         body: JSON.stringify({ operator_uid: operatorUid })
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -149,10 +149,10 @@ export default function CustomerPermissions({ params }: { params: { id: string }
 
       const result = await response.json()
       setActionMessage("Permission accordée avec succès")
-      
+
       // Rafraîchir les permissions
       await fetchPermissions()
-      
+
     } catch (err) {
       console.error("Error granting permission:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de l'octroi de permission"
@@ -167,7 +167,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
     try {
       setActionLoading(true)
       setActionMessage("")
-      
+
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
       if (!baseUrl) {
         throw new Error("Base URL not configured")
@@ -176,7 +176,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
       const response = await smartFetch(`${baseUrl}/api/v2/admin/permissions/${permissionUid}/`, {
         method: "DELETE"
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json()
         const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
@@ -185,10 +185,10 @@ export default function CustomerPermissions({ params }: { params: { id: string }
 
       const result = await response.json()
       setActionMessage(result.message || "Permission révoquée avec succès")
-      
+
       // Rafraîchir les permissions
       await fetchPermissions()
-      
+
     } catch (err) {
       console.error("Error revoking permission:", err)
       const errorMessage = err instanceof Error ? err.message : "Erreur lors de la révocation de permission"
@@ -255,8 +255,8 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                 <p className="text-sm text-green-700 dark:text-green-300 mt-1">{actionMessage}</p>
               </div>
               <div className="flex-shrink-0">
-                <Button 
-                  onClick={() => setActionMessage("")} 
+                <Button
+                  onClick={() => setActionMessage("")}
                   size="sm"
                   variant="outline"
                   className="border-green-200 text-green-800 hover:bg-green-100"
@@ -280,8 +280,8 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                 <p className="text-sm text-red-700 dark:text-red-300 mt-1 break-words">{error}</p>
               </div>
               <div className="flex-shrink-0">
-                <Button 
-                  onClick={() => fetchPermissions()} 
+                <Button
+                  onClick={() => fetchPermissions()}
                   size="sm"
                   className="bg-red-600 hover:bg-red-700 text-white"
                 >
@@ -316,8 +316,8 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                     <p className="text-red-800 dark:text-red-200 font-medium mb-2">⚠️ Erreur lors du chargement</p>
                     <p className="text-sm text-red-700 dark:text-red-300 break-words">{error}</p>
                   </div>
-                  <Button 
-                    onClick={() => fetchPermissions()} 
+                  <Button
+                    onClick={() => fetchPermissions()}
                     className="bg-crimson-600 hover:bg-crimson-700 text-white"
                   >
                     🔄 Réessayer
@@ -364,7 +364,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <div className="text-right mr-4">
                         <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
@@ -378,9 +378,9 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                           </div>
                         )}
                       </div>
-                      
-                      <Button 
-                        size="sm" 
+
+                      <Button
+                        size="sm"
                         variant="destructive"
                         className="rounded-lg"
                         onClick={() => revokePermission(permission.uid)}
@@ -409,7 +409,7 @@ export default function CustomerPermissions({ params }: { params: { id: string }
                 Sélectionnez un opérateur pour accorder la permission
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
