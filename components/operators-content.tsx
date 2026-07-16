@@ -55,16 +55,28 @@ interface Operator {
   uid: string
   operator_name: string
   operator_code: string
+  api_backend?: string
+  country_code?: string
   operator_payin_rate: string
   operator_payout_rate: string
+  operator_bank_transfer_rate?: string
   min_payin_amount: number
   max_payin_amount: number
   min_payout_amount: number
   max_payout_amount: number
+  min_bank_transfer_amount?: number
+  max_bank_transfer_amount?: number
   is_active: boolean
   api_base_url: string
+  api_token?: string
+  api_timeout_seconds?: number
   supports_smartlink: boolean
   supports_callback: boolean
+  webhook_secret?: string
+  pal_v2_enabled?: boolean
+  pal_v2_public_key?: string
+  pal_v2_secret_key?: string
+  pal_v2_base_url?: string
   created_at: string
 }
 
@@ -78,17 +90,28 @@ interface OperatorHealth {
 interface CreateOperatorPayload {
   operator_name: string
   operator_code: string
+  api_backend?: string
+  country_code?: string
   operator_payin_rate: number
   operator_payout_rate: number
+  operator_bank_transfer_rate?: number
   min_payin_amount: number
   max_payin_amount: number
   min_payout_amount: number
   max_payout_amount: number
+  min_bank_transfer_amount?: number
+  max_bank_transfer_amount?: number
   is_active: boolean
   api_base_url: string
+  api_token?: string
   api_timeout_seconds: number
   supports_smartlink: boolean
   supports_callback: boolean
+  webhook_secret?: string
+  pal_v2_enabled?: boolean
+  pal_v2_public_key?: string
+  pal_v2_secret_key?: string
+  pal_v2_base_url?: string
 }
 
 export function OperatorsContent() {
@@ -100,25 +123,38 @@ export function OperatorsContent() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [operatorToDelete, setOperatorToDelete] = useState<Operator | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("operators")
   const { toast } = useToast()
 
   // Form state for create/edit
   const [formData, setFormData] = useState<CreateOperatorPayload>({
-    operator_name: "",
-    operator_code: "",
+    operator_name: '',
+    operator_code: '',
+    api_backend: 'wave',
+    country_code: '',
     operator_payin_rate: 1.0,
     operator_payout_rate: 1.0,
+    operator_bank_transfer_rate: 1.0,
     min_payin_amount: 500,
     max_payin_amount: 2000000,
     min_payout_amount: 1000,
     max_payout_amount: 2000000,
+    min_bank_transfer_amount: 500,
+    max_bank_transfer_amount: 2000000,
     is_active: true,
-    api_base_url: "",
+    api_base_url: '',
+    api_token: '',
     api_timeout_seconds: 120,
     supports_smartlink: true,
     supports_callback: true,
+    webhook_secret: '',
+    pal_v2_enabled: false,
+    pal_v2_public_key: '',
+    pal_v2_secret_key: '',
+    pal_v2_base_url: 'https://partner.pals.africa/api',
   })
 
   useEffect(() => {
@@ -243,21 +279,70 @@ export function OperatorsContent() {
     }
   }
 
+  const handleDeleteOperator = async () => {
+    if (!operatorToDelete) return
+
+    try {
+      setIsSubmitting(true)
+      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v2/admin/operators/${operatorToDelete.uid}/delete/`, {
+        method: "DELETE",
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Operator deleted successfully",
+        })
+        setIsDeleteDialogOpen(false)
+        setOperatorToDelete(null)
+        loadOperators()
+        loadOperatorHealth()
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: "Error",
+          description: errorData.message || "Failed to delete operator",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting operator:", error)
+      toast({
+        title: "Error",
+        description: "Failed to delete operator",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
-      operator_name: "",
-      operator_code: "",
+      operator_name: '',
+      operator_code: '',
+      api_backend: 'wave',
+      country_code: '',
       operator_payin_rate: 1.0,
       operator_payout_rate: 1.0,
+      operator_bank_transfer_rate: 1.0,
       min_payin_amount: 500,
       max_payin_amount: 2000000,
       min_payout_amount: 1000,
       max_payout_amount: 2000000,
+      min_bank_transfer_amount: 500,
+      max_bank_transfer_amount: 2000000,
       is_active: true,
-      api_base_url: "",
+      api_base_url: '',
+      api_token: '',
       api_timeout_seconds: 120,
       supports_smartlink: true,
       supports_callback: true,
+      webhook_secret: '',
+      pal_v2_enabled: false,
+      pal_v2_public_key: '',
+      pal_v2_secret_key: '',
+      pal_v2_base_url: 'https://partner.pals.africa/api',
     })
   }
 
@@ -266,17 +351,28 @@ export function OperatorsContent() {
     setFormData({
       operator_name: operator.operator_name,
       operator_code: operator.operator_code,
+      api_backend: operator.api_backend || 'wave',
+      country_code: operator.country_code || '',
       operator_payin_rate: parseFloat(operator.operator_payin_rate),
       operator_payout_rate: parseFloat(operator.operator_payout_rate),
+      operator_bank_transfer_rate: operator.operator_bank_transfer_rate ? parseFloat(operator.operator_bank_transfer_rate) : 1.0,
       min_payin_amount: operator.min_payin_amount,
       max_payin_amount: operator.max_payin_amount,
       min_payout_amount: operator.min_payout_amount,
       max_payout_amount: operator.max_payout_amount,
+      min_bank_transfer_amount: operator.min_bank_transfer_amount || 500,
+      max_bank_transfer_amount: operator.max_bank_transfer_amount || 2000000,
       is_active: operator.is_active,
       api_base_url: operator.api_base_url,
-      api_timeout_seconds: 120,
+      api_token: '',
+      api_timeout_seconds: operator.api_timeout_seconds || 120,
       supports_smartlink: operator.supports_smartlink,
       supports_callback: operator.supports_callback,
+      webhook_secret: '',
+      pal_v2_enabled: operator.pal_v2_enabled || false,
+      pal_v2_public_key: operator.pal_v2_public_key || '',
+      pal_v2_secret_key: '',
+      pal_v2_base_url: operator.pal_v2_base_url || 'https://partner.pals.africa/api',
     })
     setIsEditDialogOpen(true)
   }
@@ -496,16 +592,35 @@ export function OperatorsContent() {
                         <div className="text-sm">
                           <div>Payin: {operator.operator_payin_rate}</div>
                           <div>Payout: {operator.operator_payout_rate}</div>
+                          {operator.operator_bank_transfer_rate && (
+                            <div>Bank Transfer: {operator.operator_bank_transfer_rate}</div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
                           <div>Payin: {formatCurrency(operator.min_payin_amount)} - {formatCurrency(operator.max_payin_amount)}</div>
                           <div>Payout: {formatCurrency(operator.min_payout_amount)} - {formatCurrency(operator.max_payout_amount)}</div>
+                          {operator.min_bank_transfer_amount && operator.max_bank_transfer_amount && (
+                            <div>Bank Transfer: {formatCurrency(operator.min_bank_transfer_amount)} - {formatCurrency(operator.max_bank_transfer_amount)}</div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex space-x-1">
+                        <div className="flex flex-wrap gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {operator.api_backend === "wave" ? "Wave" : "PAL v2"}
+                          </Badge>
+                          {operator.country_code && (
+                            <Badge variant="outline" className="text-xs">
+                              {operator.country_code}
+                            </Badge>
+                          )}
+                          {operator.pal_v2_enabled && (
+                            <Badge className="bg-purple-100 text-purple-800 text-xs">
+                              PAL v2 Enabled
+                            </Badge>
+                          )}
                           {operator.supports_smartlink && (
                             <Badge variant="secondary" className="text-xs">Smartlink</Badge>
                           )}
@@ -536,7 +651,13 @@ export function OperatorsContent() {
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600">
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => {
+                                setOperatorToDelete(operator)
+                                setIsDeleteDialogOpen(true)
+                              }}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                             </DropdownMenuItem>
@@ -589,169 +710,298 @@ export function OperatorsContent() {
       </Tabs>
 
       {/* Create Operator Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Create New Operator</DialogTitle>
-            <DialogDescription>
-              Add a new payment operator to the system
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="operator_name">Operator Name</Label>
-                <Input
-                  id="operator_name"
-                  value={formData.operator_name}
-                  onChange={(e) => setFormData({ ...formData, operator_name: e.target.value })}
-                  placeholder="e.g., Wave Senegal"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="operator_code">Operator Code</Label>
-                <Input
-                  id="operator_code"
-                  value={formData.operator_code}
-                  onChange={(e) => setFormData({ ...formData, operator_code: e.target.value })}
-                  placeholder="e.g., wave-sn"
-                />
-              </div>
-            </div>
-            
+  <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>Create New Operator</DialogTitle>
+        <DialogDescription>
+          Add a new payment operator to the system
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid gap-4 py-4">
+        {/* Basic Info */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="operator_name">Operator Name</Label>
+            <Input
+              id="operator_name"
+              value={formData.operator_name}
+              onChange={(e) => setFormData({ ...formData, operator_name: e.target.value })}
+              placeholder="e.g., Wave Senegal"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="operator_code">Operator Code</Label>
+            <Input
+              id="operator_code"
+              value={formData.operator_code}
+              onChange={(e) => setFormData({ ...formData, operator_code: e.target.value })}
+              placeholder="e.g., wave-sn"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="api_backend">API Backend</Label>
+            <Select
+              value={formData.api_backend}
+              onValueChange={(value) => setFormData({ ...formData, api_backend: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select API Backend" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wave">Wave</SelectItem>
+                <SelectItem value="pal_v2">PAL v2</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="country_code">Country Code</Label>
+            <Input
+              id="country_code"
+              value={formData.country_code}
+              onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
+              placeholder="e.g., SN"
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="api_base_url">API Base URL</Label>
+          <Input
+            id="api_base_url"
+            value={formData.api_base_url}
+            onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
+            placeholder="https://api.wave.com"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="api_token">API Token</Label>
+            <Input
+              id="api_token"
+              type="password"
+              value={formData.api_token}
+              onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
+              placeholder="Enter API token"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="api_timeout_seconds">API Timeout (seconds)</Label>
+            <Input
+              id="api_timeout_seconds"
+              type="number"
+              value={formData.api_timeout_seconds}
+              onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="webhook_secret">Webhook Secret</Label>
+          <Input
+            id="webhook_secret"
+            type="password"
+            value={formData.webhook_secret}
+            onChange={(e) => setFormData({ ...formData, webhook_secret: e.target.value })}
+            placeholder="Enter webhook secret"
+          />
+        </div>
+
+        {/* Rates */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="operator_payin_rate">Payin Rate</Label>
+            <Input
+              id="operator_payin_rate"
+              type="number"
+              step="0.01"
+              value={formData.operator_payin_rate}
+              onChange={(e) => setFormData({ ...formData, operator_payin_rate: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="operator_payout_rate">Payout Rate</Label>
+            <Input
+              id="operator_payout_rate"
+              type="number"
+              step="0.01"
+              value={formData.operator_payout_rate}
+              onChange={(e) => setFormData({ ...formData, operator_payout_rate: parseFloat(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="operator_bank_transfer_rate">Bank Transfer Rate</Label>
+            <Input
+              id="operator_bank_transfer_rate"
+              type="number"
+              step="0.01"
+              value={formData.operator_bank_transfer_rate}
+              onChange={(e) => setFormData({ ...formData, operator_bank_transfer_rate: parseFloat(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        {/* Limits */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="min_payin_amount">Min Payin Amount</Label>
+            <Input
+              id="min_payin_amount"
+              type="number"
+              value={formData.min_payin_amount}
+              onChange={(e) => setFormData({ ...formData, min_payin_amount: parseInt(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="max_payin_amount">Max Payin Amount</Label>
+            <Input
+              id="max_payin_amount"
+              type="number"
+              value={formData.max_payin_amount}
+              onChange={(e) => setFormData({ ...formData, max_payin_amount: parseInt(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="min_payout_amount">Min Payout Amount</Label>
+            <Input
+              id="min_payout_amount"
+              type="number"
+              value={formData.min_payout_amount}
+              onChange={(e) => setFormData({ ...formData, min_payout_amount: parseInt(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="max_payout_amount">Max Payout Amount</Label>
+            <Input
+              id="max_payout_amount"
+              type="number"
+              value={formData.max_payout_amount}
+              onChange={(e) => setFormData({ ...formData, max_payout_amount: parseInt(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="min_bank_transfer_amount">Min Bank Transfer Amount</Label>
+            <Input
+              id="min_bank_transfer_amount"
+              type="number"
+              value={formData.min_bank_transfer_amount}
+              onChange={(e) => setFormData({ ...formData, min_bank_transfer_amount: parseInt(e.target.value) })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="max_bank_transfer_amount">Max Bank Transfer Amount</Label>
+            <Input
+              id="max_bank_transfer_amount"
+              type="number"
+              value={formData.max_bank_transfer_amount}
+              onChange={(e) => setFormData({ ...formData, max_bank_transfer_amount: parseInt(e.target.value) })}
+            />
+          </div>
+        </div>
+
+        {/* PAL v2 Fields */}
+        <div className="space-y-2">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="pal_v2_enabled"
+              checked={formData.pal_v2_enabled}
+              onCheckedChange={(checked) => setFormData({ ...formData, pal_v2_enabled: checked })}
+            />
+            <Label htmlFor="pal_v2_enabled">PAL v2 Enabled</Label>
+          </div>
+        </div>
+
+        {formData.pal_v2_enabled && (
+          <div className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
             <div className="space-y-2">
-              <Label htmlFor="api_base_url">API Base URL</Label>
+              <Label htmlFor="pal_v2_public_key">PAL v2 Public Key</Label>
               <Input
-                id="api_base_url"
-                value={formData.api_base_url}
-                onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
-                placeholder="https://api.wave.com"
+                id="pal_v2_public_key"
+                value={formData.pal_v2_public_key}
+                onChange={(e) => setFormData({ ...formData, pal_v2_public_key: e.target.value })}
+                placeholder="pgk_..."
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="operator_payin_rate">Payin Rate</Label>
-                <Input
-                  id="operator_payin_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.operator_payin_rate}
-                  onChange={(e) => setFormData({ ...formData, operator_payin_rate: parseFloat(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="operator_payout_rate">Payout Rate</Label>
-                <Input
-                  id="operator_payout_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.operator_payout_rate}
-                  onChange={(e) => setFormData({ ...formData, operator_payout_rate: parseFloat(e.target.value) })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="min_payin_amount">Min Payin Amount</Label>
-                <Input
-                  id="min_payin_amount"
-                  type="number"
-                  value={formData.min_payin_amount}
-                  onChange={(e) => setFormData({ ...formData, min_payin_amount: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="max_payin_amount">Max Payin Amount</Label>
-                <Input
-                  id="max_payin_amount"
-                  type="number"
-                  value={formData.max_payin_amount}
-                  onChange={(e) => setFormData({ ...formData, max_payin_amount: parseInt(e.target.value) })}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="min_payout_amount">Min Payout Amount</Label>
-                <Input
-                  id="min_payout_amount"
-                  type="number"
-                  value={formData.min_payout_amount}
-                  onChange={(e) => setFormData({ ...formData, min_payout_amount: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="max_payout_amount">Max Payout Amount</Label>
-                <Input
-                  id="max_payout_amount"
-                  type="number"
-                  value={formData.max_payout_amount}
-                  onChange={(e) => setFormData({ ...formData, max_payout_amount: parseInt(e.target.value) })}
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="api_timeout_seconds">API Timeout (seconds)</Label>
+              <Label htmlFor="pal_v2_secret_key">PAL v2 Secret Key</Label>
               <Input
-                id="api_timeout_seconds"
-                type="number"
-                value={formData.api_timeout_seconds}
-                onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
+                id="pal_v2_secret_key"
+                type="password"
+                value={formData.pal_v2_secret_key}
+                onChange={(e) => setFormData({ ...formData, pal_v2_secret_key: e.target.value })}
+                placeholder="Enter secret key"
               />
             </div>
-
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active">Active</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="supports_smartlink"
-                  checked={formData.supports_smartlink}
-                  onCheckedChange={(checked) => setFormData({ ...formData, supports_smartlink: checked })}
-                />
-                <Label htmlFor="supports_smartlink">Smartlink Support</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="supports_callback"
-                  checked={formData.supports_callback}
-                  onCheckedChange={(checked) => setFormData({ ...formData, supports_callback: checked })}
-                />
-                <Label htmlFor="supports_callback">Callback Support</Label>
-              </div>
+            <div className="col-span-2 space-y-2">
+              <Label htmlFor="pal_v2_base_url">PAL v2 Base URL</Label>
+              <Input
+                id="pal_v2_base_url"
+                value={formData.pal_v2_base_url}
+                onChange={(e) => setFormData({ ...formData, pal_v2_base_url: e.target.value })}
+                placeholder="https://partner.pals.africa/api"
+              />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleCreateOperator} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                "Create Operator"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+
+        <div className="flex items-center space-x-6">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+            />
+            <Label htmlFor="is_active">Active</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="supports_smartlink"
+              checked={formData.supports_smartlink}
+              onCheckedChange={(checked) => setFormData({ ...formData, supports_smartlink: checked })}
+            />
+            <Label htmlFor="supports_smartlink">Smartlink Support</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="supports_callback"
+              checked={formData.supports_callback}
+              onCheckedChange={(checked) => setFormData({ ...formData, supports_callback: checked })}
+            />
+            <Label htmlFor="supports_callback">Callback Support</Label>
+          </div>
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+          Cancel
+        </Button>
+        <Button onClick={handleCreateOperator} disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            "Create Operator"
+          )}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 
       {/* Edit Operator Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Operator</DialogTitle>
             <DialogDescription>
@@ -759,6 +1009,7 @@ export function OperatorsContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_operator_name">Operator Name</Label>
@@ -777,6 +1028,32 @@ export function OperatorsContent() {
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_api_backend">API Backend</Label>
+                <Select
+                  value={formData.api_backend}
+                  onValueChange={(value) => setFormData({ ...formData, api_backend: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select API Backend" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="wave">Wave</SelectItem>
+                    <SelectItem value="pal_v2">PAL v2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_country_code">Country Code</Label>
+                <Input
+                  id="edit_country_code"
+                  value={formData.country_code}
+                  onChange={(e) => setFormData({ ...formData, country_code: e.target.value })}
+                />
+              </div>
+            </div>
             
             <div className="space-y-2">
               <Label htmlFor="edit_api_base_url">API Base URL</Label>
@@ -788,6 +1065,40 @@ export function OperatorsContent() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_api_token">API Token (leave blank to keep current)</Label>
+                <Input
+                  id="edit_api_token"
+                  type="password"
+                  value={formData.api_token}
+                  onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
+                  placeholder="Enter new API token"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_api_timeout_seconds">API Timeout (seconds)</Label>
+                <Input
+                  id="edit_api_timeout_seconds"
+                  type="number"
+                  value={formData.api_timeout_seconds}
+                  onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit_webhook_secret">Webhook Secret (leave blank to keep current)</Label>
+              <Input
+                id="edit_webhook_secret"
+                type="password"
+                value={formData.webhook_secret}
+                onChange={(e) => setFormData({ ...formData, webhook_secret: e.target.value })}
+                placeholder="Enter new webhook secret"
+              />
+            </div>
+
+            {/* Rates */}
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_operator_payin_rate">Payin Rate</Label>
                 <Input
@@ -808,8 +1119,19 @@ export function OperatorsContent() {
                   onChange={(e) => setFormData({ ...formData, operator_payout_rate: parseFloat(e.target.value) })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_operator_bank_transfer_rate">Bank Transfer Rate</Label>
+                <Input
+                  id="edit_operator_bank_transfer_rate"
+                  type="number"
+                  step="0.01"
+                  value={formData.operator_bank_transfer_rate}
+                  onChange={(e) => setFormData({ ...formData, operator_bank_transfer_rate: parseFloat(e.target.value) })}
+                />
+              </div>
             </div>
 
+            {/* Limits */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_min_payin_amount">Min Payin Amount</Label>
@@ -852,15 +1174,69 @@ export function OperatorsContent() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit_api_timeout_seconds">API Timeout (seconds)</Label>
-              <Input
-                id="edit_api_timeout_seconds"
-                type="number"
-                value={formData.api_timeout_seconds}
-                onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit_min_bank_transfer_amount">Min Bank Transfer Amount</Label>
+                <Input
+                  id="edit_min_bank_transfer_amount"
+                  type="number"
+                  value={formData.min_bank_transfer_amount}
+                  onChange={(e) => setFormData({ ...formData, min_bank_transfer_amount: parseInt(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_max_bank_transfer_amount">Max Bank Transfer Amount</Label>
+                <Input
+                  id="edit_max_bank_transfer_amount"
+                  type="number"
+                  value={formData.max_bank_transfer_amount}
+                  onChange={(e) => setFormData({ ...formData, max_bank_transfer_amount: parseInt(e.target.value) })}
+                />
+              </div>
             </div>
+
+            {/* PAL v2 Fields */}
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="edit_pal_v2_enabled"
+                  checked={formData.pal_v2_enabled}
+                  onCheckedChange={(checked) => setFormData({ ...formData, pal_v2_enabled: checked })}
+                />
+                <Label htmlFor="edit_pal_v2_enabled">PAL v2 Enabled</Label>
+              </div>
+            </div>
+
+            {formData.pal_v2_enabled && (
+              <div className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
+                <div className="space-y-2">
+                  <Label htmlFor="edit_pal_v2_public_key">PAL v2 Public Key</Label>
+                  <Input
+                    id="edit_pal_v2_public_key"
+                    value={formData.pal_v2_public_key}
+                    onChange={(e) => setFormData({ ...formData, pal_v2_public_key: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_pal_v2_secret_key">PAL v2 Secret Key (leave blank to keep current)</Label>
+                  <Input
+                    id="edit_pal_v2_secret_key"
+                    type="password"
+                    value={formData.pal_v2_secret_key}
+                    onChange={(e) => setFormData({ ...formData, pal_v2_secret_key: e.target.value })}
+                    placeholder="Enter new secret key"
+                  />
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="edit_pal_v2_base_url">PAL v2 Base URL</Label>
+                  <Input
+                    id="edit_pal_v2_base_url"
+                    value={formData.pal_v2_base_url}
+                    onChange={(e) => setFormData({ ...formData, pal_v2_base_url: e.target.value })}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
@@ -901,6 +1277,33 @@ export function OperatorsContent() {
                 </>
               ) : (
                 "Update Operator"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Operator Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Operator</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {operatorToDelete?.operator_name}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteOperator} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
               )}
             </Button>
           </DialogFooter>
