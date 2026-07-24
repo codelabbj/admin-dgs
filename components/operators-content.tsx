@@ -57,6 +57,7 @@ interface Operator {
   operator_code: string
   api_backend?: string
   country_code?: string
+  currency?: string
   operator_payin_rate: string
   operator_payout_rate: string
   operator_bank_transfer_rate?: string
@@ -92,6 +93,7 @@ interface CreateOperatorPayload {
   operator_code: string
   api_backend?: string
   country_code?: string
+  currency?: string
   operator_payin_rate: number
   operator_payout_rate: number
   operator_bank_transfer_rate?: number
@@ -135,6 +137,7 @@ export function OperatorsContent() {
     operator_code: '',
     api_backend: 'wave',
     country_code: '',
+    currency: 'XOF',
     operator_payin_rate: 1.0,
     operator_payout_rate: 1.0,
     operator_bank_transfer_rate: 1.0,
@@ -323,6 +326,7 @@ export function OperatorsContent() {
       operator_code: '',
       api_backend: 'wave',
       country_code: '',
+      currency: 'XOF',
       operator_payin_rate: 1.0,
       operator_payout_rate: 1.0,
       operator_bank_transfer_rate: 1.0,
@@ -353,6 +357,7 @@ export function OperatorsContent() {
       operator_code: operator.operator_code,
       api_backend: operator.api_backend || 'wave',
       country_code: operator.country_code || '',
+      currency: operator.currency || 'XOF',
       operator_payin_rate: parseFloat(operator.operator_payin_rate),
       operator_payout_rate: parseFloat(operator.operator_payout_rate),
       operator_bank_transfer_rate: operator.operator_bank_transfer_rate ? parseFloat(operator.operator_bank_transfer_rate) : 1.0,
@@ -414,12 +419,16 @@ export function OperatorsContent() {
     return matchesSearch
   })
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'XOF',
-      minimumFractionDigits: 0,
-    }).format(amount)
+  const formatCurrency = (amount: number, currencyCode = "XOF") => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode,
+        minimumFractionDigits: 0,
+      }).format(amount)
+    } catch {
+      return `${amount.toLocaleString()} ${currencyCode}`
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -599,10 +608,10 @@ export function OperatorsContent() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>Payin: {formatCurrency(operator.min_payin_amount)} - {formatCurrency(operator.max_payin_amount)}</div>
-                          <div>Payout: {formatCurrency(operator.min_payout_amount)} - {formatCurrency(operator.max_payout_amount)}</div>
+                          <div>Payin: {formatCurrency(operator.min_payin_amount, operator.currency || "XOF")} - {formatCurrency(operator.max_payin_amount, operator.currency || "XOF")}</div>
+                          <div>Payout: {formatCurrency(operator.min_payout_amount, operator.currency || "XOF")} - {formatCurrency(operator.max_payout_amount, operator.currency || "XOF")}</div>
                           {operator.min_bank_transfer_amount && operator.max_bank_transfer_amount && (
-                            <div>Bank Transfer: {formatCurrency(operator.min_bank_transfer_amount)} - {formatCurrency(operator.max_bank_transfer_amount)}</div>
+                            <div>Bank Transfer: {formatCurrency(operator.min_bank_transfer_amount, operator.currency || "XOF")} - {formatCurrency(operator.max_bank_transfer_amount, operator.currency || "XOF")}</div>
                           )}
                         </div>
                       </TableCell>
@@ -610,6 +619,9 @@ export function OperatorsContent() {
                         <div className="flex flex-wrap gap-1">
                           <Badge variant="outline" className="text-xs">
                             {operator.api_backend === "wave" ? "Wave" : "PAL v2"}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs font-semibold">
+                            {operator.currency || "XOF"}
                           </Badge>
                           {operator.country_code && (
                             <Badge variant="outline" className="text-xs">
@@ -766,6 +778,23 @@ export function OperatorsContent() {
               placeholder="e.g., SN"
             />
           </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="currency">Currency (wallet impacté)</Label>
+          <Select
+            value={formData.currency || "XOF"}
+            onValueChange={(value) => setFormData({ ...formData, currency: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select currency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="XOF">XOF</SelectItem>
+              <SelectItem value="NGN">NGN</SelectItem>
+              <SelectItem value="GHS">GHS</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <div className="space-y-2">

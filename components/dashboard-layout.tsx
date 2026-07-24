@@ -42,6 +42,7 @@ import {
   Zap,
   Code,
   DollarSign,
+  Coins,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -107,6 +108,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Gestion Commissions", href: "/commission-management", icon: DollarSign, current: pathname === "/commission-management" },
     { name: "Webhooks", href: "/webhooks", icon: Code, current: pathname === "/webhooks" },
     { name: "Operators", href: "/operators", icon: Network, current: pathname === "/operators" },
+    { name: "Devises", href: "/currencies", icon: Coins, current: pathname === "/currencies" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
     // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },
@@ -243,7 +245,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("availableBalance")}:</span>
                   <span className="font-semibold text-neutral-900 dark:text-white">
-                    {isBalanceVisible ? `${balance} FCFA` : "••••••"}
+                    {isBalanceVisible ? `${balance} XOF` : "••••••"}
                   </span>
                   <Button
                     variant="ghost"

@@ -748,8 +748,8 @@ export function DashboardContent() {
   }, [startDate, endDate])
 
   const formatCurrency = (amount: number | null | undefined) => {
-    if (amount == null) return showBalances ? "0 FCFA" : "••••••"
-    return showBalances ? `${amount.toLocaleString()} FCFA` : "••••••"
+    if (amount == null) return showBalances ? "0 XOF" : "••••••"
+    return showBalances ? `${amount.toLocaleString()} XOF` : "••••••"
   }
 
 

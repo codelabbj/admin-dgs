@@ -47,6 +47,14 @@ interface Customer {
     total_payout: number
     total_fees_paid: number
   }
+  wallets?: {
+    uid: string
+    currency_code: string
+    balance: number
+    formatted_balance: string
+    is_default: boolean
+  }[]
+  default_currency?: string
 }
 
 interface CustomerPermission {
@@ -101,6 +109,7 @@ export default function Customers() {
   const [balanceAmount, setBalanceAmount] = useState("")
   const [balanceType, setBalanceType] = useState<"credit" | "debit">("credit")
   const [balanceReason, setBalanceReason] = useState("")
+  const [balanceCurrency, setBalanceCurrency] = useState("XOF")
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -334,9 +343,15 @@ export default function Customers() {
                             </Badge>
                             {customer.account && (
                               <Badge variant="outline" className="text-xs">
-                                Solde: {customer.account.balance?.toLocaleString()} FCFA
+                                Solde: {customer.account.balance?.toLocaleString()} XOF
                               </Badge>
                             )}
+                            {customer.wallets?.map((w) => (
+                              <Badge key={w.uid} variant="outline" className="text-xs">
+                                {w.currency_code}: {w.balance?.toLocaleString()}
+                                {w.is_default ? " ★" : ""}
+                              </Badge>
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -363,7 +378,7 @@ export default function Customers() {
                         <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white rounded-lg" onClick={() => { setSelectedCustomerForAction(customer); setIsUnfreezeModalOpen(true) }}>
                           <Flame className="h-3 w-3 mr-1" />Dégeler
                         </Button>
-                        <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg" onClick={() => { setSelectedCustomerForAction(customer); setBalanceAmount(""); setBalanceReason(""); setIsBalanceModalOpen(true) }}>
+                        <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg" onClick={() => { setSelectedCustomerForAction(customer); setBalanceAmount(""); setBalanceReason(""); setBalanceCurrency("XOF"); setIsBalanceModalOpen(true) }}>
                           <DollarSign className="h-3 w-3 mr-1" />Solde
                         </Button>
                       </div>
@@ -483,6 +498,18 @@ export default function Customers() {
           <div className="space-y-4">
             <p className="text-sm text-neutral-600 dark:text-neutral-400">Client : <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong></p>
             <div>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Devise *</label>
+              <select
+                className="w-full rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm"
+                value={balanceCurrency}
+                onChange={(e) => setBalanceCurrency(e.target.value)}
+              >
+                <option value="XOF">XOF</option>
+                <option value="NGN">NGN</option>
+                <option value="GHS">GHS</option>
+              </select>
+            </div>
+            <div>
               <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Type</label>
               <div className="flex gap-4">
                 {(["credit", "debit"] as const).map(t => (
@@ -494,7 +521,7 @@ export default function Customers() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Montant (FCFA) *</label>
+              <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Montant ({balanceCurrency}) *</label>
               <Input type="number" placeholder="Ex: 50000" value={balanceAmount} onChange={e => setBalanceAmount(e.target.value)} className="rounded-xl" />
             </div>
             <div>
@@ -503,7 +530,7 @@ export default function Customers() {
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setIsBalanceModalOpen(false)}>Annuler</Button>
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled={actionLoading || !balanceAmount || !balanceReason.trim()} onClick={async () => { await callAction(`${baseUrl}/api/v2/admin/customers-config/${selectedCustomerForAction?.customer_id}/adjust-balance/`, "POST", { amount: parseInt(balanceAmount), type: balanceType, reason: balanceReason }); setIsBalanceModalOpen(false) }}>
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white" disabled={actionLoading || !balanceAmount || !balanceReason.trim()} onClick={async () => { await callAction(`${baseUrl}/api/v2/admin/customers-config/${selectedCustomerForAction?.customer_id}/adjust-balance/`, "POST", { amount: parseInt(balanceAmount), type: balanceType, reason: balanceReason, currency: balanceCurrency }); setIsBalanceModalOpen(false) }}>
                 {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <DollarSign className="h-4 w-4 mr-2" />}Ajuster
               </Button>
             </div>

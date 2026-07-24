@@ -53,7 +53,22 @@ interface CustomerDetails {
     total_fees_paid: number
     paid_commission?: number
     unpaid_commission?: number
-  }
+  } | null
+  wallets?: {
+    uid: string
+    currency_code: string
+    currency_name?: string
+    currency_symbol?: string
+    balance: number
+    formatted_balance: string
+    is_default: boolean
+    is_active: boolean
+    is_frozen: boolean
+  }[]
+  default_currency?: string
+  paid_commission?: number
+  unpaid_commission?: number
+  total_commission?: number
 }
 
 // Fonction pour traduire le statut du compte
@@ -97,6 +112,7 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
     notes: ""
   })
   const [ipInput, setIpInput] = useState("")
+  const [walletsLoading, setWalletsLoading] = useState(false)
 
   // Fonction pour récupérer les détails du client
   const fetchCustomerDetails = async () => {
@@ -185,6 +201,33 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
     } catch (err) {
       console.error("Error fetching user data:", err)
       // Don't throw error, just log it as this is optional data
+    }
+  }
+
+  // Fonction pour mettre à jour les informations du client
+  const initCustomerWallets = async () => {
+    try {
+      setWalletsLoading(true)
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+      if (!baseUrl) throw new Error("Base URL not configured")
+      const response = await smartFetch(
+        `${baseUrl}/api/v2/admin/customers-config/${customerId}/wallets/initialize/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        }
+      )
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Erreur ${response.status}`)
+      }
+      await fetchCustomerDetails()
+    } catch (err) {
+      console.error("Error initializing wallets:", err)
+      setError(err instanceof Error ? err.message : "Erreur init wallets")
+    } finally {
+      setWalletsLoading(false)
     }
   }
 
@@ -677,45 +720,82 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
               <CardContent className="p-6">
                <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Solde actuel</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Wallets</label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={walletsLoading}
+                        onClick={initCustomerWallets}
+                      >
+                        {walletsLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                        Initialiser
+                      </Button>
+                    </div>
+                    {customer.wallets && customer.wallets.length > 0 ? (
+                      <div className="space-y-2">
+                        {customer.wallets.map((wallet) => (
+                          <div
+                            key={wallet.uid}
+                            className={`flex items-center justify-between p-3 rounded-xl border ${wallet.is_default ? "border-blue-400 bg-blue-50/50 dark:bg-blue-950/20" : "border-slate-200 dark:border-neutral-700"}`}
+                          >
+                            <div>
+                              <p className="font-semibold text-neutral-900 dark:text-white">
+                                {wallet.currency_code}
+                                {wallet.is_default ? " · default" : ""}
+                              </p>
+                              <p className="text-xs text-neutral-500">{wallet.currency_name || wallet.currency_code}</p>
+                            </div>
+                            <p className="text-lg font-bold text-neutral-900 dark:text-white">
+                              {wallet.formatted_balance || `${wallet.balance.toLocaleString()} ${wallet.currency_code}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-neutral-500">Aucun wallet — cliquez Initialiser</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Solde legacy (XOF)</label>
                     <p className="text-2xl font-bold text-neutral-900 dark:text-white">
-                      {customer.account?.balance?.toLocaleString() || "0"} FCFA
+                      {customer.account?.balance?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total Payin</label>
                     <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                      {customer.account?.total_payin?.toLocaleString() || "0"} FCFA
+                      {customer.account?.total_payin?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total Payout</label>
                     <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                      {customer.account?.total_payout?.toLocaleString() || "0"} FCFA
+                      {customer.account?.total_payout?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total des frais payés</label>
                     <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                      {customer.account?.total_fees_paid?.toLocaleString() || "0"} FCFA
+                      {customer.account?.total_fees_paid?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions encaissées</label>
                     <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                      {customer.account?.paid_commission?.toLocaleString() || "0"} FCFA
+                      {(customer.paid_commission ?? customer.account?.paid_commission)?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions à encaisser</label>
                     <p className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
-                      {customer.account?.unpaid_commission?.toLocaleString() || "0"} FCFA
+                      {(customer.unpaid_commission ?? customer.account?.unpaid_commission)?.toLocaleString() || "0"} XOF
                     </p>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions Total</label>
                     <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                      {((customer.account?.paid_commission || 0) + (customer.account?.unpaid_commission || 0)).toLocaleString()} FCFA
+                      {(customer.total_commission ?? ((customer.paid_commission || customer.account?.paid_commission || 0) + (customer.unpaid_commission || customer.account?.unpaid_commission || 0))).toLocaleString()} XOF
                     </p>
                        </div>
                        </div>
