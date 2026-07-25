@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight, Settings } from "lucide-react"
+import { Search, Filter, Plus, Users, UserCheck, UserX, TrendingUp, MapPin, Building, Globe, Loader2, Shield, ChevronLeft, ChevronRight, Settings, DollarSign } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Pagination,
@@ -100,6 +100,16 @@ export default function Customers() {
   const [pageSize, setPageSize] = useState(10)
   const [totalPages, setTotalPages] = useState(0)
   const [totalUsers, setTotalUsers] = useState(0)
+
+  // Ajustement wallet (test crédit/débit)
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false)
+  const [selectedUserForBalance, setSelectedUserForBalance] = useState<User | null>(null)
+  const [balanceAmount, setBalanceAmount] = useState("")
+  const [balanceType, setBalanceType] = useState<"credit" | "debit">("credit")
+  const [balanceReason, setBalanceReason] = useState("")
+  const [balanceCurrency, setBalanceCurrency] = useState("XOF")
+  const [balanceLoading, setBalanceLoading] = useState(false)
+  const [balanceMessage, setBalanceMessage] = useState("")
 
   // Fonction pour récupérer les utilisateurs depuis l'API
   const fetchUsers = async (query: string = "", page: number = 1) => {
@@ -1061,6 +1071,22 @@ export default function Customers() {
                               Permissions
                             </Button>
                             <Button
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg"
+                              onClick={() => {
+                                setSelectedUserForBalance(customer.user)
+                                setBalanceAmount("")
+                                setBalanceReason("")
+                                setBalanceCurrency("XOF")
+                                setBalanceType("credit")
+                                setBalanceMessage("")
+                                setIsBalanceModalOpen(true)
+                              }}
+                            >
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              Solde
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="sm"
                               className="rounded-lg text-crimson-600 hover:text-crimson-700"
@@ -1534,6 +1560,124 @@ export default function Customers() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Ajuster Solde / Wallet */}
+      <Dialog open={isBalanceModalOpen} onOpenChange={setIsBalanceModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <DollarSign className="h-5 w-5 mr-2 text-purple-600" />
+              Ajuster le Solde (Wallet)
+            </DialogTitle>
+            <DialogDescription>
+              Crédit / débit manuel pour test. Client :{" "}
+              <strong>{selectedUserForBalance?.fullname || selectedUserForBalance?.email}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            {balanceMessage && (
+              <p className="text-sm text-green-600 dark:text-green-400">{balanceMessage}</p>
+            )}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Devise *</label>
+              <select
+                className="w-full rounded-xl border border-slate-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm"
+                value={balanceCurrency}
+                onChange={(e) => setBalanceCurrency(e.target.value)}
+              >
+                <option value="XOF">XOF</option>
+                <option value="NGN">NGN</option>
+                <option value="GHS">GHS</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Type</label>
+              <div className="flex gap-4">
+                {(["credit", "debit"] as const).map((t) => (
+                  <label key={t} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      checked={balanceType === t}
+                      onChange={() => setBalanceType(t)}
+                    />
+                    <span className="text-sm">{t === "credit" ? "Crédit +" : "Débit −"}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Montant ({balanceCurrency}) *</label>
+              <Input
+                type="number"
+                placeholder="Ex: 10000"
+                value={balanceAmount}
+                onChange={(e) => setBalanceAmount(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Raison *</label>
+              <Input
+                placeholder="Ex: Test wallet NGN"
+                value={balanceReason}
+                onChange={(e) => setBalanceReason(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setIsBalanceModalOpen(false)}>
+                Annuler
+              </Button>
+              <Button
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                disabled={balanceLoading || !balanceAmount || !balanceReason.trim() || !selectedUserForBalance}
+                onClick={async () => {
+                  if (!selectedUserForBalance) return
+                  try {
+                    setBalanceLoading(true)
+                    setBalanceMessage("")
+                    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+                    const res = await smartFetch(
+                      `${baseUrl}/api/v2/admin/customers-config/${selectedUserForBalance.id}/adjust-balance/`,
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          amount: parseInt(balanceAmount, 10),
+                          type: balanceType,
+                          reason: balanceReason,
+                          currency: balanceCurrency,
+                        }),
+                      }
+                    )
+                    if (!res.ok) {
+                      const err = await res.json().catch(() => ({}))
+                      throw new Error(err.error || err.detail || err.message || `Erreur ${res.status}`)
+                    }
+                    const data = await res.json()
+                    setBalanceMessage(
+                      data.message ||
+                        `OK — ${balanceType} ${balanceAmount} ${balanceCurrency}`
+                    )
+                    setTimeout(() => setIsBalanceModalOpen(false), 1200)
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Erreur ajustement solde")
+                  } finally {
+                    setBalanceLoading(false)
+                  }
+                }}
+              >
+                {balanceLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <DollarSign className="h-4 w-4 mr-2" />
+                )}
+                Ajuster
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
