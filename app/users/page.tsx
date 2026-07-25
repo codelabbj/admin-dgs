@@ -1053,6 +1053,14 @@ export default function Customers() {
                               Mettre à jour Config
                             </Button>
                             <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                              onClick={() => router.push(`/customers/${customer.user.id}/permissions`)}
+                            >
+                              <Shield className="h-3 w-3 mr-1" />
+                              Permissions
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="sm"
                               className="rounded-lg text-crimson-600 hover:text-crimson-700"
