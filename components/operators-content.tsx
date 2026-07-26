@@ -54,6 +54,8 @@ import { useToast } from "@/hooks/use-toast"
 interface Operator {
   uid: string
   operator_name: string
+  public_operator_name?: string
+  display_name?: string
   operator_code: string
   api_backend?: string
   country_code?: string
@@ -90,6 +92,7 @@ interface OperatorHealth {
 
 interface CreateOperatorPayload {
   operator_name: string
+  public_operator_name?: string
   operator_code: string
   api_backend?: string
   country_code?: string
@@ -134,6 +137,7 @@ export function OperatorsContent() {
   // Form state for create/edit
   const [formData, setFormData] = useState<CreateOperatorPayload>({
     operator_name: '',
+    public_operator_name: '',
     operator_code: '',
     api_backend: 'wave',
     country_code: '',
@@ -323,6 +327,7 @@ export function OperatorsContent() {
   const resetForm = () => {
     setFormData({
       operator_name: '',
+      public_operator_name: '',
       operator_code: '',
       api_backend: 'wave',
       country_code: '',
@@ -354,6 +359,7 @@ export function OperatorsContent() {
     setSelectedOperator(operator)
     setFormData({
       operator_name: operator.operator_name,
+      public_operator_name: operator.public_operator_name || '',
       operator_code: operator.operator_code,
       api_backend: operator.api_backend || 'wave',
       country_code: operator.country_code || '',
@@ -409,8 +415,10 @@ export function OperatorsContent() {
   }
 
   const filteredOperators = operators.filter(operator => {
-    const matchesSearch = operator.operator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         operator.operator_code.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      operator.operator_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (operator.public_operator_name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      operator.operator_code.toLowerCase().includes(searchTerm.toLowerCase())
     
     if (filterStatus === "all") return matchesSearch
     if (filterStatus === "active") return matchesSearch && operator.is_active
@@ -590,8 +598,12 @@ export function OperatorsContent() {
                     <TableRow key={operator.uid}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{operator.operator_name}</div>
-                          <div className="text-sm text-slate-500">{operator.api_base_url}</div>
+                          <div className="font-medium">
+                            {operator.public_operator_name || operator.display_name || operator.operator_name}
+                          </div>
+                          <div className="text-sm text-slate-500">
+                            interne: {operator.operator_name} · {operator.api_base_url}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -734,13 +746,25 @@ export function OperatorsContent() {
         {/* Basic Info */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="operator_name">Operator Name</Label>
+            <Label htmlFor="operator_name">Nom interne (admin)</Label>
             <Input
               id="operator_name"
               value={formData.operator_name}
               onChange={(e) => setFormData({ ...formData, operator_name: e.target.value })}
-              placeholder="e.g., Wave Senegal"
+              placeholder="ex: Moov BJ Pal"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="public_operator_name">Nom public (marchand)</Label>
+            <Input
+              id="public_operator_name"
+              value={formData.public_operator_name || ""}
+              onChange={(e) => setFormData({ ...formData, public_operator_name: e.target.value })}
+              placeholder="ex: Moov Bénin"
+            />
+            <p className="text-xs text-muted-foreground">
+              Affiché dans les sélecteurs payin/payout du dashboard. Si vide → nom interne.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="operator_code">Operator Code</Label>
@@ -1041,11 +1065,20 @@ export function OperatorsContent() {
             {/* Basic Info */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edit_operator_name">Operator Name</Label>
+                <Label htmlFor="edit_operator_name">Nom interne (admin)</Label>
                 <Input
                   id="edit_operator_name"
                   value={formData.operator_name}
                   onChange={(e) => setFormData({ ...formData, operator_name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit_public_operator_name">Nom public (marchand)</Label>
+                <Input
+                  id="edit_public_operator_name"
+                  value={formData.public_operator_name || ""}
+                  onChange={(e) => setFormData({ ...formData, public_operator_name: e.target.value })}
+                  placeholder="ex: Moov Bénin"
                 />
               </div>
               <div className="space-y-2">
