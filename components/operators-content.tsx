@@ -251,9 +251,16 @@ export function OperatorsContent() {
 
     try {
       setIsSubmitting(true)
+      // Ne pas renvoyer les secrets vides (sinon 400 "ne peut être vide")
+      const payload: Record<string, unknown> = { ...formData }
+      if (!String(payload.api_token || "").trim()) delete payload.api_token
+      if (!String(payload.webhook_secret || "").trim()) delete payload.webhook_secret
+      if (!String(payload.pal_v2_secret_key || "").trim()) delete payload.pal_v2_secret_key
+
       const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v2/admin/operators/${selectedOperator.uid}/`, {
         method: "PUT",
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
