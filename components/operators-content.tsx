@@ -212,9 +212,19 @@ export function OperatorsContent() {
   const handleCreateOperator = async () => {
     try {
       setIsSubmitting(true)
+      const payload: Record<string, unknown> = { ...formData }
+      // PAL : credentials dans Settings — ne pas les envoyer sur l'opérateur
+      if (payload.api_backend === "pal_v2") {
+        payload.pal_v2_enabled = true
+        payload.api_base_url = ""
+        payload.api_token = ""
+        delete payload.pal_v2_public_key
+        delete payload.pal_v2_secret_key
+        delete payload.pal_v2_base_url
+      }
       const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v2/admin/operators/create/`, {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (response.ok) {
@@ -256,6 +266,13 @@ export function OperatorsContent() {
       if (!String(payload.api_token || "").trim()) delete payload.api_token
       if (!String(payload.webhook_secret || "").trim()) delete payload.webhook_secret
       if (!String(payload.pal_v2_secret_key || "").trim()) delete payload.pal_v2_secret_key
+      if (payload.api_backend === "pal_v2") {
+        payload.pal_v2_enabled = true
+        delete payload.pal_v2_public_key
+        delete payload.pal_v2_secret_key
+        delete payload.pal_v2_base_url
+        delete payload.api_token
+      }
 
       const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v2/admin/operators/${selectedOperator.uid}/`, {
         method: "PUT",
@@ -609,7 +626,12 @@ export function OperatorsContent() {
                             {operator.public_operator_name || operator.display_name || operator.operator_name}
                           </div>
                           <div className="text-sm text-slate-500">
-                            interne: {operator.operator_name} · {operator.api_base_url}
+                            interne: {operator.operator_name}
+                            {operator.api_backend === "wave" && operator.api_base_url
+                              ? ` · ${operator.api_base_url}`
+                              : operator.api_backend === "pal_v2"
+                                ? " · PAL v2 (Settings)"
+                                : ""}
                           </div>
                         </div>
                       </TableCell>
@@ -789,7 +811,16 @@ export function OperatorsContent() {
             <Label htmlFor="api_backend">API Backend</Label>
             <Select
               value={formData.api_backend}
-              onValueChange={(value) => setFormData({ ...formData, api_backend: value })}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  api_backend: value,
+                  pal_v2_enabled: value === "pal_v2",
+                  ...(value === "pal_v2"
+                    ? { api_base_url: "", api_token: "" }
+                    : {}),
+                })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select API Backend" />
@@ -799,6 +830,11 @@ export function OperatorsContent() {
                 <SelectItem value="pal_v2">PAL v2</SelectItem>
               </SelectContent>
             </Select>
+            {formData.api_backend === "pal_v2" && (
+              <p className="text-xs text-muted-foreground">
+                URL et clés PAL : Settings globaux (pas sur l&apos;opérateur).
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="country_code">Country Code</Label>
@@ -827,28 +863,44 @@ export function OperatorsContent() {
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="api_base_url">API Base URL</Label>
-          <Input
-            id="api_base_url"
-            value={formData.api_base_url}
-            onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
-            placeholder="https://api.wave.com"
-          />
-        </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="api_token">API Token</Label>
-            <Input
-              id="api_token"
-              type="password"
-              value={formData.api_token}
-              onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
-              placeholder="Enter API token"
-            />
-          </div>
+        {formData.api_backend === "wave" && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="api_base_url">API Base URL</Label>
+              <Input
+                id="api_base_url"
+                value={formData.api_base_url}
+                onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
+                placeholder="https://api.wave.com"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="api_token">API Token</Label>
+                <Input
+                  id="api_token"
+                  type="password"
+                  value={formData.api_token}
+                  onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
+                  placeholder="Enter API token"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="api_timeout_seconds">API Timeout (seconds)</Label>
+                <Input
+                  id="api_timeout_seconds"
+                  type="number"
+                  value={formData.api_timeout_seconds}
+                  onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+          </>
+        )}
+
+        {formData.api_backend === "pal_v2" && (
           <div className="space-y-2">
             <Label htmlFor="api_timeout_seconds">API Timeout (seconds)</Label>
             <Input
@@ -858,7 +910,7 @@ export function OperatorsContent() {
               onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
             />
           </div>
-        </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="webhook_secret">Webhook Secret</Label>
@@ -969,49 +1021,11 @@ export function OperatorsContent() {
           </div>
         </div>
 
-        {/* PAL v2 Fields */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="pal_v2_enabled"
-              checked={formData.pal_v2_enabled}
-              onCheckedChange={(checked) => setFormData({ ...formData, pal_v2_enabled: checked })}
-            />
-            <Label htmlFor="pal_v2_enabled">PAL v2 Enabled</Label>
-          </div>
-        </div>
-
-        {formData.pal_v2_enabled && (
-          <div className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
-            <div className="space-y-2">
-              <Label htmlFor="pal_v2_public_key">PAL v2 Public Key</Label>
-              <Input
-                id="pal_v2_public_key"
-                value={formData.pal_v2_public_key}
-                onChange={(e) => setFormData({ ...formData, pal_v2_public_key: e.target.value })}
-                placeholder="pgk_..."
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pal_v2_secret_key">PAL v2 Secret Key</Label>
-              <Input
-                id="pal_v2_secret_key"
-                type="password"
-                value={formData.pal_v2_secret_key}
-                onChange={(e) => setFormData({ ...formData, pal_v2_secret_key: e.target.value })}
-                placeholder="Enter secret key"
-              />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label htmlFor="pal_v2_base_url">PAL v2 Base URL</Label>
-              <Input
-                id="pal_v2_base_url"
-                value={formData.pal_v2_base_url}
-                onChange={(e) => setFormData({ ...formData, pal_v2_base_url: e.target.value })}
-                placeholder="https://partner.pals.africa/api"
-              />
-            </div>
-          </div>
+        {/* PAL v2 : credentials dans Settings globaux */}
+        {formData.api_backend === "pal_v2" && (
+          <p className="text-sm text-muted-foreground border rounded-lg p-3">
+            Clés et base URL PAL v2 : configurées dans Settings (global), pas ici.
+          </p>
         )}
 
         <div className="flex items-center space-x-6">
@@ -1103,7 +1117,14 @@ export function OperatorsContent() {
                 <Label htmlFor="edit_api_backend">API Backend</Label>
                 <Select
                   value={formData.api_backend}
-                  onValueChange={(value) => setFormData({ ...formData, api_backend: value })}
+                  onValueChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      api_backend: value,
+                      pal_v2_enabled: value === "pal_v2",
+                      ...(value === "pal_v2" ? { api_base_url: "", api_token: "" } : {}),
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select API Backend" />
@@ -1113,6 +1134,11 @@ export function OperatorsContent() {
                     <SelectItem value="pal_v2">PAL v2</SelectItem>
                   </SelectContent>
                 </Select>
+                {formData.api_backend === "pal_v2" && (
+                  <p className="text-xs text-muted-foreground">
+                    URL et clés PAL : Settings globaux (pas sur l&apos;opérateur).
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit_country_code">Country Code</Label>
@@ -1123,27 +1149,43 @@ export function OperatorsContent() {
                 />
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="edit_api_base_url">API Base URL</Label>
-              <Input
-                id="edit_api_base_url"
-                value={formData.api_base_url}
-                onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
-              />
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit_api_token">API Token (leave blank to keep current)</Label>
-                <Input
-                  id="edit_api_token"
-                  type="password"
-                  value={formData.api_token}
-                  onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
-                  placeholder="Enter new API token"
-                />
-              </div>
+            {formData.api_backend === "wave" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="edit_api_base_url">API Base URL</Label>
+                  <Input
+                    id="edit_api_base_url"
+                    value={formData.api_base_url}
+                    onChange={(e) => setFormData({ ...formData, api_base_url: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_api_token">API Token (leave blank to keep current)</Label>
+                    <Input
+                      id="edit_api_token"
+                      type="password"
+                      value={formData.api_token}
+                      onChange={(e) => setFormData({ ...formData, api_token: e.target.value })}
+                      placeholder="Enter new API token"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit_api_timeout_seconds">API Timeout (seconds)</Label>
+                    <Input
+                      id="edit_api_timeout_seconds"
+                      type="number"
+                      value={formData.api_timeout_seconds}
+                      onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {formData.api_backend === "pal_v2" && (
               <div className="space-y-2">
                 <Label htmlFor="edit_api_timeout_seconds">API Timeout (seconds)</Label>
                 <Input
@@ -1153,7 +1195,7 @@ export function OperatorsContent() {
                   onChange={(e) => setFormData({ ...formData, api_timeout_seconds: parseInt(e.target.value) })}
                 />
               </div>
-            </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="edit_webhook_secret">Webhook Secret (leave blank to keep current)</Label>
@@ -1264,47 +1306,11 @@ export function OperatorsContent() {
               </div>
             </div>
 
-            {/* PAL v2 Fields */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="edit_pal_v2_enabled"
-                  checked={formData.pal_v2_enabled}
-                  onCheckedChange={(checked) => setFormData({ ...formData, pal_v2_enabled: checked })}
-                />
-                <Label htmlFor="edit_pal_v2_enabled">PAL v2 Enabled</Label>
-              </div>
-            </div>
-
-            {formData.pal_v2_enabled && (
-              <div className="grid grid-cols-2 gap-4 border p-4 rounded-lg">
-                <div className="space-y-2">
-                  <Label htmlFor="edit_pal_v2_public_key">PAL v2 Public Key</Label>
-                  <Input
-                    id="edit_pal_v2_public_key"
-                    value={formData.pal_v2_public_key}
-                    onChange={(e) => setFormData({ ...formData, pal_v2_public_key: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit_pal_v2_secret_key">PAL v2 Secret Key (leave blank to keep current)</Label>
-                  <Input
-                    id="edit_pal_v2_secret_key"
-                    type="password"
-                    value={formData.pal_v2_secret_key}
-                    onChange={(e) => setFormData({ ...formData, pal_v2_secret_key: e.target.value })}
-                    placeholder="Enter new secret key"
-                  />
-                </div>
-                <div className="col-span-2 space-y-2">
-                  <Label htmlFor="edit_pal_v2_base_url">PAL v2 Base URL</Label>
-                  <Input
-                    id="edit_pal_v2_base_url"
-                    value={formData.pal_v2_base_url}
-                    onChange={(e) => setFormData({ ...formData, pal_v2_base_url: e.target.value })}
-                  />
-                </div>
-              </div>
+            {/* PAL v2 : credentials dans Settings globaux */}
+            {formData.api_backend === "pal_v2" && (
+              <p className="text-sm text-muted-foreground border rounded-lg p-3">
+                Clés et base URL PAL v2 : configurées dans Settings (global), pas ici.
+              </p>
             )}
 
             <div className="flex items-center space-x-6">
