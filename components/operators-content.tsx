@@ -240,7 +240,14 @@ export function OperatorsContent() {
         const errorData = await response.json()
         toast({
           title: "Error",
-          description: errorData.message || "Failed to create operator",
+          description:
+            errorData.message
+            || (typeof errorData === "object"
+              ? Object.entries(errorData)
+                  .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : v}`)
+                  .join(" · ")
+              : null)
+            || "Failed to create operator",
           variant: "destructive",
         })
       }
