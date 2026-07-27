@@ -107,7 +107,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Demandes de Remboursement", href: "/refunds", icon: AlertTriangle, current: pathname === "/refunds" || pathname?.startsWith("/refunds") },
     { name: "Gestion Commissions", href: "/commission-management", icon: DollarSign, current: pathname === "/commission-management" },
     { name: "Webhooks", href: "/webhooks", icon: Code, current: pathname === "/webhooks" },
-    { name: "Operators", href: "/operators", icon: Network, current: pathname === "/operators" },
+    { name: "Opérateurs", href: "/operators", icon: Network, current: pathname === "/operators" },
     { name: "Devises", href: "/currencies", icon: Coins, current: pathname === "/currencies" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
