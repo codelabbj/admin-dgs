@@ -231,6 +231,7 @@ export function OperatorsContent() {
   const [operatorToDelete, setOperatorToDelete] = useState<Operator | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeTab, setActiveTab] = useState("operators")
+  const [currencies, setCurrencies] = useState<{ code: string; name: string; is_active: boolean }[]>([])
   const { toast } = useToast()
 
   // Form state for create/edit
@@ -275,7 +276,31 @@ export function OperatorsContent() {
   useEffect(() => {
     loadOperators()
     loadOperatorHealth()
+    loadCurrencies()
   }, [])
+
+  const loadCurrencies = async () => {
+    try {
+      const response = await smartFetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v2/admin/currencies/`)
+      if (!response.ok) return
+      const data = await response.json()
+      const list = Array.isArray(data) ? data : data.results || []
+      setCurrencies(list)
+    } catch (error) {
+      console.error("Error loading currencies:", error)
+    }
+  }
+
+  const currencyOptions = (() => {
+    const active = currencies.filter((c) => c.is_active)
+    const current = formData.currency
+    if (current && !active.some((c) => c.code === current)) {
+      const orphan = currencies.find((c) => c.code === current)
+      if (orphan) return [...active, orphan]
+      return [...active, { code: current, name: current, is_active: false }]
+    }
+    return active.length > 0 ? active : currencies
+  })()
 
   const loadOperators = async () => {
     try {
@@ -993,9 +1018,15 @@ export function OperatorsContent() {
               <SelectValue placeholder="Choisir la devise" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="XOF">XOF</SelectItem>
-              <SelectItem value="NGN">NGN</SelectItem>
-              <SelectItem value="GHS">GHS</SelectItem>
+              {currencyOptions.length === 0 ? (
+                <SelectItem value="XOF">XOF</SelectItem>
+              ) : (
+                currencyOptions.map((c) => (
+                  <SelectItem key={c.code} value={c.code}>
+                    {c.code}{c.name ? ` — ${c.name}` : ""}{!c.is_active ? " (inactif)" : ""}
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -1286,9 +1317,15 @@ export function OperatorsContent() {
                   <SelectValue placeholder="Choisir la devise" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="XOF">XOF</SelectItem>
-                  <SelectItem value="NGN">NGN</SelectItem>
-                  <SelectItem value="GHS">GHS</SelectItem>
+                  {currencyOptions.length === 0 ? (
+                    <SelectItem value="XOF">XOF</SelectItem>
+                  ) : (
+                    currencyOptions.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code}{c.name ? ` — ${c.name}` : ""}{!c.is_active ? " (inactif)" : ""}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
