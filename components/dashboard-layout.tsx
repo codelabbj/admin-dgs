@@ -109,6 +109,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Webhooks", href: "/webhooks", icon: Code, current: pathname === "/webhooks" },
     { name: "Opérateurs", href: "/operators", icon: Network, current: pathname === "/operators" },
     { name: "Devises", href: "/currencies", icon: Coins, current: pathname === "/currencies" },
+    { name: "Pays", href: "/countries", icon: Globe, current: pathname === "/countries" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
     // { name: t("payDirect"), href: "/pay", icon: Zap, current: pathname === "/pay" },
     // { name: t("payDirect"), href: "/direct", icon: MessageCircle, current: pathname === "/direct" },
