@@ -81,9 +81,17 @@ export default function Customers() {
     webhook_url: "",
     payin_fee_rate: 1.3,
     payout_fee_rate: 1.6,
+    bank_transfer_fee_rate: 1.5,
+    payin_fee_mode: "percentage",
+    payout_fee_mode: "percentage",
+    bank_transfer_fee_mode: "percentage",
     use_fixed_fees: false,
     payin_fee_fixed: "",
     payout_fee_fixed: "",
+    bank_transfer_fee_fixed: "",
+    payin_fee_base: 0,
+    payout_fee_base: 0,
+    bank_transfer_fee_base: 0,
     daily_payin_limit: "",
     daily_payout_limit: "",
     monthly_payin_limit: "",
@@ -363,9 +371,20 @@ export default function Customers() {
         webhook_url: configForm.webhook_url || null,
         payin_fee_rate: configForm.payin_fee_rate,
         payout_fee_rate: configForm.payout_fee_rate,
-        use_fixed_fees: configForm.use_fixed_fees,
+        bank_transfer_fee_rate: configForm.bank_transfer_fee_rate,
+        payin_fee_mode: configForm.payin_fee_mode,
+        payout_fee_mode: configForm.payout_fee_mode,
+        bank_transfer_fee_mode: configForm.bank_transfer_fee_mode,
+        use_fixed_fees:
+          configForm.payin_fee_mode === "fixed" &&
+          configForm.payout_fee_mode === "fixed" &&
+          configForm.bank_transfer_fee_mode === "fixed",
         payin_fee_fixed: configForm.payin_fee_fixed || null,
         payout_fee_fixed: configForm.payout_fee_fixed || null,
+        bank_transfer_fee_fixed: configForm.bank_transfer_fee_fixed || null,
+        payin_fee_base: configForm.payin_fee_base || 0,
+        payout_fee_base: configForm.payout_fee_base || 0,
+        bank_transfer_fee_base: configForm.bank_transfer_fee_base || 0,
         daily_payin_limit: configForm.daily_payin_limit || null,
         daily_payout_limit: configForm.daily_payout_limit || null,
         monthly_payin_limit: configForm.monthly_payin_limit || null,
@@ -440,9 +459,17 @@ export default function Customers() {
         webhook_url: data.webhook_url || "",
         payin_fee_rate: parseFloat(data.payin_fee_rate) || 1.3,
         payout_fee_rate: parseFloat(data.payout_fee_rate) || 1.6,
+        bank_transfer_fee_rate: parseFloat(data.bank_transfer_fee_rate) || 1.5,
+        payin_fee_mode: data.payin_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
+        payout_fee_mode: data.payout_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
+        bank_transfer_fee_mode: data.bank_transfer_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
         use_fixed_fees: data.use_fixed_fees || false,
         payin_fee_fixed: data.payin_fee_fixed || "",
         payout_fee_fixed: data.payout_fee_fixed || "",
+        bank_transfer_fee_fixed: data.bank_transfer_fee_fixed || "",
+        payin_fee_base: data.payin_fee_base || 0,
+        payout_fee_base: data.payout_fee_base || 0,
+        bank_transfer_fee_base: data.bank_transfer_fee_base || 0,
         daily_payin_limit: data.daily_payin_limit || "",
         daily_payout_limit: data.daily_payout_limit || "",
         monthly_payin_limit: data.monthly_payin_limit || "",
@@ -467,9 +494,17 @@ export default function Customers() {
         webhook_url: "",
         payin_fee_rate: 1.3,
         payout_fee_rate: 1.6,
+        bank_transfer_fee_rate: 1.5,
+        payin_fee_mode: "percentage",
+        payout_fee_mode: "percentage",
+        bank_transfer_fee_mode: "percentage",
         use_fixed_fees: false,
         payin_fee_fixed: "",
         payout_fee_fixed: "",
+        bank_transfer_fee_fixed: "",
+        payin_fee_base: 0,
+        payout_fee_base: 0,
+        bank_transfer_fee_base: 0,
         daily_payin_limit: "",
         daily_payout_limit: "",
         monthly_payin_limit: "",
@@ -1383,43 +1418,88 @@ export default function Customers() {
 
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                          Taux de frais Payin (%)
+                          Mode / frais Collecte
                         </label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="1.3"
-                          value={configForm.payin_fee_rate}
-                          onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_rate: parseFloat(e.target.value) || 0 }))}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                        />
+                        <select
+                          className="w-full rounded-xl border border-slate-200 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm mb-2"
+                          value={configForm.payin_fee_mode}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_mode: e.target.value }))}
+                        >
+                          <option value="percentage">Pourcentage (actuel)</option>
+                          <option value="fixed">Frais fixe</option>
+                          <option value="base_percent">Base + %</option>
+                        </select>
+                        {(configForm.payin_fee_mode === "percentage" || configForm.payin_fee_mode === "base_percent") && (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="Taux %"
+                            value={configForm.payin_fee_rate}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_rate: parseFloat(e.target.value) || 0 }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700 mb-2"
+                          />
+                        )}
+                        {configForm.payin_fee_mode === "fixed" && (
+                          <Input
+                            type="number"
+                            placeholder="Montant fixe"
+                            value={configForm.payin_fee_fixed}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_fixed: e.target.value }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          />
+                        )}
+                        {configForm.payin_fee_mode === "base_percent" && (
+                          <Input
+                            type="number"
+                            placeholder="Frais de base (min)"
+                            value={configForm.payin_fee_base}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payin_fee_base: parseInt(e.target.value) || 0 }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          />
+                        )}
                       </div>
 
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                          Taux de frais Payout (%)
+                          Mode / frais Retrait
                         </label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="1.6"
-                          value={configForm.payout_fee_rate}
-                          onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_rate: parseFloat(e.target.value) || 0 }))}
-                          className="rounded-xl border-slate-200 dark:border-neutral-700"
-                        />
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="use_fixed_fees"
-                          checked={configForm.use_fixed_fees}
-                          onChange={(e) => setConfigForm(prev => ({ ...prev, use_fixed_fees: e.target.checked }))}
-                          className="rounded border-slate-300 text-green-600 focus:ring-green-500"
-                        />
-                        <label htmlFor="use_fixed_fees" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                          Utiliser des frais fixes
-                        </label>
+                        <select
+                          className="w-full rounded-xl border border-slate-200 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm mb-2"
+                          value={configForm.payout_fee_mode}
+                          onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_mode: e.target.value }))}
+                        >
+                          <option value="percentage">Pourcentage (actuel)</option>
+                          <option value="fixed">Frais fixe</option>
+                          <option value="base_percent">Base + %</option>
+                        </select>
+                        {(configForm.payout_fee_mode === "percentage" || configForm.payout_fee_mode === "base_percent") && (
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="Taux %"
+                            value={configForm.payout_fee_rate}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_rate: parseFloat(e.target.value) || 0 }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700 mb-2"
+                          />
+                        )}
+                        {configForm.payout_fee_mode === "fixed" && (
+                          <Input
+                            type="number"
+                            placeholder="Montant fixe"
+                            value={configForm.payout_fee_fixed}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_fixed: e.target.value }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          />
+                        )}
+                        {configForm.payout_fee_mode === "base_percent" && (
+                          <Input
+                            type="number"
+                            placeholder="Frais de base (min)"
+                            value={configForm.payout_fee_base}
+                            onChange={(e) => setConfigForm(prev => ({ ...prev, payout_fee_base: parseInt(e.target.value) || 0 }))}
+                            className="rounded-xl border-slate-200 dark:border-neutral-700"
+                          />
+                        )}
                       </div>
                     </div>
 

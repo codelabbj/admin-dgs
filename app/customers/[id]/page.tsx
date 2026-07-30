@@ -27,9 +27,17 @@ interface CustomerDetails {
   webhook_url: string | null
   payin_fee_rate: string
   payout_fee_rate: string
+  bank_transfer_fee_rate?: string
+  payin_fee_mode?: string
+  payout_fee_mode?: string
+  bank_transfer_fee_mode?: string
   use_fixed_fees: boolean
   payin_fee_fixed: string | null
   payout_fee_fixed: string | null
+  bank_transfer_fee_fixed?: string | null
+  payin_fee_base?: number
+  payout_fee_base?: number
+  bank_transfer_fee_base?: number
   daily_payin_limit: string | null
   daily_payout_limit: string | null
   monthly_payin_limit: string | null
@@ -106,6 +114,16 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
     webhook_url: "",
     payin_fee_rate: "",
     payout_fee_rate: "",
+    bank_transfer_fee_rate: "",
+    payin_fee_mode: "percentage",
+    payout_fee_mode: "percentage",
+    bank_transfer_fee_mode: "percentage",
+    payin_fee_fixed: "",
+    payout_fee_fixed: "",
+    bank_transfer_fee_fixed: "",
+    payin_fee_base: "0",
+    payout_fee_base: "0",
+    bank_transfer_fee_base: "0",
     use_fixed_fees: false,
     ip_whitelist: [] as string[],
     require_ip_whitelist: false,
@@ -146,6 +164,16 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
         webhook_url: data.webhook_url || "",
         payin_fee_rate: data.payin_fee_rate,
         payout_fee_rate: data.payout_fee_rate,
+        bank_transfer_fee_rate: data.bank_transfer_fee_rate || "1.5",
+        payin_fee_mode: data.payin_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
+        payout_fee_mode: data.payout_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
+        bank_transfer_fee_mode: data.bank_transfer_fee_mode || (data.use_fixed_fees ? "fixed" : "percentage"),
+        payin_fee_fixed: data.payin_fee_fixed || "",
+        payout_fee_fixed: data.payout_fee_fixed || "",
+        bank_transfer_fee_fixed: data.bank_transfer_fee_fixed || "",
+        payin_fee_base: String(data.payin_fee_base ?? 0),
+        payout_fee_base: String(data.payout_fee_base ?? 0),
+        bank_transfer_fee_base: String(data.bank_transfer_fee_base ?? 0),
         use_fixed_fees: data.use_fixed_fees,
         ip_whitelist: data.ip_whitelist || [],
         require_ip_whitelist: data.require_ip_whitelist,
@@ -248,7 +276,20 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
         webhook_url: editForm.webhook_url || null,
         payin_fee_rate: editForm.payin_fee_rate,
         payout_fee_rate: editForm.payout_fee_rate,
-        use_fixed_fees: editForm.use_fixed_fees,
+        bank_transfer_fee_rate: editForm.bank_transfer_fee_rate || "1.5",
+        payin_fee_mode: editForm.payin_fee_mode,
+        payout_fee_mode: editForm.payout_fee_mode,
+        bank_transfer_fee_mode: editForm.bank_transfer_fee_mode,
+        payin_fee_fixed: editForm.payin_fee_fixed ? parseInt(editForm.payin_fee_fixed) : null,
+        payout_fee_fixed: editForm.payout_fee_fixed ? parseInt(editForm.payout_fee_fixed) : null,
+        bank_transfer_fee_fixed: editForm.bank_transfer_fee_fixed ? parseInt(editForm.bank_transfer_fee_fixed) : null,
+        payin_fee_base: parseInt(editForm.payin_fee_base) || 0,
+        payout_fee_base: parseInt(editForm.payout_fee_base) || 0,
+        bank_transfer_fee_base: parseInt(editForm.bank_transfer_fee_base) || 0,
+        use_fixed_fees:
+          editForm.payin_fee_mode === "fixed" &&
+          editForm.payout_fee_mode === "fixed" &&
+          editForm.bank_transfer_fee_mode === "fixed",
         ip_whitelist: editForm.ip_whitelist,
         require_ip_whitelist: editForm.require_ip_whitelist,
         notes: editForm.notes
@@ -599,35 +640,31 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                 </CardTitle>
              </CardHeader>
               <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Taux de frais Payin</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">{customer.payin_fee_rate}%</p>
-                   </div>
-                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Taux de frais Payout</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">{customer.payout_fee_rate}%</p>
-                   </div>
-                 <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Frais fixes Payin</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">
-                      {customer.payin_fee_fixed || "Non configuré"}
-                   </p>
-                 </div>
-                 <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Frais fixes Payout</label>
-                    <p className="text-neutral-900 dark:text-white text-sm">
-                      {customer.payout_fee_fixed || "Non configuré"}
-                   </p>
-                 </div>
-                 <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Type de frais</label>
-                    <div className="mt-1">
-                      <Badge className={customer.use_fixed_fees ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"}>
-                        {customer.use_fixed_fees ? "Frais fixes" : "Frais variables"}
-                     </Badge>
-                   </div>
-                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {([
+                    ["Collecte", customer.payin_fee_mode, customer.payin_fee_rate, customer.payin_fee_fixed, customer.payin_fee_base],
+                    ["Retrait", customer.payout_fee_mode, customer.payout_fee_rate, customer.payout_fee_fixed, customer.payout_fee_base],
+                    ["Virement", customer.bank_transfer_fee_mode, customer.bank_transfer_fee_rate, customer.bank_transfer_fee_fixed, customer.bank_transfer_fee_base],
+                  ] as const).map(([label, mode, rate, fixed, base]) => {
+                    const m = mode || (customer.use_fixed_fees ? "fixed" : "percentage")
+                    const modeLabel =
+                      m === "fixed" ? "Frais fixe" : m === "base_percent" ? "Base + %" : "Pourcentage"
+                    return (
+                      <div key={label as string} className="space-y-1">
+                        <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">{label}</label>
+                        <Badge className="bg-slate-100 text-slate-800">{modeLabel}</Badge>
+                        {(m === "percentage" || m === "base_percent") && (
+                          <p className="text-neutral-900 dark:text-white text-sm">{rate ?? "—"}%</p>
+                        )}
+                        {m === "fixed" && (
+                          <p className="text-neutral-900 dark:text-white text-sm">{fixed || "Non configuré"}</p>
+                        )}
+                        {m === "base_percent" && (
+                          <p className="text-neutral-500 text-xs">Base min. : {base ?? 0}</p>
+                        )}
+                      </div>
+                    )
+                  })}
                </div>
               </CardContent>
             </Card>
@@ -880,49 +917,63 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                 />
                    </div>
 
-              {/* Frais */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                    Taux de frais Payin (%)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="1.50"
-                    value={editForm.payin_fee_rate}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, payin_fee_rate: e.target.value }))}
-                    className="rounded-xl border-slate-200 dark:border-neutral-700"
-                  />
-                       </div>
-                <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                    Taux de frais Payout (%)
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="1.70"
-                    value={editForm.payout_fee_rate}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, payout_fee_rate: e.target.value }))}
-                    className="rounded-xl border-slate-200 dark:border-neutral-700"
-                  />
-                     </div>
-                   </div>
-
-              {/* Frais fixes */}
-              <div className="flex items-center space-x-3">
-                <input
-                  type="checkbox"
-                  id="use_fixed_fees"
-                  checked={editForm.use_fixed_fees}
-                  onChange={(e) => setEditForm(prev => ({ ...prev, use_fixed_fees: e.target.checked }))}
-                  className="rounded border-slate-300 text-crimson-600 focus:ring-crimson-500"
-                />
-                <label htmlFor="use_fixed_fees" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                  Utiliser des frais fixes
-                </label>
-               </div>
+              {/* Frais par flux */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-neutral-900 dark:text-white">Frais client (par flux)</h4>
+                {([
+                  ["payin", "Collecte"],
+                  ["payout", "Retrait"],
+                  ["bank_transfer", "Virement"],
+                ] as const).map(([flow, label]) => {
+                  const modeKey = `${flow}_fee_mode` as keyof typeof editForm
+                  const rateKey = `${flow}_fee_rate` as keyof typeof editForm
+                  const fixedKey = `${flow}_fee_fixed` as keyof typeof editForm
+                  const baseKey = `${flow}_fee_base` as keyof typeof editForm
+                  const mode = String(editForm[modeKey] || "percentage")
+                  return (
+                    <div key={flow} className="p-3 rounded-xl border border-slate-200 dark:border-neutral-700 space-y-2">
+                      <label className="text-sm font-medium">{label}</label>
+                      <select
+                        className="w-full rounded-xl border border-slate-200 dark:border-neutral-700 bg-transparent px-3 py-2 text-sm"
+                        value={mode}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, [modeKey]: e.target.value }))}
+                      >
+                        <option value="percentage">Pourcentage (actuel)</option>
+                        <option value="fixed">Frais fixe</option>
+                        <option value="base_percent">Base + %</option>
+                      </select>
+                      {(mode === "percentage" || mode === "base_percent") && (
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="Taux %"
+                          value={String(editForm[rateKey] ?? "")}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, [rateKey]: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      )}
+                      {mode === "fixed" && (
+                        <Input
+                          type="number"
+                          placeholder="Montant fixe"
+                          value={String(editForm[fixedKey] ?? "")}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, [fixedKey]: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      )}
+                      {mode === "base_percent" && (
+                        <Input
+                          type="number"
+                          placeholder="Frais de base (minimum)"
+                          value={String(editForm[baseKey] ?? "0")}
+                          onChange={(e) => setEditForm(prev => ({ ...prev, [baseKey]: e.target.value }))}
+                          className="rounded-xl border-slate-200 dark:border-neutral-700"
+                        />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
 
               {/* IP Whitelist */}
                  <div className="space-y-4">

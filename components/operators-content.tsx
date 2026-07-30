@@ -63,6 +63,15 @@ interface Operator {
   operator_payin_rate: string
   operator_payout_rate: string
   operator_bank_transfer_rate?: string
+  payin_fee_mode?: string
+  payout_fee_mode?: string
+  bank_transfer_fee_mode?: string
+  operator_payin_fee_fixed?: number
+  operator_payout_fee_fixed?: number
+  operator_bank_transfer_fee_fixed?: number
+  operator_payin_fee_base?: number
+  operator_payout_fee_base?: number
+  operator_bank_transfer_fee_base?: number
   min_payin_amount: number
   max_payin_amount: number
   min_payout_amount: number
@@ -100,6 +109,15 @@ interface CreateOperatorPayload {
   operator_payin_rate: number
   operator_payout_rate: number
   operator_bank_transfer_rate?: number
+  payin_fee_mode?: string
+  payout_fee_mode?: string
+  bank_transfer_fee_mode?: string
+  operator_payin_fee_fixed?: number
+  operator_payout_fee_fixed?: number
+  operator_bank_transfer_fee_fixed?: number
+  operator_payin_fee_base?: number
+  operator_payout_fee_base?: number
+  operator_bank_transfer_fee_base?: number
   min_payin_amount: number
   max_payin_amount: number
   min_payout_amount: number
@@ -117,6 +135,87 @@ interface CreateOperatorPayload {
   pal_v2_public_key?: string
   pal_v2_secret_key?: string
   pal_v2_base_url?: string
+}
+
+const FEE_MODE_OPTIONS = [
+  { value: "percentage", label: "Pourcentage (actuel)" },
+  { value: "fixed", label: "Frais fixe" },
+  { value: "base_percent", label: "Base + %" },
+]
+
+function OperatorFeeFlowFields({
+  idPrefix,
+  title,
+  mode,
+  rate,
+  fixed,
+  base,
+  onMode,
+  onRate,
+  onFixed,
+  onBase,
+}: {
+  idPrefix: string
+  title: string
+  mode?: string
+  rate?: number
+  fixed?: number
+  base?: number
+  onMode: (v: string) => void
+  onRate: (v: number) => void
+  onFixed: (v: number) => void
+  onBase: (v: number) => void
+}) {
+  const m = mode || "percentage"
+  return (
+    <div className="space-y-2 p-3 rounded-lg border border-slate-200 dark:border-neutral-700">
+      <Label className="font-medium">{title}</Label>
+      <Select value={m} onValueChange={onMode}>
+        <SelectTrigger id={`${idPrefix}_mode`}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {FEE_MODE_OPTIONS.map((o) => (
+            <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {(m === "percentage" || m === "base_percent") && (
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}_rate`} className="text-xs text-muted-foreground">Taux (%)</Label>
+          <Input
+            id={`${idPrefix}_rate`}
+            type="number"
+            step="0.01"
+            value={rate ?? 0}
+            onChange={(e) => onRate(parseFloat(e.target.value) || 0)}
+          />
+        </div>
+      )}
+      {m === "fixed" && (
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}_fixed`} className="text-xs text-muted-foreground">Montant fixe</Label>
+          <Input
+            id={`${idPrefix}_fixed`}
+            type="number"
+            value={fixed ?? 0}
+            onChange={(e) => onFixed(parseInt(e.target.value) || 0)}
+          />
+        </div>
+      )}
+      {m === "base_percent" && (
+        <div className="space-y-1">
+          <Label htmlFor={`${idPrefix}_base`} className="text-xs text-muted-foreground">Frais de base (minimum)</Label>
+          <Input
+            id={`${idPrefix}_base`}
+            type="number"
+            value={base ?? 0}
+            onChange={(e) => onBase(parseInt(e.target.value) || 0)}
+          />
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function OperatorsContent() {
@@ -145,6 +244,15 @@ export function OperatorsContent() {
     operator_payin_rate: 1.0,
     operator_payout_rate: 1.0,
     operator_bank_transfer_rate: 1.0,
+    payin_fee_mode: 'percentage',
+    payout_fee_mode: 'percentage',
+    bank_transfer_fee_mode: 'percentage',
+    operator_payin_fee_fixed: 0,
+    operator_payout_fee_fixed: 0,
+    operator_bank_transfer_fee_fixed: 0,
+    operator_payin_fee_base: 0,
+    operator_payout_fee_base: 0,
+    operator_bank_transfer_fee_base: 0,
     min_payin_amount: 500,
     max_payin_amount: 2000000,
     min_payout_amount: 1000,
@@ -369,6 +477,15 @@ export function OperatorsContent() {
       operator_payin_rate: 1.0,
       operator_payout_rate: 1.0,
       operator_bank_transfer_rate: 1.0,
+      payin_fee_mode: 'percentage',
+      payout_fee_mode: 'percentage',
+      bank_transfer_fee_mode: 'percentage',
+      operator_payin_fee_fixed: 0,
+      operator_payout_fee_fixed: 0,
+      operator_bank_transfer_fee_fixed: 0,
+      operator_payin_fee_base: 0,
+      operator_payout_fee_base: 0,
+      operator_bank_transfer_fee_base: 0,
       min_payin_amount: 500,
       max_payin_amount: 2000000,
       min_payout_amount: 1000,
@@ -401,6 +518,15 @@ export function OperatorsContent() {
       operator_payin_rate: parseFloat(operator.operator_payin_rate),
       operator_payout_rate: parseFloat(operator.operator_payout_rate),
       operator_bank_transfer_rate: operator.operator_bank_transfer_rate ? parseFloat(operator.operator_bank_transfer_rate) : 1.0,
+      payin_fee_mode: operator.payin_fee_mode || 'percentage',
+      payout_fee_mode: operator.payout_fee_mode || 'percentage',
+      bank_transfer_fee_mode: operator.bank_transfer_fee_mode || 'percentage',
+      operator_payin_fee_fixed: operator.operator_payin_fee_fixed || 0,
+      operator_payout_fee_fixed: operator.operator_payout_fee_fixed || 0,
+      operator_bank_transfer_fee_fixed: operator.operator_bank_transfer_fee_fixed || 0,
+      operator_payin_fee_base: operator.operator_payin_fee_base || 0,
+      operator_payout_fee_base: operator.operator_payout_fee_base || 0,
+      operator_bank_transfer_fee_base: operator.operator_bank_transfer_fee_base || 0,
       min_payin_amount: operator.min_payin_amount,
       max_payin_amount: operator.max_payin_amount,
       min_payout_amount: operator.min_payout_amount,
@@ -650,8 +776,8 @@ export function OperatorsContent() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          <div>Collecte : {operator.operator_payin_rate}</div>
-                          <div>Retrait : {operator.operator_payout_rate}</div>
+                          <div>Collecte : {operator.payin_fee_mode || "percentage"} / {operator.operator_payin_rate}</div>
+                          <div>Retrait : {operator.payout_fee_mode || "percentage"} / {operator.operator_payout_rate}</div>
                           {operator.operator_bank_transfer_rate && (
                             <div>Virement : {operator.operator_bank_transfer_rate}</div>
                           )}
@@ -922,36 +1048,45 @@ export function OperatorsContent() {
           </div>
         )}
 
-        {/* Rates */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="operator_payin_rate">Taux de collecte</Label>
-            <Input
-              id="operator_payin_rate"
-              type="number"
-              step="0.01"
-              value={formData.operator_payin_rate}
-              onChange={(e) => setFormData({ ...formData, operator_payin_rate: parseFloat(e.target.value) })}
+        {/* Frais / coûts opérateur */}
+        <div className="space-y-2">
+          <Label className="text-base">Coûts opérateur (par flux)</Label>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <OperatorFeeFlowFields
+              idPrefix="payin"
+              title="Collecte"
+              mode={formData.payin_fee_mode}
+              rate={formData.operator_payin_rate}
+              fixed={formData.operator_payin_fee_fixed}
+              base={formData.operator_payin_fee_base}
+              onMode={(v) => setFormData({ ...formData, payin_fee_mode: v })}
+              onRate={(v) => setFormData({ ...formData, operator_payin_rate: v })}
+              onFixed={(v) => setFormData({ ...formData, operator_payin_fee_fixed: v })}
+              onBase={(v) => setFormData({ ...formData, operator_payin_fee_base: v })}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="operator_payout_rate">Taux de retrait</Label>
-            <Input
-              id="operator_payout_rate"
-              type="number"
-              step="0.01"
-              value={formData.operator_payout_rate}
-              onChange={(e) => setFormData({ ...formData, operator_payout_rate: parseFloat(e.target.value) })}
+            <OperatorFeeFlowFields
+              idPrefix="payout"
+              title="Retrait"
+              mode={formData.payout_fee_mode}
+              rate={formData.operator_payout_rate}
+              fixed={formData.operator_payout_fee_fixed}
+              base={formData.operator_payout_fee_base}
+              onMode={(v) => setFormData({ ...formData, payout_fee_mode: v })}
+              onRate={(v) => setFormData({ ...formData, operator_payout_rate: v })}
+              onFixed={(v) => setFormData({ ...formData, operator_payout_fee_fixed: v })}
+              onBase={(v) => setFormData({ ...formData, operator_payout_fee_base: v })}
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="operator_bank_transfer_rate">Taux de virement bancaire</Label>
-            <Input
-              id="operator_bank_transfer_rate"
-              type="number"
-              step="0.01"
-              value={formData.operator_bank_transfer_rate}
-              onChange={(e) => setFormData({ ...formData, operator_bank_transfer_rate: parseFloat(e.target.value) })}
+            <OperatorFeeFlowFields
+              idPrefix="bank"
+              title="Virement"
+              mode={formData.bank_transfer_fee_mode}
+              rate={formData.operator_bank_transfer_rate}
+              fixed={formData.operator_bank_transfer_fee_fixed}
+              base={formData.operator_bank_transfer_fee_base}
+              onMode={(v) => setFormData({ ...formData, bank_transfer_fee_mode: v })}
+              onRate={(v) => setFormData({ ...formData, operator_bank_transfer_rate: v })}
+              onFixed={(v) => setFormData({ ...formData, operator_bank_transfer_fee_fixed: v })}
+              onBase={(v) => setFormData({ ...formData, operator_bank_transfer_fee_base: v })}
             />
           </div>
         </div>
@@ -1205,36 +1340,45 @@ export function OperatorsContent() {
               </div>
             )}
 
-            {/* Rates */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit_operator_payin_rate">Taux de collecte</Label>
-                <Input
-                  id="edit_operator_payin_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.operator_payin_rate}
-                  onChange={(e) => setFormData({ ...formData, operator_payin_rate: parseFloat(e.target.value) })}
+            {/* Frais / coûts opérateur */}
+            <div className="space-y-2">
+              <Label className="text-base">Coûts opérateur (par flux)</Label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <OperatorFeeFlowFields
+                  idPrefix="edit_payin"
+                  title="Collecte"
+                  mode={formData.payin_fee_mode}
+                  rate={formData.operator_payin_rate}
+                  fixed={formData.operator_payin_fee_fixed}
+                  base={formData.operator_payin_fee_base}
+                  onMode={(v) => setFormData({ ...formData, payin_fee_mode: v })}
+                  onRate={(v) => setFormData({ ...formData, operator_payin_rate: v })}
+                  onFixed={(v) => setFormData({ ...formData, operator_payin_fee_fixed: v })}
+                  onBase={(v) => setFormData({ ...formData, operator_payin_fee_base: v })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_operator_payout_rate">Taux de retrait</Label>
-                <Input
-                  id="edit_operator_payout_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.operator_payout_rate}
-                  onChange={(e) => setFormData({ ...formData, operator_payout_rate: parseFloat(e.target.value) })}
+                <OperatorFeeFlowFields
+                  idPrefix="edit_payout"
+                  title="Retrait"
+                  mode={formData.payout_fee_mode}
+                  rate={formData.operator_payout_rate}
+                  fixed={formData.operator_payout_fee_fixed}
+                  base={formData.operator_payout_fee_base}
+                  onMode={(v) => setFormData({ ...formData, payout_fee_mode: v })}
+                  onRate={(v) => setFormData({ ...formData, operator_payout_rate: v })}
+                  onFixed={(v) => setFormData({ ...formData, operator_payout_fee_fixed: v })}
+                  onBase={(v) => setFormData({ ...formData, operator_payout_fee_base: v })}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit_operator_bank_transfer_rate">Taux de virement bancaire</Label>
-                <Input
-                  id="edit_operator_bank_transfer_rate"
-                  type="number"
-                  step="0.01"
-                  value={formData.operator_bank_transfer_rate}
-                  onChange={(e) => setFormData({ ...formData, operator_bank_transfer_rate: parseFloat(e.target.value) })}
+                <OperatorFeeFlowFields
+                  idPrefix="edit_bank"
+                  title="Virement"
+                  mode={formData.bank_transfer_fee_mode}
+                  rate={formData.operator_bank_transfer_rate}
+                  fixed={formData.operator_bank_transfer_fee_fixed}
+                  base={formData.operator_bank_transfer_fee_base}
+                  onMode={(v) => setFormData({ ...formData, bank_transfer_fee_mode: v })}
+                  onRate={(v) => setFormData({ ...formData, operator_bank_transfer_rate: v })}
+                  onFixed={(v) => setFormData({ ...formData, operator_bank_transfer_fee_fixed: v })}
+                  onBase={(v) => setFormData({ ...formData, operator_bank_transfer_fee_base: v })}
                 />
               </div>
             </div>
