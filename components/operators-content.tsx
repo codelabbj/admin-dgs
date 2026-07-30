@@ -1141,6 +1141,23 @@ export function OperatorsContent() {
               </div>
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="edit_currency">Devise (portefeuille impacté)</Label>
+              <Select
+                value={formData.currency || "XOF"}
+                onValueChange={(value) => setFormData({ ...formData, currency: value })}
+              >
+                <SelectTrigger id="edit_currency">
+                  <SelectValue placeholder="Choisir la devise" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="XOF">XOF</SelectItem>
+                  <SelectItem value="NGN">NGN</SelectItem>
+                  <SelectItem value="GHS">GHS</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             {formData.api_backend === "wave" && (
               <>
                 <div className="space-y-2">
