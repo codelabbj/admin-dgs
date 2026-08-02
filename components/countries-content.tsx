@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Globe, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { useCurrencies } from "@/hooks/use-currencies"
 
 interface Country {
   uid: string
@@ -39,6 +41,13 @@ export function CountriesContent() {
   })
   const { toast } = useToast()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  const { currencies: catalogCurrencies, defaultCode } = useCurrencies(true)
+
+  useEffect(() => {
+    if (defaultCode) {
+      setForm((prev) => ({ ...prev, currency_code: prev.currency_code || defaultCode }))
+    }
+  }, [defaultCode])
 
   const loadCountries = async () => {
     try {
@@ -262,11 +271,25 @@ export function CountriesContent() {
             </div>
             <div>
               <Label>Devise associée</Label>
-              <Input
-                value={form.currency_code}
-                onChange={(e) => setForm({ ...form, currency_code: e.target.value })}
-                placeholder="XAF"
-              />
+              <Select
+                value={form.currency_code || defaultCode || "XOF"}
+                onValueChange={(value) => setForm({ ...form, currency_code: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir une devise" />
+                </SelectTrigger>
+                <SelectContent>
+                  {catalogCurrencies.length === 0 ? (
+                    <SelectItem value="XOF">XOF</SelectItem>
+                  ) : (
+                    catalogCurrencies.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code}{c.name ? ` — ${c.name}` : ""}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex items-center gap-3">
               <Switch

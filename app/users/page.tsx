@@ -21,6 +21,7 @@ import {
 import { smartFetch, debugTokenRefresh } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useCurrencies } from "@/hooks/use-currencies"
 
 // Interface pour les données utilisateur de l'API
 interface User {
@@ -118,6 +119,11 @@ export default function Customers() {
   const [balanceCurrency, setBalanceCurrency] = useState("XOF")
   const [balanceLoading, setBalanceLoading] = useState(false)
   const [balanceMessage, setBalanceMessage] = useState("")
+  const { currencies: catalogCurrencies, defaultCode: defaultCurrencyCode } = useCurrencies(true)
+
+  useEffect(() => {
+    if (defaultCurrencyCode) setBalanceCurrency(defaultCurrencyCode)
+  }, [defaultCurrencyCode])
 
   // Fonction pour récupérer les utilisateurs depuis l'API
   const fetchUsers = async (query: string = "", page: number = 1) => {
@@ -1667,9 +1673,15 @@ export default function Customers() {
                 value={balanceCurrency}
                 onChange={(e) => setBalanceCurrency(e.target.value)}
               >
-                <option value="XOF">XOF</option>
-                <option value="NGN">NGN</option>
-                <option value="GHS">GHS</option>
+                {catalogCurrencies.length === 0 ? (
+                  <option value="XOF">XOF</option>
+                ) : (
+                  catalogCurrencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}{c.name ? ` — ${c.name}` : ""}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>

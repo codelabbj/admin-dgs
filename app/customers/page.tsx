@@ -14,6 +14,7 @@ import {
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
+import { useCurrencies } from "@/hooks/use-currencies"
 
 interface Customer {
   customer_id: string
@@ -110,6 +111,11 @@ export default function Customers() {
   const [balanceType, setBalanceType] = useState<"credit" | "debit">("credit")
   const [balanceReason, setBalanceReason] = useState("")
   const [balanceCurrency, setBalanceCurrency] = useState("XOF")
+  const { currencies: catalogCurrencies, defaultCode: defaultCurrencyCode } = useCurrencies(true)
+
+  useEffect(() => {
+    if (defaultCurrencyCode) setBalanceCurrency(defaultCurrencyCode)
+  }, [defaultCurrencyCode])
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -504,9 +510,15 @@ export default function Customers() {
                 value={balanceCurrency}
                 onChange={(e) => setBalanceCurrency(e.target.value)}
               >
-                <option value="XOF">XOF</option>
-                <option value="NGN">NGN</option>
-                <option value="GHS">GHS</option>
+                {catalogCurrencies.length === 0 ? (
+                  <option value="XOF">XOF</option>
+                ) : (
+                  catalogCurrencies.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.code}{c.name ? ` — ${c.name}` : ""}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
             <div>

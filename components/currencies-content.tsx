@@ -127,7 +127,7 @@ export function CurrenciesContent() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">Devises</h1>
-          <p className="text-neutral-500 mt-1">Wallets multi-devises (XOF, NGN, GHS…)</p>
+          <p className="text-neutral-500 mt-1">Wallets multi-devises (catalogue dynamique)</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={loadCurrencies} disabled={loading}>

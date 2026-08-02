@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { useLanguage } from "@/contexts/language-context"
 import { smartFetch } from "@/utils/auth"
+import { useCurrencies } from "@/hooks/use-currencies"
 
 export function PayinContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -16,6 +17,7 @@ export function PayinContent() {
   const [success, setSuccess] = useState<string | null>(null)
   const { t } = useLanguage()
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  const { currencies, defaultCode } = useCurrencies(true)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -73,13 +75,20 @@ export function PayinContent() {
               </div>
               <div>
                 <Label htmlFor="currency">{t("currency")}</Label>
-                <Select name="currency" defaultValue="XOF">
+                <Select name="currency" defaultValue={defaultCode || "XOF"}>
                   <SelectTrigger id="currency">
                     <SelectValue placeholder={t("selectCurrency")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="XOF">{t("xof")}</SelectItem>
-                    <SelectItem value="USD">{t("usd")}</SelectItem>
+                    {currencies.length === 0 ? (
+                      <SelectItem value="XOF">XOF</SelectItem>
+                    ) : (
+                      currencies.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>
+                          {c.code}{c.name ? ` — ${c.name}` : ""}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
