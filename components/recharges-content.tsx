@@ -27,6 +27,7 @@ interface Recharge {
   uid: string
   reference: string
   amount: number
+  currency_code?: string
   payment_method: string
   payment_method_display: string
   proof_image: string | null
@@ -559,7 +560,7 @@ export function RechargesContent() {
                         </div>
                       </TableCell>
                       <TableCell className="font-medium text-green-600">
-                        {recharge.amount.toLocaleString()} FCFA
+                        {recharge.amount.toLocaleString()} {recharge.currency_code || "XOF"}
                       </TableCell>
                       <TableCell>
                         <div>
@@ -658,7 +659,7 @@ export function RechargesContent() {
                   </div>
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant</p>
-                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} FCFA</p>
+                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
                   </div>
                 </div>
                 <div className="mt-3">
@@ -724,7 +725,7 @@ export function RechargesContent() {
                   </div>
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant</p>
-                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} FCFA</p>
+                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
                   </div>
                 </div>
                 <div className="mt-3">
@@ -810,7 +811,7 @@ export function RechargesContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Montant</label>
-                  <p className="text-lg font-semibold text-green-600">{selectedRecharge.amount.toLocaleString()} FCFA</p>
+                  <p className="text-lg font-semibold text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Statut</label>
