@@ -551,8 +551,9 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
     }
   }
 
-  // If we get 401, 403 or token expired error, try to refresh token and retry once
-  const is403or401 = response.status === 401 || response.status === 403
+  // 401 = token invalide/expiré → refresh.
+  // 403 = permission métier (compte non vérifié, etc.) → NE PAS refresh.
+  const is403or401 = response.status === 401
   const shouldRefresh = (is403or401 || isTokenExpired) && refreshToken
   
   console.log('smartFetch: Checking if refresh needed', {
@@ -564,7 +565,7 @@ export async function smartFetch(url: string, options: RequestInit = {}): Promis
   })
   
   if (shouldRefresh) {
-    console.log('smartFetch: Token expired, 401 or 403 error, attempting token refresh...', {
+    console.log('smartFetch: Token expired or 401 error, attempting token refresh...', {
       status: response.status,
       isTokenExpired,
       hasRefreshToken: !!refreshToken

@@ -125,7 +125,11 @@ export default function Developers() {
                   className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
                 />
               </div>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button
+                variant="outline"
+                className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6"
+                onClick={() => window.open('https://documenter.getpostman.com/view/27978736/2sBY4Tqe25', '_blank', 'noopener,noreferrer')}
+              >
                 <BookOpen className="h-4 w-4 mr-2" />
                 Documentation
               </Button>
@@ -288,7 +292,11 @@ export default function Developers() {
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700"
+                  onClick={() => window.open('https://documenter.getpostman.com/view/27978736/2sBY4Tqe25', '_blank', 'noopener,noreferrer')}
+                >
                   <BookOpen className="h-4 w-4 mr-2" />
                   Voir la Documentation
                 </Button>
