@@ -195,7 +195,7 @@ export function AdminDashboardContent() {
   if (loading) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="space-y-8 p-6 pb-20">
+        <div className="space-y-6 sm:space-y-8 pb-20 min-w-0">
           <div className="flex items-center justify-center h-64">
             <div className="text-neutral-600 dark:text-neutral-400">Loading admin dashboard...</div>
           </div>
@@ -206,7 +206,7 @@ export function AdminDashboardContent() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="space-y-8 p-6 pb-20">
+      <div className="space-y-6 sm:space-y-8 pb-20 min-w-0">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between sticky top-0 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-md z-10 py-4 md:py-6 -mx-4 md:-mx-6 px-4 md:px-6 border-b border-slate-200 dark:border-neutral-700 gap-4">
           <div>

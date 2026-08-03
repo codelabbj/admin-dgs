@@ -97,6 +97,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     fetchData()
   }, [router])
 
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [pathname])
+
   const navigation = [
     { name: t("dashboard"), href: "/", icon: Home, current: pathname === "/" },
     { name: t("users"), href: "/users", icon: Users, current: pathname === "/users" || pathname?.startsWith("/users") },
@@ -139,40 +143,37 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-neutral-900 text-black dark:text-white flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-neutral-900 text-black dark:text-white flex overflow-x-hidden">
       {/* Mobile sidebar overlay */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-50 w-[min(16rem,85vw)] max-w-full bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <div className="flex h-screen flex-col">
           {/* Logo */}
-          <div className="flex-shrink-0 flex h-16 items-center justify-between px-6 border-b border-slate-200 dark:border-neutral-700">
-            <div className="flex items-center space-x-3">
-              {/* <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center">
-                <Shield className="h-5 w-5 text-crimson-600" />
-              </div> */}
-              <div className="w-12 h-12 flex items-center justify-center">
+          <div className="flex-shrink-0 flex h-16 items-center justify-between px-4 sm:px-6 border-b border-slate-200 dark:border-neutral-700 gap-2">
+            <div className="flex items-center space-x-3 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center shrink-0">
                 <img
                   src={theme === "dark" ? "/logo_dark1.png" : "/logo_light11.png"}
                   alt="Logo"
-                  className="w-10 h-10 object-contain"
+                  className="w-9 h-9 sm:w-10 sm:h-10 object-contain"
                 />
               </div>
-              <span className="text-xl font-bold text-black dark:text-white">Admin DGS</span>
+              <span className="text-lg sm:text-xl font-bold text-black dark:text-white truncate">Admin DGS</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800"
+              className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800 shrink-0"
               onClick={() => setIsSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -180,23 +181,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-2 px-4 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent text-slate-700 dark:text-slate-300">
+          <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto overscroll-contain scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-neutral-700 scrollbar-track-transparent text-slate-700 dark:text-slate-300">
             {navigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center space-x-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${item.current
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={`group flex items-center space-x-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 min-w-0 ${item.current
                     ? "bg-slate-100 dark:bg-neutral-800 text-slate-900 dark:text-white shadow-sm"
                     : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-neutral-800/50 hover:text-slate-900 dark:hover:text-white"
                     }`}
                 >
-                  <Icon className={`h-5 w-5 ${item.current ? "text-primary" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                  <Icon className={`h-5 w-5 shrink-0 ${item.current ? "text-primary" : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                     }`} />
-                  <span>{item.name}</span>
+                  <span className="truncate">{item.name}</span>
                   {item.current && (
-                    <div className="ml-auto h-2 w-2 rounded-full bg-primary"></div>
+                    <div className="ml-auto h-2 w-2 rounded-full bg-primary shrink-0"></div>
                   )}
                 </Link>
               )
@@ -205,8 +207,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* User section */}
           <div className="flex-shrink-0 border-t border-slate-200 dark:border-neutral-700 p-4">
-            <div className="flex items-center space-x-3">
-              <Avatar className="h-10 w-10 ring-2 ring-white/20">
+            <div className="flex items-center space-x-3 min-w-0">
+              <Avatar className="h-10 w-10 ring-2 ring-white/20 shrink-0">
                 <AvatarImage src={userData?.avatar || "/placeholder-user.jpg"} />
                 <AvatarFallback className="bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-slate-400 font-semibold">
                   {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
@@ -226,55 +228,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:ml-64 flex-1 flex flex-col min-w-0">
+      <div className="lg:ml-64 flex-1 flex flex-col min-w-0 w-full max-w-full overflow-x-hidden">
         {/* Top navbar */}
         <div className="sticky top-0 z-30 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700">
-          <div className="flex h-16 items-center justify-between px-4 md:px-6">
+          <div className="flex h-14 sm:h-16 items-center justify-between gap-2 px-3 sm:px-4 md:px-6">
             {/* Left side */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center gap-2 min-w-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                className="lg:hidden text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white shrink-0"
                 onClick={() => setIsSidebarOpen(true)}
               >
                 <Menu className="h-5 w-5" />
               </Button>
-
-              {/* Balance display */}
-              {/* <div className="hidden md:flex items-center space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-4 py-2">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("availableBalance")}:</span>
-                  <span className="font-semibold text-neutral-900 dark:text-white">
-                    {isBalanceVisible ? `${balance} XOF` : "••••••"}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-                    onClick={() => setIsBalanceVisible(!isBalanceVisible)}
-                  >
-                    {isBalanceVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div> */}
             </div>
 
             {/* Right side */}
-            <div className="flex items-center space-x-4">
-
-              {/* Notifications */}
-              {/* <Button
-              variant="ghost"
-              size="icon"
-                className="relative text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-            >
-              <Bell className="h-5 w-5" />
-                <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-xs text-primary-foreground p-0 flex items-center justify-center">
-                  3
-                </Badge>
-              </Button> */}
-
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0">
               {/* Profile dropdown */}
               <div className="relative">
                 <Button
@@ -288,14 +259,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       {userData?.name?.charAt(0) || t("companyShortName").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden md:block text-sm font-medium">
+                  <span className="hidden md:block text-sm font-medium max-w-[10rem] truncate">
                     {userData?.name || t("companyShortName")}
                   </span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-slate-200 dark:border-neutral-700 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-1.5rem)] bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-slate-200 dark:border-neutral-700 py-2 z-50">
                     <Link
                       href="/profile"
                       className="flex items-center space-x-2 px-4 py-2 text-sm text-neutral-700 dark:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-700"
@@ -328,8 +299,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 p-4 md:p-6">
-          {children}
+        <main className="flex-1 p-3 sm:p-4 md:p-6 min-w-0 w-full max-w-full overflow-x-hidden">
+          <div className="w-full max-w-full min-w-0">
+            {children}
+          </div>
         </main>
       </div>
     </div>

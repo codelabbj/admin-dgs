@@ -1176,17 +1176,17 @@ export function TransactionsContent() {
   const completedTransactions = filteredTransactions.filter((t) => t.status === "completed").length
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Sync Messages */}
       {syncError && (
         <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-          <div className="flex items-center justify-between">
-            <p className="text-red-800 dark:text-red-200">{syncError}</p>
+          <div className="flex items-start sm:items-center justify-between gap-2">
+            <p className="text-red-800 dark:text-red-200 text-sm break-words min-w-0">{syncError}</p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSyncError(null)}
-              className="h-6 w-6 p-0 text-red-800 dark:text-red-200"
+              className="h-6 w-6 p-0 text-red-800 dark:text-red-200 shrink-0"
             >
               ×
             </Button>
@@ -1195,13 +1195,13 @@ export function TransactionsContent() {
       )}
       {syncSuccess && (
         <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-          <div className="flex items-center justify-between">
-            <p className="text-green-800 dark:text-green-200">{syncSuccess}</p>
+          <div className="flex items-start sm:items-center justify-between gap-2">
+            <p className="text-green-800 dark:text-green-200 text-sm break-words min-w-0">{syncSuccess}</p>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setSyncSuccess(null)}
-              className="h-6 w-6 p-0 text-green-800 dark:text-green-200"
+              className="h-6 w-6 p-0 text-green-800 dark:text-green-200 shrink-0"
             >
               ×
             </Button>
@@ -1210,8 +1210,8 @@ export function TransactionsContent() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-w-0">
+        <div className="min-w-0">
           <h1 className="text-2xl md:text-3xl font-bold">{t("transactions")}</h1>
           <p className="text-muted-foreground text-sm md:text-base">{t("manageAndTrackPayments")}</p>
         </div>

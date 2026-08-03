@@ -881,17 +881,17 @@ export default function Customers() {
         )}
 
         {/* En-tête Amélioré */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Gestion des Clients</h1>
-            <p className="text-neutral-600 dark:text-neutral-400 text-lg">Gérez et analysez votre base de clients</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1 sm:mb-2">Gestion des Clients</h1>
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm sm:text-lg">Gérez et analysez votre base de clients</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-2 sm:gap-4 shrink-0">
             {/* <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <Filter className="h-4 w-4 mr-2" />
               Filtres
             </Button> */}
-            <Button className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl">
+            <Button className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl w-full sm:w-auto">
               <Plus className="h-4 w-4 mr-2" />
               Ajouter un Client
             </Button>
@@ -956,21 +956,17 @@ export default function Customers() {
 
         {/* Recherche et Filtres */}
         <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="relative flex-1">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+              <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                   placeholder="Rechercher des clients par nom, email ou localisation..."
-                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12 w-full"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
               </div>
-              {/* <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtres Avancés
-              </Button> */}
             </div>
           </CardContent>
         </Card>
@@ -1019,18 +1015,18 @@ export default function Customers() {
                 ) : (
                   <div className="space-y-4">
                     {allCustomers.map((customer) => (
-                      <div key={customer.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                        <div className="flex items-center space-x-4">
-                          <Avatar className="h-12 w-12">
+                      <div key={customer.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 min-w-0">
+                        <div className="flex items-start sm:items-center gap-3 sm:space-x-4 min-w-0 flex-1">
+                          <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
                             <AvatarImage src={customer.avatar} />
                             <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 text-slate-700 dark:text-slate-300">
                               {customer.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <p className="font-semibold text-neutral-900 dark:text-white">{customer.name}</p>
-                            <p className="text-sm text-neutral-600 dark:text-neutral-400">{customer.email}</p>
-                            <div className="flex items-center space-x-2 mt-1">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-neutral-900 dark:text-white truncate">{customer.name}</p>
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate">{customer.email}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
                               <Badge
                                 variant="outline"
                                 className={`text-xs ${customer.type === 'Premium' ? 'border-amber-200 text-amber-700' : 'border-slate-200 text-slate-700'
@@ -1048,41 +1044,19 @@ export default function Customers() {
                               >
                                 {customer.status}
                               </Badge>
+                              <span className="inline-flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[10rem]">{customer.location}</span>
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-2">
-                          <div className="text-right mr-4">
-                            <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400 mb-1">
-                              <MapPin className="h-3 w-3" />
-                              <span>{customer.location}</span>
-                            </div>
-                          </div>
-
+                        <div className="flex flex-col xs:flex-row sm:items-center gap-2 min-w-0">
                           {/* Verification Actions */}
-                          <div className="flex items-center space-x-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             {customer.status === 'En Attente' && (
                               <>
-                                {/* <Button 
-                                size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white rounded-lg"
-                                onClick={() => verifyAccount(customer.user.id, "approved")}
-                                disabled={verifying}
-                              >
-                                {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserCheck className="h-3 w-3" />}
-                                Approuver
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="destructive"
-                                className="rounded-lg"
-                                onClick={() => verifyAccount(customer.user.id, "rejected")}
-                                disabled={verifying}
-                              >
-                                {verifying ? <Loader2 className="h-3 w-3 animate-spin" /> : <UserX className="h-3 w-3" />}
-                                Rejeter
-                              </Button> */}
                                 <Button
                                   size="sm"
                                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
@@ -1101,7 +1075,8 @@ export default function Customers() {
                               disabled={configLoading}
                             >
                               <Settings className="h-3 w-3" />
-                              Mettre à jour Config
+                              <span className="hidden sm:inline ml-1">Mettre à jour Config</span>
+                              <span className="sm:hidden ml-1">Config</span>
                             </Button>
                             <Button
                               size="sm"

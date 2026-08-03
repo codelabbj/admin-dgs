@@ -765,7 +765,7 @@ export function DashboardContent() {
   if (loading) {
     return (
       <div className="h-full overflow-y-auto">
-        <div className="space-y-8 p-6 pb-20">
+        <div className="space-y-6 sm:space-y-8 pb-20 min-w-0">
           <div className="flex items-center justify-center h-64">
             <div className="text-neutral-600 dark:text-neutral-400">{t("loading")}</div>
           </div>
@@ -775,22 +775,17 @@ export function DashboardContent() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="space-y-8 p-6 pb-20">
-        {/* Debug info commented out */}
-        {/* <div style={{background: 'red', color: 'white', padding: '10px', margin: '10px'}}>
-          DEBUG: Dashboard rendering - check console for object data
-        </div> */}
+    <div className="h-full overflow-y-auto overflow-x-hidden">
+      <div className="space-y-6 sm:space-y-8 pb-20 min-w-0">
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between sticky top-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md z-10 py-6 -mx-6 px-6 border-b border-slate-200 dark:border-neutral-700">
-          <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("dashboard")}</h1>
-            {/* <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("welcomeBack2")}</p> */}
+        <div className="flex flex-col gap-4 sticky top-0 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md z-10 py-4 sm:py-6 border-b border-slate-200 dark:border-neutral-700">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1 sm:mb-2">{t("dashboard")}</h1>
             {/* Date Range Display */}
             {(startDate || endDate) && (
-              <div className="flex items-center space-x-2 mt-2">
-                <CalendarDays className="h-4 w-4 text-neutral-500" />
-                <span className="text-sm text-neutral-600 dark:text-neutral-400">
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <CalendarDays className="h-4 w-4 text-neutral-500 shrink-0" />
+                <span className="text-sm text-neutral-600 dark:text-neutral-400 break-words">
                   {startDate && endDate 
                     ? `${format(startDate, 'dd/MM/yyyy', { locale: fr })} - ${format(endDate, 'dd/MM/yyyy', { locale: fr })}`
                     : startDate 
@@ -809,15 +804,15 @@ export function DashboardContent() {
               </div>
             )}
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {/* Date Filter Controls */}
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent flex-1 sm:flex-none"
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     Date de début
@@ -839,7 +834,7 @@ export function DashboardContent() {
                   <Button
                     variant="outline"
                     size="lg"
-                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+                    className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent flex-1 sm:flex-none"
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     Date de fin
@@ -860,7 +855,7 @@ export function DashboardContent() {
             <Button
               variant="outline"
               size="lg"
-              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent"
+              className="rounded-xl border-slate-200 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800 bg-transparent w-full sm:w-auto"
               onClick={() => setShowBalances(!showBalances)}
             >
               {showBalances ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}

@@ -646,21 +646,21 @@ export function OperatorsContent() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Gestion des opérateurs</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Gestion des opérateurs</h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1 sm:mt-2 text-sm sm:text-base">
             Gérer les opérateurs de paiement et suivre leur état de santé
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter un opérateur
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total opérateurs</CardTitle>
@@ -730,18 +730,18 @@ export function OperatorsContent() {
         {/* Operators Tab */}
         <TabsContent value="operators" className="space-y-6">
           {/* Filters */}
-          <div className="flex items-center space-x-4">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 min-w-0 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
               <Input
                 placeholder="Rechercher un opérateur..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 w-full"
               />
             </div>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
+              <SelectTrigger className="w-full sm:w-40">
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
@@ -750,21 +750,21 @@ export function OperatorsContent() {
                 <SelectItem value="inactive">Inactif</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" onClick={loadOperators}>
+            <Button variant="outline" onClick={loadOperators} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualiser
             </Button>
           </div>
 
           {/* Operators Table */}
-          <Card>
+          <Card className="min-w-0 overflow-hidden">
             <CardHeader>
               <CardTitle>Liste des opérateurs</CardTitle>
               <CardDescription>
                 Gérer et configurer les opérateurs de paiement
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0 sm:p-6 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -898,15 +898,15 @@ export function OperatorsContent() {
             <CardContent>
               <div className="space-y-4">
                 {operatorHealth.map((health) => (
-                  <div key={health.operator_code} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center space-x-4">
+                  <div key={health.operator_code} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg min-w-0">
+                    <div className="flex items-center gap-3 sm:space-x-4 min-w-0">
                       {getHealthStatusIcon(health.status)}
-                      <div>
-                        <div className="font-medium">{health.operator_name}</div>
-                        <div className="text-sm text-slate-500">{health.operator_code}</div>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{health.operator_name}</div>
+                        <div className="text-sm text-slate-500 truncate">{health.operator_code}</div>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                       {health.balance !== null && (
                         <div className="text-sm">
                           <span className="text-slate-500">Solde :</span>

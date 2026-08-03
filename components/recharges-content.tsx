@@ -349,25 +349,25 @@ export function RechargesContent() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center min-w-0">
           <Button
             variant="ghost"
             onClick={() => router.back()}
-            className="rounded-xl"
+            className="rounded-xl self-start shrink-0"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Retour
           </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Gestion des Recharges</h1>
-            <p className="text-muted-foreground">Gérez les demandes de recharge des clients</p>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold">Gestion des Recharges</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">Gérez les demandes de recharge des clients</p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)} className="w-full sm:w-auto">
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
           </Button>

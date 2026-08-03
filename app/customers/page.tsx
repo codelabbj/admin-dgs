@@ -225,11 +225,11 @@ export default function Customers() {
     const end = Math.min(totalPages, start + 4)
     for (let i = start; i <= end; i++) pages.push(i)
     return (
-      <div className="flex items-center justify-between px-2 py-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-2 py-4">
         <span className="text-sm text-muted-foreground">
           {((currentPage - 1) * pageSize) + 1}–{Math.min(currentPage * pageSize, totalCustomers)} sur {totalCustomers}
         </span>
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center flex-wrap gap-1">
           <Button variant="outline" size="sm" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} className="h-8 w-8 p-0"><ChevronLeft className="h-4 w-4" /></Button>
           {pages.map(p => (
             <Button key={p} variant={currentPage === p ? "default" : "outline"} size="sm" onClick={() => setCurrentPage(p)} className="h-8 w-8 p-0">{p}</Button>
@@ -267,10 +267,10 @@ export default function Customers() {
         )}
 
         {/* ── Header ───────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Gestion des Clients</h1>
-            <p className="text-neutral-600 dark:text-neutral-400 text-lg">Gérez et analysez votre base de clients</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between min-w-0">
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white mb-1 sm:mb-2">Gestion des Clients</h1>
+            <p className="text-neutral-600 dark:text-neutral-400 text-sm sm:text-lg">Gérez et analysez votre base de clients</p>
           </div>
         </div>
 
@@ -291,16 +291,18 @@ export default function Customers() {
 
         {/* ── Search + Filter ───────────────────────────────────────── */}
         <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6 flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[200px]">
+          <CardContent className="p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-4">
+            <div className="relative flex-1 min-w-0 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input placeholder="Rechercher par ID, email..." className="pl-10 rounded-xl h-12" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
+              <Input placeholder="Rechercher par ID, email..." className="pl-10 rounded-xl h-12 w-full" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             </div>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {(["", "true", "false"] as const).map((f, i) => (
-              <Button key={i} variant={isActiveFilter === f ? "default" : "outline"} className="rounded-xl h-12" onClick={() => handleActiveFilter(f)}>
+              <Button key={i} variant={isActiveFilter === f ? "default" : "outline"} className="rounded-xl h-12 flex-1 sm:flex-none" onClick={() => handleActiveFilter(f)}>
                 {f === "" ? "Tous" : f === "true" ? "Actifs" : "Inactifs"}
               </Button>
             ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -329,21 +331,21 @@ export default function Customers() {
                   <div key={customer.uid} className="p-5 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       {/* Info */}
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-12 w-12">
+                      <div className="flex items-start sm:items-center gap-3 sm:space-x-4 min-w-0 flex-1">
+                        <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
                           <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 font-semibold text-sm">
                             {customer.customer_id.slice(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <p className="font-semibold text-neutral-900 dark:text-white text-sm">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-neutral-900 dark:text-white text-sm truncate">
                             {customer.grpc_info?.entreprise_name || `Client ${customer.customer_id.slice(0, 8)}`}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400">{customer.grpc_info?.email || customer.customer_id}</p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{customer.grpc_info?.email || customer.customer_id}</p>
                           {customer.grpc_info?.phone && (
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">{customer.grpc_info.phone}</p>
                           )}
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
                             <Badge className={customer.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                               {customer.is_active ? "Actif" : "Inactif"}
                             </Badge>
