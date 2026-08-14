@@ -11,6 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Search, RefreshCw, CheckCircle, XCircle, Eye, Loader2, ChevronLeft, ChevronRight, DollarSign, ArrowLeft } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
 import { useRouter } from "next/navigation"
+import { Label } from "@/components/ui/label"
+import { useCurrencies } from "@/hooks/use-currencies"
 
 // Interface pour les données de recharge
 interface UserInfo {
@@ -59,6 +61,8 @@ export function RechargesContent() {
   const [rejectModalOpen, setRejectModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [rejectionReason, setRejectionReason] = useState("")
+  const [approveCurrency, setApproveCurrency] = useState("XOF")
+  const { currencies: catalogCurrencies, defaultCode } = useCurrencies(true)
   
   // États pour la pagination
   const [currentPage, setCurrentPage] = useState(1)
@@ -126,7 +130,7 @@ export function RechargesContent() {
   }
 
   // Fonction pour approuver une recharge
-  const approveRecharge = async (rechargeUid: string) => {
+  const approveRecharge = async (rechargeUid: string, currencyCode?: string) => {
     try {
       setActionLoading(true)
       setActionMessage("")
@@ -136,7 +140,10 @@ export function RechargesContent() {
       }
 
       const response = await smartFetch(`${baseUrl}/api/v2/admin/recharges/${rechargeUid}/approve/`, {
-        method: "POST"
+        method: "POST",
+        body: JSON.stringify({
+          currency_code: (currencyCode || approveCurrency || defaultCode || "XOF").toUpperCase(),
+        })
       })
       
       if (!response.ok) {
@@ -602,6 +609,7 @@ export function RechargesContent() {
                                 className="bg-green-600 hover:bg-green-700 text-white"
                                 onClick={() => {
                                   setSelectedRecharge(recharge)
+                                  setApproveCurrency(recharge.currency_code || defaultCode || "XOF")
                                   setApproveModalOpen(true)
                                 }}
                                 disabled={actionLoading}
@@ -645,7 +653,7 @@ export function RechargesContent() {
               Approuver la Recharge
             </DialogTitle>
             <DialogDescription className="text-neutral-600 dark:text-neutral-400">
-              Êtes-vous sûr de vouloir approuver cette recharge ?
+              Le wallet de la devise choisie sera crédité. Vérifiez le montant et la devise avant de valider.
             </DialogDescription>
           </DialogHeader>
           
@@ -659,13 +667,38 @@ export function RechargesContent() {
                   </div>
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant</p>
-                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
+                    <p className="font-medium text-green-600">{selectedRecharge.amount.toLocaleString()} {approveCurrency || selectedRecharge.currency_code || "XOF"}</p>
                   </div>
                 </div>
                 <div className="mt-3">
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">Méthode de Paiement</p>
                   <p className="text-sm">{selectedRecharge.payment_method_display}</p>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="approve-currency">Wallet à créditer</Label>
+                <Select
+                  value={approveCurrency}
+                  onValueChange={setApproveCurrency}
+                >
+                  <SelectTrigger id="approve-currency">
+                    <SelectValue placeholder="Sélectionner la devise" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(catalogCurrencies.length > 0
+                      ? catalogCurrencies
+                      : [{ code: approveCurrency || defaultCode || "XOF", name: "" }]
+                    ).map((c) => (
+                      <SelectItem key={c.code} value={c.code}>
+                        {c.code}{c.name ? ` — ${c.name}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-neutral-500">
+                  Demandé par le client : {selectedRecharge.currency_code || "XOF"}
+                </p>
               </div>
 
               <div className="flex justify-end space-x-3">
@@ -678,7 +711,7 @@ export function RechargesContent() {
                 </Button>
                 <Button
                   onClick={() => {
-                    approveRecharge(selectedRecharge.uid)
+                    approveRecharge(selectedRecharge.uid, approveCurrency)
                     setApproveModalOpen(false)
                   }}
                   disabled={actionLoading}
@@ -814,16 +847,23 @@ export function RechargesContent() {
                   <p className="text-lg font-semibold text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">Statut</label>
-                  <div className="mt-1">{getStatusBadge(selectedRecharge.status)}</div>
+                  <label className="text-sm font-medium text-muted-foreground">Wallet à créditer</label>
+                  <p className="text-lg font-semibold">{selectedRecharge.currency_code || "XOF"}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
+                  <label className="text-sm font-medium text-muted-foreground">Statut</label>
+                  <div className="mt-1">{getStatusBadge(selectedRecharge.status)}</div>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-muted-foreground">Méthode de Paiement</label>
                   <p className="text-sm">{selectedRecharge.payment_method_display}</p>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Référence Bancaire</label>
                   <p className="text-sm font-mono">{selectedRecharge.bank_reference || "N/A"}</p>
