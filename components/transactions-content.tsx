@@ -1172,7 +1172,14 @@ export function TransactionsContent() {
     }
   }
 
-  const totalAmount = filteredTransactions.reduce((sum, transaction) => sum + transaction.amount, 0)
+  const totalsByCurrency = filteredTransactions.reduce((acc: Record<string, number>, transaction: any) => {
+    const code = transaction.currency || "—"
+    acc[code] = (acc[code] || 0) + (Number(transaction.amount) || 0)
+    return acc
+  }, {})
+  const totalAmountLabel = Object.entries(totalsByCurrency)
+    .map(([code, amount]) => `${Number(amount).toLocaleString()} ${code}`)
+    .join(" · ") || "0"
   const completedTransactions = filteredTransactions.filter((t) => t.status === "completed").length
 
   return (
@@ -1274,7 +1281,7 @@ export function TransactionsContent() {
             <CardTitle className="text-sm font-medium">{t("totalAmount")}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalAmount.toLocaleString()} FCFA</div>
+            <div className="text-2xl font-bold">{totalAmountLabel}</div>
           </CardContent>
         </Card>
         <Card>
@@ -1767,7 +1774,7 @@ export function TransactionsContent() {
                     <label className="text-sm font-medium text-muted-foreground">Montant</label>
                     <p className="text-lg font-semibold text-green-600">
                       {selectedTransactionDetails.amount?.toLocaleString?.() || selectedTransactionDetails.amount || "-"}
-                      {selectedTransactionDetails.currency ? ` ${selectedTransactionDetails.currency}` : " FCFA"}
+                      {selectedTransactionDetails.currency ? ` ${selectedTransactionDetails.currency}` : ""}
                     </p>
                   </div>
                   <div>
@@ -1878,7 +1885,7 @@ export function TransactionsContent() {
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Montant des Frais</label>
-                      <p className="text-sm">{selectedTransactionDetails.fee_amount ? `${selectedTransactionDetails.fee_amount} FCFA` : "-"}</p>
+                      <p className="text-sm">{selectedTransactionDetails.fee_amount ? `${selectedTransactionDetails.fee_amount} ${selectedTransactionDetails.currency || ""}` : "-"}</p>
                     </div>
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Pour Compte Client</label>
@@ -1979,7 +1986,7 @@ export function TransactionsContent() {
               </span>
               <br />
               <span className="text-sm text-muted-foreground">
-                Montant: <strong>{selectedTransaction?.amount?.toLocaleString?.() || selectedTransaction?.amount || "-"} {selectedTransaction?.currency || "FCFA"}</strong>
+                Montant: <strong>{selectedTransaction?.amount?.toLocaleString?.() || selectedTransaction?.amount || "-"} {selectedTransaction?.currency || ""}</strong>
               </span>
               <br />
               <span className="text-sm font-medium text-red-600 mt-2 block">
@@ -2132,7 +2139,7 @@ export function TransactionsContent() {
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Montant</label>
                     <p className="text-lg font-semibold text-green-600">
-                      {statusVerificationData?.amount?.toLocaleString?.() || statusVerificationData?.amount || "-"} FCFA
+                      {statusVerificationData?.amount?.toLocaleString?.() || statusVerificationData?.amount || "-"} {statusVerificationData?.currency || selectedTransactionDetails?.currency || ""}
                     </p>
                   </div>
                   <div>

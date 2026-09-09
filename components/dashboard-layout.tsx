@@ -43,6 +43,7 @@ import {
   Code,
   DollarSign,
   Coins,
+  Wallet,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -112,6 +113,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Gestion Commissions", href: "/commission-management", icon: DollarSign, current: pathname === "/commission-management" },
     { name: "Webhooks", href: "/webhooks", icon: Code, current: pathname === "/webhooks" },
     { name: "Opérateurs", href: "/operators", icon: Network, current: pathname === "/operators" },
+    { name: "Soldes PAL", href: "/pal-wallets", icon: Wallet, current: pathname === "/pal-wallets" },
+    { name: "Corridors PAL", href: "/pal-corridors", icon: Network, current: pathname === "/pal-corridors" },
     { name: "Devises", href: "/currencies", icon: Coins, current: pathname === "/currencies" },
     { name: "Pays", href: "/countries", icon: Globe, current: pathname === "/countries" },
     // { name: t("myStore"), href: "/store", icon: Store, current: pathname === "/store" },
