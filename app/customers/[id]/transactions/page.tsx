@@ -17,15 +17,28 @@ interface Transaction {
   uid: string
   customer_id: string
   amount: number
+  currency?: string
   type: string
+  type_trans?: string
   status: string
+  status_display?: string
   created_at: string
   updated_at: string
   reference?: string
   description?: string
   fees?: number
+  commission_amount?: number
   balance_before?: number
   balance_after?: number
+}
+
+function txCurrency(tx?: { currency?: string } | null): string {
+  return (tx?.currency || "XOF").toUpperCase()
+}
+
+function formatTxAmount(amount?: number | null, currency?: string): string {
+  const value = amount ?? 0
+  return `${value.toLocaleString()} ${currency || "XOF"}`
 }
 
 // Interface pour les détails de transaction
@@ -608,17 +621,17 @@ export default function Transactions({ params }: { params: { id: string } }) {
                     <div className="flex items-center space-x-2">
                       <div className="text-right mr-4">
                         <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                          {transaction.amount.toLocaleString()} FCFA
+                          {formatTxAmount(transaction.amount, txCurrency(transaction))}
                         </p>
                         <div className="flex items-center space-x-2 text-sm text-neutral-500 dark:text-neutral-400">
                           <Calendar className="h-3 w-3" />
                           <span>{new Date(transaction.created_at).toLocaleDateString()}</span>
                         </div>
-                        {transaction.fees && (
+                        {(transaction.fees || transaction.commission_amount) ? (
                           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                            Frais: {transaction.fees.toLocaleString()} FCFA
+                            Frais: {formatTxAmount(transaction.fees || transaction.commission_amount, txCurrency(transaction))}
                           </p>
-                        )}
+                        ) : null}
                       </div>
                       
                       <Button 
@@ -768,24 +781,24 @@ export default function Transactions({ params }: { params: { id: string } }) {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-neutral-800 rounded-lg">
                     <div>
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant</label>
-                      <p className="text-neutral-900 dark:text-white text-xl font-bold">{selectedTransaction.amount.toLocaleString()} FCFA</p>
+                      <p className="text-neutral-900 dark:text-white text-xl font-bold">{formatTxAmount(selectedTransaction.amount, txCurrency(selectedTransaction))}</p>
                     </div>
                     {selectedTransaction.customer_balance_before !== undefined && (
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Solde avant</label>
-                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{selectedTransaction.customer_balance_before.toLocaleString()} FCFA</p>
+                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{formatTxAmount(selectedTransaction.customer_balance_before, txCurrency(selectedTransaction))}</p>
                       </div>
                     )}
                     {selectedTransaction.customer_balance_after !== undefined && (
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Solde après</label>
-                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{selectedTransaction.customer_balance_after.toLocaleString()} FCFA</p>
+                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{formatTxAmount(selectedTransaction.customer_balance_after, txCurrency(selectedTransaction))}</p>
                       </div>
                     )}
                     {selectedTransaction.commission_amount !== undefined && (
                       <div>
                         <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant de commission</label>
-                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{selectedTransaction.commission_amount.toLocaleString()} FCFA</p>
+                        <p className="text-neutral-900 dark:text-white text-lg font-semibold">{formatTxAmount(selectedTransaction.commission_amount, txCurrency(selectedTransaction))}</p>
                       </div>
                     )}
                     {selectedTransaction.commission_paid !== undefined && (
@@ -884,7 +897,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
                         </div>
                         <div>
                           <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant Transaction</label>
-                          <p className="text-neutral-900 dark:text-white text-lg font-semibold">{selectedTransaction.commission.transaction_amount.toLocaleString()} FCFA</p>
+                          <p className="text-neutral-900 dark:text-white text-lg font-semibold">{formatTxAmount(selectedTransaction.commission.transaction_amount, txCurrency(selectedTransaction))}</p>
                         </div>
                         <div>
                           <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Statut</label>
@@ -907,7 +920,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
                           </div>
                           <div>
                             <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant frais opérateur</label>
-                            <p className="text-neutral-900 dark:text-white text-sm font-semibold">{selectedTransaction.commission.operator_fee_amount.toLocaleString()} FCFA</p>
+                            <p className="text-neutral-900 dark:text-white text-sm font-semibold">{formatTxAmount(selectedTransaction.commission.operator_fee_amount, txCurrency(selectedTransaction))}</p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Taux de frais agrégateur</label>
@@ -915,15 +928,15 @@ export default function Transactions({ params }: { params: { id: string } }) {
                           </div>
                           <div>
                             <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant frais agrégateur</label>
-                            <p className="text-neutral-900 dark:text-white text-sm font-semibold">{selectedTransaction.commission.aggregator_fee_amount.toLocaleString()} FCFA</p>
+                            <p className="text-neutral-900 dark:text-white text-sm font-semibold">{formatTxAmount(selectedTransaction.commission.aggregator_fee_amount, txCurrency(selectedTransaction))}</p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Total des frais</label>
-                            <p className="text-neutral-900 dark:text-white text-lg font-bold">{selectedTransaction.commission.total_fees.toLocaleString()} FCFA</p>
+                            <p className="text-neutral-900 dark:text-white text-lg font-bold">{formatTxAmount(selectedTransaction.commission.total_fees, txCurrency(selectedTransaction))}</p>
                           </div>
                           <div>
                             <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Montant net</label>
-                            <p className="text-neutral-900 dark:text-white text-lg font-bold">{selectedTransaction.commission.net_amount.toLocaleString()} FCFA</p>
+                            <p className="text-neutral-900 dark:text-white text-lg font-bold">{formatTxAmount(selectedTransaction.commission.net_amount, txCurrency(selectedTransaction))}</p>
                           </div>
                         </div>
                       </div>
