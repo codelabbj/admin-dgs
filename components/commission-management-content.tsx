@@ -22,6 +22,7 @@ interface Commission {
   operator_code?: string
   type_trans: string
   transaction_amount: number
+  currency?: string
   operator_fee_rate: string
   operator_fee_amount: number
   aggregator_fee_rate: string
@@ -40,11 +41,18 @@ interface CommissionBatch {
   uid: string
   operator_code: string
   operator_name: string
+  currency?: string
   total_amount: number
   commission_count: number
   status: string
   created_at: string
   paid_at?: string
+}
+
+interface CurrencyBreakdown {
+  currency: string
+  count: number
+  total: number
 }
 
 interface WithdrawalRequest {
@@ -77,7 +85,11 @@ export function CommissionManagementContent() {
   // States for data
   const [commissions, setCommissions] = useState<Commission[]>([])
   const [unpaidCommissions, setUnpaidCommissions] = useState<Commission[]>([])
-  const [unpaidSummary, setUnpaidSummary] = useState({ count: 0, total_amount: 0 })
+  const [unpaidSummary, setUnpaidSummary] = useState<{
+    count: number
+    total_amount: number
+    by_currency: CurrencyBreakdown[]
+  }>({ count: 0, total_amount: 0, by_currency: [] })
   const [commissionBatches, setCommissionBatches] = useState<CommissionBatch[]>([])
   const [operators, setOperators] = useState<Operator[]>([])
   const [loading, setLoading] = useState(true)
@@ -200,7 +212,8 @@ export function CommissionManagementContent() {
       if (data && typeof data === 'object' && 'count' in data && 'total_amount' in data) {
         setUnpaidSummary({
           count: data.count || 0,
-          total_amount: data.total_amount || 0
+          total_amount: data.total_amount || 0,
+          by_currency: Array.isArray(data.by_currency) ? data.by_currency : [],
         })
         setUnpaidCommissions(Array.isArray(data.commissions) ? data.commissions : [])
       } else if (Array.isArray(data)) {
@@ -208,23 +221,25 @@ export function CommissionManagementContent() {
         setUnpaidCommissions(data)
         setUnpaidSummary({
           count: data.length,
-          total_amount: data.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0)
+          total_amount: data.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0),
+          by_currency: [],
         })
       } else if (data && Array.isArray(data.results)) {
         const results = data.results as Commission[]
         setUnpaidCommissions(results)
         setUnpaidSummary({
           count: results.length,
-          total_amount: results.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0)
+          total_amount: results.reduce((sum: number, c: Commission) => sum + (c.net_amount || 0), 0),
+          by_currency: [],
         })
       } else {
         setUnpaidCommissions([])
-        setUnpaidSummary({ count: 0, total_amount: 0 })
+        setUnpaidSummary({ count: 0, total_amount: 0, by_currency: [] })
       }
     } catch (err) {
       console.error("Error fetching unpaid commissions:", err)
       setUnpaidCommissions([])
-      setUnpaidSummary({ count: 0, total_amount: 0 })
+      setUnpaidSummary({ count: 0, total_amount: 0, by_currency: [] })
     }
   }
 
@@ -621,8 +636,8 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCommissionsAmount.toLocaleString()} FCFA</div>
-            <p className="text-xs text-muted-foreground">{stats.totalCommissions} commissions</p>
+            <div className="text-2xl font-bold">{stats.totalCommissionsAmount.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">{stats.totalCommissions} commissions (page courante, devises mélangées)</p>
           </CardContent>
         </Card>
         
@@ -634,7 +649,8 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.totalOperatorFees.toLocaleString()} FCFA</div>
+            <div className="text-2xl font-bold text-green-600">{stats.totalOperatorFees.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">page courante</p>
           </CardContent>
         </Card>
         
@@ -646,7 +662,8 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalAggregatorFees.toLocaleString()} FCFA</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.totalAggregatorFees.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">page courante</p>
           </CardContent>
         </Card>
         
@@ -658,7 +675,16 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{unpaidSummary.total_amount.toLocaleString()} FCFA</div>
+            <div className="space-y-1">
+              {(unpaidSummary.by_currency?.length
+                ? unpaidSummary.by_currency
+                : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
+              ).map((row) => (
+                <div key={row.currency} className="text-2xl font-bold text-red-600">
+                  {(row.total || 0).toLocaleString()} {row.currency}
+                </div>
+              ))}
+            </div>
             <p className="text-xs text-muted-foreground">{unpaidSummary.count} commissions</p>
             {unpaidSummary.count > 0 && (
               <Button
@@ -802,16 +828,16 @@ export function CommissionManagementContent() {
                   
                   <div className="text-right">
                     <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                      {commission.net_amount?.toLocaleString() || '0'} FCFA
+                      {commission.net_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'}
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Opérateur: {commission.operator_fee_amount?.toLocaleString() || '0'} FCFA ({commission.operator_fee_rate}%)
+                      Opérateur: {commission.operator_fee_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'} ({commission.operator_fee_rate}%)
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Agrégateur: {commission.aggregator_fee_amount?.toLocaleString() || '0'} FCFA ({commission.aggregator_fee_rate}%)
+                      Agrégateur: {commission.aggregator_fee_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'} ({commission.aggregator_fee_rate}%)
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Total: {commission.total_fees?.toLocaleString() || '0'} FCFA
+                      Total: {commission.total_fees?.toLocaleString() || '0'} {commission.currency || 'XOF'}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       {commission.created_at ? new Date(commission.created_at).toLocaleDateString() : 'N/A'}
@@ -871,7 +897,7 @@ export function CommissionManagementContent() {
                           </div>
                           <div>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400">Montant total</p>
-                            <p className="text-sm font-medium text-green-600">{batch.total_amount?.toLocaleString() || '0'} FCFA</p>
+                            <p className="text-sm font-medium text-green-600">{batch.total_amount?.toLocaleString() || '0'} {batch.currency || 'XOF'}</p>
                           </div>
                           <div>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400">Créé le</p>
@@ -1016,7 +1042,16 @@ export function CommissionManagementContent() {
                 </div>
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant total</p>
-                  <p className="font-medium text-green-600 text-lg">{unpaidSummary.total_amount.toLocaleString()} FCFA</p>
+                  <div className="space-y-1">
+                    {(unpaidSummary.by_currency?.length
+                      ? unpaidSummary.by_currency
+                      : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
+                    ).map((row) => (
+                      <p key={row.currency} className="font-medium text-green-600 text-lg">
+                        {(row.total || 0).toLocaleString()} {row.currency}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
               {operatorFilter !== "all" && (
@@ -1106,7 +1141,7 @@ export function CommissionManagementContent() {
               ) : (
                 <>
                   <DollarSign className="h-4 w-4 mr-2" />
-                  Retirer Tout ({unpaidSummary.total_amount.toLocaleString()} FCFA)
+                  Retirer Tout
                 </>
               )}
             </Button>

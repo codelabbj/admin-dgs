@@ -77,6 +77,15 @@ interface CustomerDetails {
   paid_commission?: number
   unpaid_commission?: number
   total_commission?: number
+  paid_commissions_by_currency?: { currency: string; count: number; total: number }[]
+  unpaid_commissions_by_currency?: { currency: string; count: number; total: number }[]
+  commissions_by_currency?: {
+    currency: string
+    paid: number
+    unpaid: number
+    paid_count: number
+    unpaid_count: number
+  }[]
 }
 
 // Fonction pour traduire le statut du compte
@@ -819,21 +828,49 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions encaissées</label>
-                    <p className="text-lg font-semibold text-green-600 dark:text-green-400">
-                      {(customer.paid_commission ?? customer.account?.paid_commission)?.toLocaleString() || "0"} XOF
-                    </p>
+                    <div className="space-y-1 mt-1">
+                      {(customer.paid_commissions_by_currency?.length
+                        ? customer.paid_commissions_by_currency
+                        : [{ currency: "XOF", total: customer.paid_commission ?? customer.account?.paid_commission ?? 0, count: 0 }]
+                      ).map((row) => (
+                        <p key={`paid-${row.currency}`} className="text-lg font-semibold text-green-600 dark:text-green-400">
+                          {(row.total ?? 0).toLocaleString()} {row.currency}
+                        </p>
+                      ))}
+                    </div>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions à encaisser</label>
-                    <p className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
-                      {(customer.unpaid_commission ?? customer.account?.unpaid_commission)?.toLocaleString() || "0"} XOF
-                    </p>
+                    <div className="space-y-1 mt-1">
+                      {(customer.unpaid_commissions_by_currency?.length
+                        ? customer.unpaid_commissions_by_currency
+                        : [{ currency: "XOF", total: customer.unpaid_commission ?? customer.account?.unpaid_commission ?? 0, count: 0 }]
+                      ).map((row) => (
+                        <p key={`unpaid-${row.currency}`} className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
+                          {(row.total ?? 0).toLocaleString()} {row.currency}
+                          {row.count ? <span className="text-xs text-neutral-500 ml-2">({row.count})</span> : null}
+                        </p>
+                      ))}
+                    </div>
                        </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Commissions Total</label>
-                    <p className="text-lg font-semibold text-purple-600 dark:text-purple-400">
-                      {(customer.total_commission ?? ((customer.paid_commission || customer.account?.paid_commission || 0) + (customer.unpaid_commission || customer.account?.unpaid_commission || 0))).toLocaleString()} XOF
-                    </p>
+                    <div className="space-y-1 mt-1">
+                      {(customer.commissions_by_currency?.length
+                        ? customer.commissions_by_currency
+                        : [{
+                            currency: "XOF",
+                            paid: customer.paid_commission || 0,
+                            unpaid: customer.unpaid_commission || 0,
+                            paid_count: 0,
+                            unpaid_count: 0,
+                          }]
+                      ).map((row) => (
+                        <p key={`total-${row.currency}`} className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+                          {((row.paid || 0) + (row.unpaid || 0)).toLocaleString()} {row.currency}
+                        </p>
+                      ))}
+                    </div>
                        </div>
                        </div>
               </CardContent>
