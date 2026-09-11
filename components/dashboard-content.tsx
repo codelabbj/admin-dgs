@@ -768,13 +768,30 @@ export function DashboardContent() {
     rows,
     emptyFallback,
     textClass,
+    alignWith,
   }: {
     rows?: CurrencyStatRow[]
     emptyFallback: number
     textClass: string
+    /** Affiche aussi ces devises à 0 (ex: NGN dans payables) */
+    alignWith?: CurrencyStatRow[]
   }) => {
-    const list = rows?.length
-      ? rows
+    const byCode = new Map<string, CurrencyStatRow>()
+    for (const row of alignWith || []) {
+      const code = (row.currency || "XOF").toUpperCase()
+      byCode.set(code, { currency: code, count: 0, total: 0 })
+    }
+    for (const row of rows || []) {
+      const code = (row.currency || "XOF").toUpperCase()
+      byCode.set(code, {
+        currency: code,
+        count: row.count || 0,
+        total: row.total ?? 0,
+      })
+    }
+
+    const list = byCode.size
+      ? Array.from(byCode.values()).sort((a, b) => a.currency.localeCompare(b.currency))
       : [{ currency: "XOF", count: 0, total: emptyFallback }]
 
     return (
@@ -782,9 +799,7 @@ export function DashboardContent() {
         {list.map((row) => (
           <p key={row.currency} className={`text-lg font-bold ${textClass}`}>
             {formatCurrency(Number(row.total), row.currency || "XOF")}
-            {row.count > 0 && (
-              <span className="ml-1 text-xs font-normal opacity-70">({row.count})</span>
-            )}
+            <span className="ml-1 text-xs font-normal opacity-70">({row.count || 0})</span>
           </p>
         ))}
       </div>
@@ -993,6 +1008,7 @@ export function DashboardContent() {
                     <p className="text-sm text-red-700 dark:text-red-300 mb-1 text-right">Commissions payables</p>
                     <CurrencyCommissionList
                       rows={globalStats.unpaid_commissions_by_currency}
+                      alignWith={globalStats.commissions_by_currency}
                       emptyFallback={globalStats.unpaid_commissions}
                       textClass="text-red-900 dark:text-red-100"
                     />
