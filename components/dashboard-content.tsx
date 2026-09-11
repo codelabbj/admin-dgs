@@ -87,6 +87,12 @@ export function DashboardContent() {
   // }
 
   // Interface pour les statistiques API globales
+  interface CurrencyStatRow {
+    currency: string
+    count: number
+    total: number | string
+  }
+
   interface GlobalStatsData {
     total_transactions: number
     total_payin: {
@@ -99,6 +105,8 @@ export function DashboardContent() {
     }
     total_commissions: number
     unpaid_commissions: number
+    commissions_by_currency?: CurrencyStatRow[]
+    unpaid_commissions_by_currency?: CurrencyStatRow[]
     month_transactions: {
       count: number
       amount: number | null
@@ -747,9 +755,40 @@ export function DashboardContent() {
     }
   }, [startDate, endDate])
 
-  const formatCurrency = (amount: number | null | undefined) => {
-    if (amount == null) return showBalances ? "0 XOF" : "••••••"
-    return showBalances ? `${amount.toLocaleString()} XOF` : "••••••"
+  const formatCurrency = (amount: number | null | undefined, currency = "XOF") => {
+    if (amount == null) return showBalances ? `0 ${currency}` : "••••••"
+    const n = typeof amount === "number" ? amount : Number(amount)
+    const safe = Number.isFinite(n) ? n : 0
+    return showBalances
+      ? `${safe.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${currency}`
+      : "••••••"
+  }
+
+  const CurrencyCommissionList = ({
+    rows,
+    emptyFallback,
+    textClass,
+  }: {
+    rows?: CurrencyStatRow[]
+    emptyFallback: number
+    textClass: string
+  }) => {
+    const list = rows?.length
+      ? rows
+      : [{ currency: "XOF", count: 0, total: emptyFallback }]
+
+    return (
+      <div className="space-y-1 text-right">
+        {list.map((row) => (
+          <p key={row.currency} className={`text-lg font-bold ${textClass}`}>
+            {formatCurrency(Number(row.total), row.currency || "XOF")}
+            {row.count > 0 && (
+              <span className="ml-1 text-xs font-normal opacity-70">({row.count})</span>
+            )}
+          </p>
+        ))}
+      </div>
+    )
   }
 
 
@@ -928,13 +967,17 @@ export function DashboardContent() {
 
             <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="p-3 bg-orange-600 rounded-xl shadow-lg shrink-0">
                     <DollarSign className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-orange-900 dark:text-orange-100">{formatCurrency(globalStats.total_commissions)}</p>
-                    <p className="text-sm text-orange-700 dark:text-orange-300">Total des commissions</p>
+                  <div className="min-w-0">
+                    <p className="text-sm text-orange-700 dark:text-orange-300 mb-1 text-right">Total des commissions</p>
+                    <CurrencyCommissionList
+                      rows={globalStats.commissions_by_currency}
+                      emptyFallback={globalStats.total_commissions}
+                      textClass="text-orange-900 dark:text-orange-100"
+                    />
                   </div>
                 </div>
               </CardHeader>
@@ -942,13 +985,17 @@ export function DashboardContent() {
 
             <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 backdrop-blur-xl border-red-200 dark:border-red-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="p-3 bg-red-600 rounded-xl shadow-lg">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="p-3 bg-red-600 rounded-xl shadow-lg shrink-0">
                     <Clock className="h-6 w-6 text-white" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-red-900 dark:text-red-100">{formatCurrency(globalStats.unpaid_commissions)}</p>
-                    <p className="text-sm text-red-700 dark:text-red-300">Commissions payables</p>
+                  <div className="min-w-0">
+                    <p className="text-sm text-red-700 dark:text-red-300 mb-1 text-right">Commissions payables</p>
+                    <CurrencyCommissionList
+                      rows={globalStats.unpaid_commissions_by_currency}
+                      emptyFallback={globalStats.unpaid_commissions}
+                      textClass="text-red-900 dark:text-red-100"
+                    />
                   </div>
                 </div>
               </CardHeader>
@@ -1017,31 +1064,46 @@ export function DashboardContent() {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Commission Status */}
+                {/* Commission Status by currency */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Statut des Commissions</h4>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={[
-                      { 
-                        name: 'Total', 
-                        value: globalStats.total_commissions,
-                        color: '#3b82f6'
-                      },
-                      { 
-                        name: 'Impayées', 
-                        value: globalStats.unpaid_commissions,
-                        color: '#ef4444'
-                      }
-                    ]}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip 
-                        formatter={(value) => [formatCurrency(Number(value)), 'Montant']}
-                      />
-                      <Bar dataKey="value" fill="#3b82f6" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Commissions par devise</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-neutral-500 border-b border-slate-200 dark:border-neutral-700">
+                          <th className="py-2 pr-3 font-medium">Devise</th>
+                          <th className="py-2 pr-3 font-medium text-right">Total</th>
+                          <th className="py-2 font-medium text-right">Payables</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from(
+                          new Set([
+                            ...(globalStats.commissions_by_currency || []).map((r) => r.currency),
+                            ...(globalStats.unpaid_commissions_by_currency || []).map((r) => r.currency),
+                            "XOF",
+                          ])
+                        ).map((code) => {
+                          const totalRow = (globalStats.commissions_by_currency || []).find((r) => r.currency === code)
+                          const unpaidRow = (globalStats.unpaid_commissions_by_currency || []).find((r) => r.currency === code)
+                          const total = totalRow ? Number(totalRow.total) : (code === "XOF" ? globalStats.total_commissions : 0)
+                          const unpaid = unpaidRow ? Number(unpaidRow.total) : (code === "XOF" ? globalStats.unpaid_commissions : 0)
+                          if (!total && !unpaid && code !== "XOF") return null
+                          return (
+                            <tr key={code} className="border-b border-slate-100 dark:border-neutral-700/60">
+                              <td className="py-2.5 pr-3 font-semibold text-neutral-900 dark:text-white">{code}</td>
+                              <td className="py-2.5 pr-3 text-right text-orange-700 dark:text-orange-300">
+                                {formatCurrency(total, code)}
+                              </td>
+                              <td className="py-2.5 text-right text-red-700 dark:text-red-300">
+                                {formatCurrency(unpaid, code)}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </CardContent>

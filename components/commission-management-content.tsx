@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Search, Download, ChevronLeft, ChevronRight, Loader2, DollarSign, Users, TrendingUp, CalendarDays } from "lucide-react"
+import { ArrowLeft, Search, Download, ChevronLeft, ChevronRight, Loader2, DollarSign } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { smartFetch } from "@/utils/auth"
 
@@ -79,6 +79,7 @@ interface CurrencyBreakdown {
 interface WithdrawalRequest {
   commission_ids: string[]
   country_code: string
+  currency?: string
   payment_method: string
   notes: string
 }
@@ -417,16 +418,17 @@ export function CommissionManagementContent() {
     setWithdrawalModalOpen(true)
   }
 
-  // Open withdraw all unpaid commissions modal
-  const openWithdrawAllModal = () => {
-    if (unpaidSummary.count === 0 || unpaidSummary.total_amount === 0) {
+  // Open withdraw all unpaid commissions modal (optionnellement une devise)
+  const openWithdrawAllModal = (currency?: string) => {
+    if (unpaidSummary.count === 0) {
       setError("Aucune commission impayée disponible")
       return
     }
     
     setWithdrawalRequest({
-      commission_ids: [], // Empty array means withdraw all
+      commission_ids: [],
       country_code: countryFilter !== "all" ? countryFilter : "",
+      currency: currency || "",
       payment_method: "mobile_money",
       notes: ""
     })
@@ -442,6 +444,7 @@ export function CommissionManagementContent() {
         method: "POST",
         body: JSON.stringify({
           country_code: withdrawalRequest.country_code || null,
+          currency: withdrawalRequest.currency || null,
           payment_method: withdrawalRequest.payment_method,
           notes: withdrawalRequest.notes
         })
@@ -458,6 +461,7 @@ export function CommissionManagementContent() {
       setWithdrawalRequest({
         commission_ids: [],
         country_code: "",
+        currency: "",
         payment_method: "mobile_money",
         notes: ""
       })
@@ -476,23 +480,11 @@ export function CommissionManagementContent() {
     }
   }
 
-  // Calculate stats
-  const calculateStats = () => {
-    const totalCommissionsAmount = commissions.reduce((sum, c) => sum + moneyNum(c.net_amount), 0)
-    const totalOperatorFees = commissions.reduce((sum, c) => sum + moneyNum(c.operator_fee_amount), 0)
-    const totalAggregatorFees = commissions.reduce((sum, c) => sum + moneyNum(c.aggregator_fee_amount), 0)
-    
-    return {
-      totalCommissionsAmount,
-      totalOperatorFees,
-      totalAggregatorFees,
-      unpaidAmount: unpaidSummary.total_amount,
-      totalCommissions: commissions.length,
-      unpaidCount: unpaidSummary.count
-    }
-  }
-
-  const stats = calculateStats()
+  const unpaidByCurrency = unpaidSummary.by_currency?.length
+    ? unpaidSummary.by_currency
+    : unpaidSummary.count > 0
+      ? [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
+      : []
 
   // Pagination component
   const PaginationComponent = () => {
@@ -638,79 +630,79 @@ export function CommissionManagementContent() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Total Commissions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{moneyNum(stats.totalCommissionsAmount).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">{stats.totalCommissions} commissions (page courante, devises mélangées)</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Frais Opérateurs
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{moneyNum(stats.totalOperatorFees).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">page courante</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              Frais Agrégateur
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{moneyNum(stats.totalAggregatorFees).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
-            <p className="text-xs text-muted-foreground">page courante</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center">
-              <CalendarDays className="h-4 w-4 mr-2" />
-              Commissions Impayées
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-1">
-              {(unpaidSummary.by_currency?.length
-                ? unpaidSummary.by_currency
-                : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
-              ).map((row) => (
-                <div key={row.currency} className="text-2xl font-bold text-red-600">
-                  {formatMoney(row.total, row.currency)}
-                </div>
-              ))}
+      {/* Commissions disponibles par devise */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <CardTitle className="flex items-center">
+                <DollarSign className="h-5 w-5 mr-2 text-red-600" />
+                Commissions disponibles
+              </CardTitle>
+              <CardDescription>
+                Somme à retirer par devise — {unpaidSummary.count} commission(s) confirmée(s)
+              </CardDescription>
             </div>
-            <p className="text-xs text-muted-foreground">{unpaidSummary.count} commissions</p>
             {unpaidSummary.count > 0 && (
               <Button
                 size="sm"
-                onClick={openWithdrawAllModal}
-                className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => openWithdrawAllModal()}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 <DollarSign className="h-3 w-3 mr-1" />
-                Retirer Tout
+                Retirer tout
               </Button>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {unpaidByCurrency.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune commission disponible.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-muted-foreground border-b">
+                    <th className="py-2 pr-4 font-medium">Devise</th>
+                    <th className="py-2 pr-4 font-medium text-right">Disponible</th>
+                    <th className="py-2 pr-4 font-medium text-right">Nombre</th>
+                    <th className="py-2 font-medium text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unpaidByCurrency.map((row) => (
+                    <tr key={row.currency} className="border-b last:border-0">
+                      <td className="py-3 pr-4 font-semibold">{row.currency}</td>
+                      <td className="py-3 pr-4 text-right text-lg font-bold text-red-600">
+                        {formatMoney(row.total, row.currency)}
+                      </td>
+                      <td className="py-3 pr-4 text-right">{row.count}</td>
+                      <td className="py-3 text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openWithdrawAllModal(row.currency)}
+                          disabled={moneyNum(row.total) <= 0}
+                        >
+                          Retirer {row.currency}
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td className="py-3 pr-4 font-medium text-muted-foreground">Total</td>
+                    <td className="py-3 pr-4 text-right text-muted-foreground text-xs">
+                      (par devise ci-dessus — pas de somme multi-devises)
+                    </td>
+                    <td className="py-3 pr-4 text-right font-semibold">{unpaidSummary.count}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -1054,7 +1046,9 @@ export function CommissionManagementContent() {
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">Montant total</p>
                   <div className="space-y-1">
                     {(unpaidSummary.by_currency?.length
-                      ? unpaidSummary.by_currency
+                      ? unpaidSummary.by_currency.filter((row) =>
+                          !withdrawalRequest.currency || row.currency === withdrawalRequest.currency
+                        )
                       : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
                     ).map((row) => (
                       <p key={row.currency} className="font-medium text-green-600 text-lg">
@@ -1064,6 +1058,12 @@ export function CommissionManagementContent() {
                   </div>
                 </div>
               </div>
+              {withdrawalRequest.currency && (
+                <div className="mt-3">
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Devise</p>
+                  <p className="font-medium text-neutral-900 dark:text-white">{withdrawalRequest.currency}</p>
+                </div>
+              )}
               {countryFilter !== "all" && (
                 <div className="mt-3">
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">Pays</p>
