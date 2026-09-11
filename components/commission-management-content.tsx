@@ -13,6 +13,16 @@ import { ArrowLeft, Search, Download, ChevronLeft, ChevronRight, Loader2, Dollar
 import { useRouter } from "next/navigation"
 import { smartFetch } from "@/utils/auth"
 
+/** Évite la concaténation string des Decimal JSON ("10.00"+"0.20" → "10.000.20") */
+function moneyNum(value: number | string | null | undefined): number {
+  const n = typeof value === "number" ? value : Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+function formatMoney(value: number | string | null | undefined, currency = "XOF"): string {
+  return `${moneyNum(value).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`
+}
+
 // Interfaces for commission data
 interface Commission {
   uid: string
@@ -20,6 +30,7 @@ interface Commission {
   customer_id: string
   operator_name: string
   operator_code?: string
+  country_code?: string
   type_trans: string
   transaction_amount: number
   currency?: string
@@ -40,13 +51,23 @@ interface CommissionBatch {
   id: string
   uid: string
   operator_code: string
-  operator_name: string
+  operator_name?: string
+  country_code?: string
+  country_label?: string
   currency?: string
   total_amount: number
-  commission_count: number
+  commission_count?: number
+  commissions_count?: number
   status: string
   created_at: string
   paid_at?: string
+}
+
+interface CountryOption {
+  uid: string
+  code: string
+  name: string
+  is_active?: boolean
 }
 
 interface CurrencyBreakdown {
@@ -57,26 +78,9 @@ interface CurrencyBreakdown {
 
 interface WithdrawalRequest {
   commission_ids: string[]
-  operator_code: string
+  country_code: string
   payment_method: string
   notes: string
-}
-
-interface Operator {
-  uid: string
-  operator_name: string
-  operator_code: string
-  operator_payin_rate: string
-  operator_payout_rate: string
-  min_payin_amount: number
-  max_payin_amount: number
-  min_payout_amount: number
-  max_payout_amount: number
-  is_active: boolean
-  api_base_url: string
-  supports_smartlink: boolean
-  supports_callback: boolean
-  created_at: string
 }
 
 export function CommissionManagementContent() {
@@ -91,14 +95,14 @@ export function CommissionManagementContent() {
     by_currency: CurrencyBreakdown[]
   }>({ count: 0, total_amount: 0, by_currency: [] })
   const [commissionBatches, setCommissionBatches] = useState<CommissionBatch[]>([])
-  const [operators, setOperators] = useState<Operator[]>([])
+  const [countries, setCountries] = useState<CountryOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
   // States for filters
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [operatorFilter, setOperatorFilter] = useState("all")
+  const [countryFilter, setCountryFilter] = useState("all")
   const [refreshKey, setRefreshKey] = useState(0)
   const [activeTab, setActiveTab] = useState("commissions")
   
@@ -114,7 +118,7 @@ export function CommissionManagementContent() {
   const [selectedCommissions, setSelectedCommissions] = useState<string[]>([])
   const [withdrawalRequest, setWithdrawalRequest] = useState<WithdrawalRequest>({
     commission_ids: [],
-    operator_code: "",
+    country_code: "",
     payment_method: "mobile_money",
     notes: ""
   })
@@ -122,27 +126,30 @@ export function CommissionManagementContent() {
   
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
-  // Fetch operators
-  const fetchOperators = async () => {
+  // Fetch countries (filtre admin par pays)
+  const fetchCountries = async () => {
     try {
-      const response = await smartFetch(`${baseUrl}/api/v2/admin/operators/`)
-      
+      const response = await smartFetch(`${baseUrl}/api/v2/admin/countries/`)
       if (!response.ok) {
-        const errorData = await response.json()
-        const errorMessage = errorData.detail || errorData.message || errorData.error || `Erreur ${response.status}`
-        throw new Error(errorMessage)
+        throw new Error(`Erreur ${response.status}`)
       }
-
       const data = await response.json()
-      setOperators(Array.isArray(data) ? data : data.results || [])
+      const rows = Array.isArray(data) ? data : data.results || []
+      setCountries(rows.filter((c: CountryOption) => c.is_active !== false))
     } catch (err) {
-      console.error("Error fetching operators:", err)
-      setOperators([])
+      console.error("Error fetching countries:", err)
+      setCountries([])
     }
   }
 
+  const countryLabel = (code?: string) => {
+    if (!code) return "—"
+    const found = countries.find((c) => c.code === code)
+    return found ? `${found.name} (${code})` : code
+  }
+
   // Fetch commissions
-  const fetchCommissions = async (query: string = "", page: number = 1, status: string = "", operator: string = "all") => {
+  const fetchCommissions = async (query: string = "", page: number = 1, status: string = "", country: string = "all") => {
     try {
       setLoading(true)
       setError(null)
@@ -154,8 +161,8 @@ export function CommissionManagementContent() {
       if (status && status !== "all" && status !== "") {
         params.append('status', status)
       }
-      if (operator && operator !== "all") {
-        params.append('operator_code', operator)
+      if (country && country !== "all") {
+        params.append('country_code', country)
       }
       params.append('page', page.toString())
       params.append('page_size', pageSize.toString())
@@ -190,11 +197,11 @@ export function CommissionManagementContent() {
   }
 
   // Fetch unpaid commissions
-  const fetchUnpaidCommissions = async (operator: string = "all") => {
+  const fetchUnpaidCommissions = async (country: string = "all") => {
     try {
       const params = new URLSearchParams()
-      if (operator && operator !== "all") {
-        params.append('operator_code', operator)
+      if (country && country !== "all") {
+        params.append('country_code', country)
       }
       
       const url = `${baseUrl}/api/v2/admin/commissions/unpaid/?${params.toString()}`
@@ -268,7 +275,12 @@ export function CommissionManagementContent() {
       
       const response = await smartFetch(`${baseUrl}/api/v2/admin/commissions/withdraw/`, {
         method: "POST",
-        body: JSON.stringify(withdrawalRequest)
+        body: JSON.stringify({
+          commission_ids: withdrawalRequest.commission_ids,
+          country_code: withdrawalRequest.country_code || null,
+          payment_method: withdrawalRequest.payment_method,
+          notes: withdrawalRequest.notes,
+        })
       })
       
       if (!response.ok) {
@@ -282,14 +294,14 @@ export function CommissionManagementContent() {
       setSelectedCommissions([])
       setWithdrawalRequest({
         commission_ids: [],
-        operator_code: "",
+        country_code: "",
         payment_method: "mobile_money",
         notes: ""
       })
       
       // Refresh data
       setRefreshKey(prev => prev + 1)
-      await fetchUnpaidCommissions(operatorFilter)
+      await fetchUnpaidCommissions(countryFilter)
       await fetchCommissionBatches()
       
     } catch (err) {
@@ -313,8 +325,8 @@ export function CommissionManagementContent() {
       if (statusFilter && statusFilter !== "all" && statusFilter !== "") {
         params.append('status', statusFilter)
       }
-      if (operatorFilter && operatorFilter !== "all") {
-        params.append('operator_code', operatorFilter)
+      if (countryFilter && countryFilter !== "all") {
+        params.append('country_code', countryFilter)
       }
       
       if (params.toString()) {
@@ -338,22 +350,22 @@ export function CommissionManagementContent() {
     }
   }
 
-  // Load operators on component mount
+  // Load countries on component mount
   useEffect(() => {
-    fetchOperators()
+    fetchCountries()
   }, [])
 
   // Load data on component mount and when filters change
   useEffect(() => {
     const filterValue = statusFilter === "all" ? "" : statusFilter
-    fetchCommissions(searchTerm, currentPage, filterValue, operatorFilter)
-  }, [currentPage, searchTerm, statusFilter, operatorFilter, refreshKey])
+    fetchCommissions(searchTerm, currentPage, filterValue, countryFilter)
+  }, [currentPage, searchTerm, statusFilter, countryFilter, refreshKey])
 
-  // Load unpaid commissions and batches on mount and when operator filter changes
+  // Load unpaid commissions and batches on mount and when country filter changes
   useEffect(() => {
-    fetchUnpaidCommissions(operatorFilter)
+    fetchUnpaidCommissions(countryFilter)
     fetchCommissionBatches()
-  }, [operatorFilter])
+  }, [countryFilter])
 
   // Pagination functions
   const handlePageChange = (page: number) => {
@@ -394,11 +406,11 @@ export function CommissionManagementContent() {
     }
     
     const selectedCommissionsData = commissions.filter(c => selectedCommissions.includes(c.uid))
-    const operatorCode = selectedCommissionsData[0]?.operator_code || selectedCommissionsData[0]?.operator_name || ""
+    const countryCode = selectedCommissionsData[0]?.country_code || ""
     
     setWithdrawalRequest({
       commission_ids: selectedCommissions,
-      operator_code: operatorCode,
+      country_code: countryCode,
       payment_method: "mobile_money",
       notes: ""
     })
@@ -414,7 +426,7 @@ export function CommissionManagementContent() {
     
     setWithdrawalRequest({
       commission_ids: [], // Empty array means withdraw all
-      operator_code: operatorFilter !== "all" ? operatorFilter : "",
+      country_code: countryFilter !== "all" ? countryFilter : "",
       payment_method: "mobile_money",
       notes: ""
     })
@@ -429,7 +441,7 @@ export function CommissionManagementContent() {
       const response = await smartFetch(`${baseUrl}/api/v2/admin/commissions/withdraw/`, {
         method: "POST",
         body: JSON.stringify({
-          operator_code: withdrawalRequest.operator_code || null,
+          country_code: withdrawalRequest.country_code || null,
           payment_method: withdrawalRequest.payment_method,
           notes: withdrawalRequest.notes
         })
@@ -445,14 +457,14 @@ export function CommissionManagementContent() {
       setWithdrawAllModalOpen(false)
       setWithdrawalRequest({
         commission_ids: [],
-        operator_code: "",
+        country_code: "",
         payment_method: "mobile_money",
         notes: ""
       })
       
       // Refresh data
       setRefreshKey(prev => prev + 1)
-      await fetchUnpaidCommissions(operatorFilter)
+      await fetchUnpaidCommissions(countryFilter)
       await fetchCommissionBatches()
       
     } catch (err) {
@@ -466,9 +478,9 @@ export function CommissionManagementContent() {
 
   // Calculate stats
   const calculateStats = () => {
-    const totalCommissionsAmount = commissions.reduce((sum, c) => sum + c.net_amount, 0)
-    const totalOperatorFees = commissions.reduce((sum, c) => sum + c.operator_fee_amount, 0)
-    const totalAggregatorFees = commissions.reduce((sum, c) => sum + c.aggregator_fee_amount, 0)
+    const totalCommissionsAmount = commissions.reduce((sum, c) => sum + moneyNum(c.net_amount), 0)
+    const totalOperatorFees = commissions.reduce((sum, c) => sum + moneyNum(c.operator_fee_amount), 0)
+    const totalAggregatorFees = commissions.reduce((sum, c) => sum + moneyNum(c.aggregator_fee_amount), 0)
     
     return {
       totalCommissionsAmount,
@@ -636,7 +648,7 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCommissionsAmount.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{moneyNum(stats.totalCommissionsAmount).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">{stats.totalCommissions} commissions (page courante, devises mélangées)</p>
           </CardContent>
         </Card>
@@ -649,7 +661,7 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.totalOperatorFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-green-600">{moneyNum(stats.totalOperatorFees).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">page courante</p>
           </CardContent>
         </Card>
@@ -662,7 +674,7 @@ export function CommissionManagementContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalAggregatorFees.toLocaleString()}</div>
+            <div className="text-2xl font-bold text-blue-600">{moneyNum(stats.totalAggregatorFees).toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">page courante</p>
           </CardContent>
         </Card>
@@ -681,7 +693,7 @@ export function CommissionManagementContent() {
                 : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
               ).map((row) => (
                 <div key={row.currency} className="text-2xl font-bold text-red-600">
-                  {(row.total || 0).toLocaleString()} {row.currency}
+                  {formatMoney(row.total, row.currency)}
                 </div>
               ))}
             </div>
@@ -740,19 +752,17 @@ export function CommissionManagementContent() {
                   </SelectContent>
                 </Select>
                 
-                <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                <Select value={countryFilter} onValueChange={setCountryFilter}>
                   <SelectTrigger className="w-full md:w-40">
-                    <SelectValue placeholder="Choisissez l'opérateur" />
+                    <SelectValue placeholder="Choisissez le pays" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous</SelectItem>
-                    {operators
-                      .filter(op => op.is_active)
-                      .map((operator) => (
-                        <SelectItem key={operator.uid} value={operator.operator_code}>
-                          {operator.operator_name}
-                        </SelectItem>
-                      ))}
+                    <SelectItem value="all">Tous les pays</SelectItem>
+                    {countries.map((country) => (
+                      <SelectItem key={country.uid || country.code} value={country.code}>
+                        {country.name} ({country.code})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -819,7 +829,7 @@ export function CommissionManagementContent() {
                       </p>
                       <div className="flex items-center space-x-2 mt-1">
                         <Badge variant="outline" className="text-xs">
-                          {commission.operator_name || 'N/A'}
+                          {countryLabel(commission.country_code)}
                         </Badge>
                         {getStatusBadge(commission.status)}
                       </div>
@@ -828,16 +838,16 @@ export function CommissionManagementContent() {
                   
                   <div className="text-right">
                     <p className="text-lg font-bold text-neutral-900 dark:text-white">
-                      {commission.net_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'}
+                      {formatMoney(commission.net_amount, commission.currency || 'XOF')}
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Opérateur: {commission.operator_fee_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'} ({commission.operator_fee_rate}%)
+                      Opérateur: {formatMoney(commission.operator_fee_amount, commission.currency || 'XOF')} ({commission.operator_fee_rate}%)
                     </p>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                      Agrégateur: {commission.aggregator_fee_amount?.toLocaleString() || '0'} {commission.currency || 'XOF'} ({commission.aggregator_fee_rate}%)
+                      Agrégateur: {formatMoney(commission.aggregator_fee_amount, commission.currency || 'XOF')} ({commission.aggregator_fee_rate}%)
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Total: {commission.total_fees?.toLocaleString() || '0'} {commission.currency || 'XOF'}
+                      Total: {formatMoney(commission.total_fees, commission.currency || 'XOF')}
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
                       {commission.created_at ? new Date(commission.created_at).toLocaleDateString() : 'N/A'}
@@ -887,7 +897,7 @@ export function CommissionManagementContent() {
                           </p>
                           {getStatusBadge(batch.status)}
                           <Badge variant="outline" className="text-xs">
-                            {batch.operator_name || batch.operator_code || 'N/A'}
+                            {batch.country_label || countryLabel(batch.country_code)}
                           </Badge>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
@@ -897,7 +907,7 @@ export function CommissionManagementContent() {
                           </div>
                           <div>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400">Montant total</p>
-                            <p className="text-sm font-medium text-green-600">{batch.total_amount?.toLocaleString() || '0'} {batch.currency || 'XOF'}</p>
+                            <p className="text-sm font-medium text-green-600">{formatMoney(batch.total_amount, batch.currency || 'XOF')}</p>
                           </div>
                           <div>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400">Créé le</p>
@@ -952,7 +962,7 @@ export function CommissionManagementContent() {
           <div className="space-y-4">
             <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
               <p className="font-medium text-neutral-900 dark:text-white">
-                Opérateur: {withdrawalRequest.operator_code}
+                Pays: {countryLabel(withdrawalRequest.country_code)}
               </p>
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Commissions sélectionnées: {selectedCommissions.length}
@@ -1048,41 +1058,39 @@ export function CommissionManagementContent() {
                       : [{ currency: "XOF", total: unpaidSummary.total_amount, count: unpaidSummary.count }]
                     ).map((row) => (
                       <p key={row.currency} className="font-medium text-green-600 text-lg">
-                        {(row.total || 0).toLocaleString()} {row.currency}
+                        {formatMoney(row.total, row.currency)}
                       </p>
                     ))}
                   </div>
                 </div>
               </div>
-              {operatorFilter !== "all" && (
+              {countryFilter !== "all" && (
                 <div className="mt-3">
-                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Opérateur</p>
-                  <p className="font-medium text-neutral-900 dark:text-white">{operatorFilter}</p>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400">Pays</p>
+                  <p className="font-medium text-neutral-900 dark:text-white">{countryLabel(countryFilter)}</p>
                 </div>
               )}
             </div>
 
-            {operatorFilter === "all" && (
+            {countryFilter === "all" && (
               <div>
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
-                  Opérateur (optionnel)
+                  Pays (optionnel)
                 </label>
                 <Select 
-                  value={withdrawalRequest.operator_code || "all"} 
-                  onValueChange={(value) => setWithdrawalRequest(prev => ({ ...prev, operator_code: value === "all" ? "" : value }))}
+                  value={withdrawalRequest.country_code || "all"} 
+                  onValueChange={(value) => setWithdrawalRequest(prev => ({ ...prev, country_code: value === "all" ? "" : value }))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Tous les opérateurs" />
+                    <SelectValue placeholder="Tous les pays" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous les opérateurs</SelectItem>
-                    {operators
-                      .filter(op => op.is_active)
-                      .map((operator) => (
-                        <SelectItem key={operator.uid} value={operator.operator_code}>
-                          {operator.operator_name}
-                        </SelectItem>
-                      ))}
+                    <SelectItem value="all">Tous les pays</SelectItem>
+                    {countries.map((country) => (
+                      <SelectItem key={country.uid || country.code} value={country.code}>
+                        {country.name} ({country.code})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
