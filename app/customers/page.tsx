@@ -15,6 +15,7 @@ import { smartFetch } from "@/utils/auth"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FeeFlowFields } from "@/components/fee-flow-fields"
+import { useCurrencies } from "@/hooks/use-currencies"
 
   interface Customer {
   customer_id: string
