@@ -14,7 +14,7 @@ import {
 import { smartFetch } from "@/utils/auth"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useCurrencies } from "@/hooks/use-currencies"
+import { FeeFlowFields } from "@/components/fee-flow-fields"
 
   interface Customer {
   customer_id: string
@@ -70,6 +70,19 @@ interface CustomerPermission {
   activated_at: string
   deactivated_at: string | null
   notes: string
+  use_custom_fees?: boolean
+  payin_fee_rate?: string | number
+  payout_fee_rate?: string | number
+  bank_transfer_fee_rate?: string | number
+  payin_fee_mode?: string
+  payout_fee_mode?: string
+  bank_transfer_fee_mode?: string
+  payin_fee_fixed?: number | null
+  payout_fee_fixed?: number | null
+  bank_transfer_fee_fixed?: number | null
+  payin_fee_base?: number
+  payout_fee_base?: number
+  bank_transfer_fee_base?: number
 }
 
 interface Operator {
@@ -97,6 +110,22 @@ export default function Customers() {
   const [customerPermissions, setCustomerPermissions] = useState<CustomerPermission[]>([])
   const [operators, setOperators] = useState<Operator[]>([])
   const [selectedOperator, setSelectedOperator] = useState<string>("")
+  const [feeForm, setFeeForm] = useState({
+    use_custom_fees: true,
+    payin_fee_mode: "percentage",
+    payout_fee_mode: "percentage",
+    bank_transfer_fee_mode: "percentage",
+    payin_fee_rate: 1.7,
+    payout_fee_rate: 1.5,
+    bank_transfer_fee_rate: 1.5,
+    payin_fee_fixed: 0,
+    payout_fee_fixed: 0,
+    bank_transfer_fee_fixed: 0,
+    payin_fee_base: 0,
+    payout_fee_base: 0,
+    bank_transfer_fee_base: 0,
+  })
+  const [editingPermissionUid, setEditingPermissionUid] = useState<string | null>(null)
 
   // Activate / Deactivate modals
   const [isActivateModalOpen, setIsActivateModalOpen] = useState(false)
@@ -196,8 +225,41 @@ export default function Customers() {
   }
 
   const grantPermission = async (customerId: string, operatorUid: string) => {
-    await callAction(`${baseUrl}/api/v2/admin/customers-config/${customerId}/permissions/`, "POST", { operator_uid: operatorUid })
+    await callAction(`${baseUrl}/api/v2/admin/customers-config/${customerId}/permissions/`, "POST", {
+      operator_uid: operatorUid,
+      ...feeForm,
+      use_custom_fees: true,
+    })
     await fetchCustomerPermissions(customerId)
+    setSelectedOperator("")
+  }
+
+  const savePermissionFees = async (permissionUid: string, customerId: string) => {
+    await callAction(`${baseUrl}/api/v2/admin/permissions/${permissionUid}/`, "PATCH", {
+      ...feeForm,
+      use_custom_fees: true,
+    })
+    await fetchCustomerPermissions(customerId)
+    setEditingPermissionUid(null)
+  }
+
+  const loadFeeFormFromPermission = (p: CustomerPermission) => {
+    setFeeForm({
+      use_custom_fees: p.use_custom_fees ?? true,
+      payin_fee_mode: p.payin_fee_mode || "percentage",
+      payout_fee_mode: p.payout_fee_mode || "percentage",
+      bank_transfer_fee_mode: p.bank_transfer_fee_mode || "percentage",
+      payin_fee_rate: Number(p.payin_fee_rate ?? 1.7),
+      payout_fee_rate: Number(p.payout_fee_rate ?? 1.5),
+      bank_transfer_fee_rate: Number(p.bank_transfer_fee_rate ?? 1.5),
+      payin_fee_fixed: Number(p.payin_fee_fixed ?? 0),
+      payout_fee_fixed: Number(p.payout_fee_fixed ?? 0),
+      bank_transfer_fee_fixed: Number(p.bank_transfer_fee_fixed ?? 0),
+      payin_fee_base: Number(p.payin_fee_base ?? 0),
+      payout_fee_base: Number(p.payout_fee_base ?? 0),
+      bank_transfer_fee_base: Number(p.bank_transfer_fee_base ?? 0),
+    })
+    setEditingPermissionUid(p.uid)
   }
 
   const revokePermission = async (permissionUid: string, customerId: string) => {
@@ -226,9 +288,9 @@ export default function Customers() {
 
   const customerDisplayName = (customer: Customer) => {
     const info = customer.grpc_info
-    if (info?.entreprise_name?.trim()) return info.entreprise_name.trim()
     const full = `${info?.first_name || ""} ${info?.last_name || ""}`.trim()
     if (full) return full
+    if (info?.entreprise_name?.trim()) return info.entreprise_name.trim()
     if (info?.email?.trim()) return info.email.trim()
     return `Client ${customer.customer_id.slice(0, 8)}`
   }
@@ -363,15 +425,18 @@ export default function Customers() {
                           <p className="font-semibold text-neutral-900 dark:text-white text-sm truncate">
                             {customerDisplayName(customer)}
                           </p>
+                          {customer.grpc_info?.entreprise_name &&
+                            customer.grpc_info.entreprise_name.trim() !== customerDisplayName(customer) && (
+                            <p className="text-xs text-neutral-600 dark:text-neutral-300 truncate">
+                              {customer.grpc_info.entreprise_name}
+                            </p>
+                          )}
                           <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                             {customer.grpc_info?.email || "Email indisponible"}
                           </p>
                           {customer.grpc_info?.phone && (
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">{customer.grpc_info.phone}</p>
                           )}
-                          <p className="text-[11px] text-neutral-400 dark:text-neutral-500 font-mono truncate mt-0.5">
-                            {customer.customer_id}
-                          </p>
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             <Badge className={customer.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                               {customer.is_active ? "Actif" : "Inactif"}
@@ -429,7 +494,7 @@ export default function Customers() {
 
       {/* ── Modal Permissions ─────────────────────────────────────── */}
       <Dialog open={isPermissionsModalOpen} onOpenChange={setIsPermissionsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center"><Shield className="h-5 w-5 mr-2 text-blue-600" />Gestion des Permissions</DialogTitle>
             <DialogDescription>
@@ -441,21 +506,52 @@ export default function Customers() {
             {customerPermissions.length === 0 ? (
               <p className="text-neutral-500 text-sm text-center py-4">Aucune permission accordée</p>
             ) : customerPermissions.map(p => (
-              <div key={p.uid} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{p.operator_name} <span className="text-xs text-neutral-500">({p.operator_code})</span></p>
-                  <Badge className={p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"} >{p.is_active ? "Actif" : "Inactif"}</Badge>
+              <div key={p.uid} className="p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-sm">{p.operator_name} <span className="text-xs text-neutral-500">({p.operator_code})</span></p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <Badge className={p.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>{p.is_active ? "Actif" : "Inactif"}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {p.use_custom_fees
+                          ? `Frais: C ${p.payin_fee_rate}% / R ${p.payout_fee_rate}% / V ${p.bank_transfer_fee_rate}%`
+                          : "Frais globaux client"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => loadFeeFormFromPermission(p)}>Frais</Button>
+                    <Button size="sm" variant="destructive" onClick={() => revokePermission(p.uid, selectedCustomerForAction!.customer_id)} disabled={actionLoading}>Révoquer</Button>
+                  </div>
                 </div>
-                <Button size="sm" variant="destructive" onClick={() => revokePermission(p.uid, selectedCustomerForAction!.customer_id)} disabled={actionLoading}>Révoquer</Button>
+                {editingPermissionUid === p.uid && (
+                  <div className="space-y-3 border-t pt-3">
+                    <p className="text-sm font-medium">Frais client pour {p.operator_code}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <FeeFlowFields idPrefix={`edit-payin-${p.uid}`} title="Collecte" mode={feeForm.payin_fee_mode} rate={feeForm.payin_fee_rate} fixed={feeForm.payin_fee_fixed} base={feeForm.payin_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, payin_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, payin_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, payin_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, payin_fee_base: v }))} />
+                      <FeeFlowFields idPrefix={`edit-payout-${p.uid}`} title="Retrait" mode={feeForm.payout_fee_mode} rate={feeForm.payout_fee_rate} fixed={feeForm.payout_fee_fixed} base={feeForm.payout_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, payout_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, payout_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, payout_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, payout_fee_base: v }))} />
+                      <FeeFlowFields idPrefix={`edit-bank-${p.uid}`} title="Virement" mode={feeForm.bank_transfer_fee_mode} rate={feeForm.bank_transfer_fee_rate} fixed={feeForm.bank_transfer_fee_fixed} base={feeForm.bank_transfer_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_base: v }))} />
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setEditingPermissionUid(null)}>Annuler</Button>
+                      <Button size="sm" className="bg-blue-600 text-white" disabled={actionLoading} onClick={() => savePermissionFees(p.uid, selectedCustomerForAction!.customer_id)}>Enregistrer</Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
-            <div className="border-t pt-4">
-              <h4 className="font-semibold text-neutral-900 dark:text-white mb-3">Accorder une permission</h4>
-              <div className="flex gap-2">
-                <select value={selectedOperator} onChange={e => setSelectedOperator(e.target.value)} className="flex-1 p-2 border border-slate-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-sm">
-                  <option value="">Sélectionner un opérateur</option>
-                  {operators.map(op => <option key={op.uid} value={op.uid}>{op.operator_name} ({op.operator_code})</option>)}
-                </select>
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="font-semibold text-neutral-900 dark:text-white">Accorder une permission + frais</h4>
+              <select value={selectedOperator} onChange={e => setSelectedOperator(e.target.value)} className="w-full p-2 border border-slate-200 dark:border-neutral-700 rounded-xl bg-white dark:bg-neutral-900 text-sm">
+                <option value="">Sélectionner un opérateur</option>
+                {operators.map(op => <option key={op.uid} value={op.uid}>{op.operator_name} ({op.operator_code})</option>)}
+              </select>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <FeeFlowFields idPrefix="grant-payin" title="Collecte" mode={feeForm.payin_fee_mode} rate={feeForm.payin_fee_rate} fixed={feeForm.payin_fee_fixed} base={feeForm.payin_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, payin_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, payin_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, payin_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, payin_fee_base: v }))} />
+                <FeeFlowFields idPrefix="grant-payout" title="Retrait" mode={feeForm.payout_fee_mode} rate={feeForm.payout_fee_rate} fixed={feeForm.payout_fee_fixed} base={feeForm.payout_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, payout_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, payout_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, payout_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, payout_fee_base: v }))} />
+                <FeeFlowFields idPrefix="grant-bank" title="Virement" mode={feeForm.bank_transfer_fee_mode} rate={feeForm.bank_transfer_fee_rate} fixed={feeForm.bank_transfer_fee_fixed} base={feeForm.bank_transfer_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_base: v }))} />
+              </div>
+              <div className="flex justify-end">
                 <Button onClick={() => selectedOperator && grantPermission(selectedCustomerForAction!.customer_id, selectedOperator)} disabled={!selectedOperator || actionLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accorder"}
                 </Button>
@@ -470,7 +566,7 @@ export default function Customers() {
       <Dialog open={isActivateModalOpen} onOpenChange={setIsActivateModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center"><UserCheck className="h-5 w-5 mr-2 text-green-600" />Activer le Client</DialogTitle></DialogHeader>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Activer le client <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong> ?</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Activer le client <strong>{selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : ""}</strong> ?</p>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsActivateModalOpen(false)}>Annuler</Button>
             <Button className="bg-green-600 hover:bg-green-700 text-white" disabled={actionLoading} onClick={async () => { await callAction(`${baseUrl}/api/v2/admin/customers-config/${selectedCustomerForAction?.customer_id}/activate/`, "POST"); setIsActivateModalOpen(false) }}>
@@ -484,7 +580,7 @@ export default function Customers() {
       <Dialog open={isDeactivateModalOpen} onOpenChange={setIsDeactivateModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center"><UserX className="h-5 w-5 mr-2 text-red-600" />Désactiver le Client</DialogTitle></DialogHeader>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Désactiver le client <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong> ?</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Désactiver le client <strong>{selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : ""}</strong> ?</p>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsDeactivateModalOpen(false)}>Annuler</Button>
             <Button variant="destructive" disabled={actionLoading} onClick={async () => { await callAction(`${baseUrl}/api/v2/admin/customers-config/${selectedCustomerForAction?.customer_id}/deactivate/`, "DELETE"); setIsDeactivateModalOpen(false) }}>
@@ -499,7 +595,7 @@ export default function Customers() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center"><Snowflake className="h-5 w-5 mr-2 text-cyan-600" />Geler le Compte</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Client : <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong></p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Client : <strong>{selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : ""}</strong></p>
             <div>
               <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Raison du gel *</label>
               <Input placeholder="Saisissez la raison..." value={freezeReason} onChange={e => setFreezeReason(e.target.value)} className="rounded-xl" />
@@ -518,7 +614,7 @@ export default function Customers() {
       <Dialog open={isUnfreezeModalOpen} onOpenChange={setIsUnfreezeModalOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center"><Flame className="h-5 w-5 mr-2 text-orange-500" />Dégeler le Compte</DialogTitle></DialogHeader>
-          <p className="text-sm text-neutral-600 dark:text-neutral-400">Dégeler le compte du client <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong> ?</p>
+          <p className="text-sm text-neutral-600 dark:text-neutral-400">Dégeler le compte du client <strong>{selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : ""}</strong> ?</p>
           <div className="flex justify-end gap-3 mt-4">
             <Button variant="outline" onClick={() => setIsUnfreezeModalOpen(false)}>Annuler</Button>
             <Button className="bg-orange-500 hover:bg-orange-600 text-white" disabled={actionLoading} onClick={async () => { await callAction(`${baseUrl}/api/v2/admin/customers-config/${selectedCustomerForAction?.customer_id}/unfreeze/`, "POST"); setIsUnfreezeModalOpen(false) }}>
@@ -533,7 +629,7 @@ export default function Customers() {
         <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle className="flex items-center"><DollarSign className="h-5 w-5 mr-2 text-purple-600" />Ajuster le Solde</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">Client : <strong>{selectedCustomerForAction?.customer_id.slice(0, 8)}</strong></p>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400">Client : <strong>{selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : ""}</strong></p>
             <div>
               <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">Devise *</label>
               <select

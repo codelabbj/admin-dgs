@@ -950,7 +950,7 @@ export function TransactionsContent() {
     const tableRows = filteredTransactions.map((transaction) => {
       const dateObj = transaction.created_at ? new Date(transaction.created_at) : null
       return [
-        `${transaction.customer?.username || transaction.customer?.email || "-"} (ID: ${transaction.customer_id || "-"})`,
+        `${transaction.customer_fullname || transaction.customer?.username || transaction.customer?.email || "-"}`,
         transaction.reference || "-",
         transaction.client_reference || "-",
         transaction.external_id || "-",
@@ -1393,27 +1393,10 @@ export function TransactionsContent() {
                     <TableRow key={transaction.id}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{transaction.customer?.username || transaction.customer?.email || "-"}</div>
-                          <div className="text-sm text-muted-foreground">{transaction.customer?.email || "-"}</div>
-                          {transaction.customer_id && (
-                            <div className="flex items-center gap-1 mt-1 text-[11px] font-mono text-muted-foreground bg-slate-50 px-1 rounded border border-slate-100 w-fit">
-                              <span>ID: {transaction.customer_id}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  copyToClipboard(transaction.customer_id, `cust_id-${transaction.id}`);
-                                }}
-                                className="h-4 w-4 p-0"
-                              >
-                                {copiedFields[`cust_id-${transaction.id}`] ? (
-                                  <Check className="h-2 w-2 text-green-600" />
-                                ) : (
-                                  <Copy className="h-2 w-2" />
-                                )}
-                              </Button>
-                            </div>
+                          <div className="font-medium">{transaction.customer_fullname || transaction.customer?.username || transaction.customer?.email || "-"}</div>
+                          <div className="text-sm text-muted-foreground">{transaction.customer_email || transaction.customer?.email || "-"}</div>
+                          {transaction.customer_entreprise && (
+                            <div className="text-xs text-muted-foreground">{transaction.customer_entreprise}</div>
                           )}
                         </div>
                       </TableCell>
@@ -1801,24 +1784,21 @@ export function TransactionsContent() {
                   </div>
                 </div>
 
-                {/* Customer ID */}
+                {/* Customer */}
                 <div>
-                  <label className="text-sm font-medium text-muted-foreground">ID Client</label>
+                  <label className="text-sm font-medium text-muted-foreground">Client</label>
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">{selectedTransactionDetails.customer_id || "-"}</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyToClipboard(selectedTransactionDetails.customer_id, 'customerId')}
-                      className="h-8 w-8 p-0"
-                    >
-                      {copiedFields['customerId'] ? (
-                        <Check className="h-4 w-4 text-green-600" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
+                    <p className="text-sm bg-slate-100 dark:bg-slate-800 p-2 rounded flex-1">
+                      {selectedTransactionDetails.customer_fullname
+                        || selectedTransactionDetails.customer?.username
+                        || selectedTransactionDetails.customer?.email
+                        || selectedTransactionDetails.customer_id
+                        || "-"}
+                    </p>
                   </div>
+                  {selectedTransactionDetails.customer_email && (
+                    <p className="text-xs text-muted-foreground mt-1">{selectedTransactionDetails.customer_email}</p>
+                  )}
                 </div>
 
                 {/* Beneficiary Information */}

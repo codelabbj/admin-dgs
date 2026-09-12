@@ -47,12 +47,14 @@ interface CustomerDetails {
   notes: string
   created_at: string
   grpc_info: {
-  email: string
+    email: string
     entreprise_name: string
     phone: string
+    first_name?: string
+    last_name?: string
     is_verify: boolean
     is_block: boolean
-  account_status: string
+    account_status: string
   }
   account: {
     balance: number
@@ -441,10 +443,16 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
             </Button>
             <div>
               <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
-                Détails du Client
+                {`${customer.grpc_info?.first_name || ""} ${customer.grpc_info?.last_name || ""}`.trim()
+                  || customer.grpc_info?.entreprise_name
+                  || customer.grpc_info?.email
+                  || "Détails du Client"}
               </h1>
               <p className="text-neutral-600 dark:text-neutral-400 text-lg">
-                ID: {customer.customer_id}
+                {customer.grpc_info?.entreprise_name &&
+                `${customer.grpc_info?.first_name || ""} ${customer.grpc_info?.last_name || ""}`.trim()
+                  ? customer.grpc_info.entreprise_name
+                  : customer.grpc_info?.email || ""}
               </p>
             </div>
           </div>
@@ -473,12 +481,16 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">ID Client</label>
-                    <p className="text-neutral-900 dark:text-white font-mono text-sm">{customer.customer_id}</p>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Nom complet</label>
+                    <p className="text-neutral-900 dark:text-white text-sm">
+                      {`${customer.grpc_info?.first_name || ""} ${customer.grpc_info?.last_name || ""}`.trim()
+                        || customer.grpc_info?.entreprise_name
+                        || "Non spécifié"}
+                    </p>
                  </div>
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">UID</label>
-                    <p className="text-neutral-900 dark:text-white font-mono text-sm">{customer.uid}</p>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Email</label>
+                    <p className="text-neutral-900 dark:text-white text-sm">{customer.grpc_info?.email || "Non spécifié"}</p>
                      </div>
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Statut</label>
