@@ -12,11 +12,11 @@ import {
   Loader2, Shield, ChevronLeft, ChevronRight, DollarSign, Snowflake, Flame
 } from "lucide-react"
 import { smartFetch } from "@/utils/auth"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useCurrencies } from "@/hooks/use-currencies"
 
-interface Customer {
+  interface Customer {
   customer_id: string
   uid: string
   is_active: boolean
@@ -38,6 +38,8 @@ interface Customer {
     email: string
     entreprise_name: string
     phone: string
+    first_name?: string
+    last_name?: string
     is_verify: boolean
     is_block: boolean
     account_status: string
@@ -205,16 +207,36 @@ export default function Customers() {
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────────
 
-  useEffect(() => { fetchCustomers("", 1, "") }, [])
-  useEffect(() => { fetchCustomers(searchQuery, currentPage, isActiveFilter) }, [currentPage])
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchCustomers(searchQuery, currentPage, isActiveFilter)
+    }, searchQuery ? 350 : 0)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, searchQuery, isActiveFilter])
 
-  const debouncedSearch = useCallback((() => {
-    let t: NodeJS.Timeout
-    return (q: string) => { clearTimeout(t); t = setTimeout(() => fetchCustomers(q, 1, isActiveFilter), 300) }
-  })(), [isActiveFilter])
+  const handleSearch = (q: string) => {
+    setSearchQuery(q)
+    setCurrentPage(1)
+  }
+  const handleActiveFilter = (f: string) => {
+    setIsActiveFilter(f)
+    setCurrentPage(1)
+  }
 
-  const handleSearch = (q: string) => { setSearchQuery(q); setCurrentPage(1); debouncedSearch(q) }
-  const handleActiveFilter = (f: string) => { setIsActiveFilter(f); setCurrentPage(1); fetchCustomers(searchQuery, 1, f) }
+  const customerDisplayName = (customer: Customer) => {
+    const info = customer.grpc_info
+    if (info?.entreprise_name?.trim()) return info.entreprise_name.trim()
+    const full = `${info?.first_name || ""} ${info?.last_name || ""}`.trim()
+    if (full) return full
+    if (info?.email?.trim()) return info.email.trim()
+    return `Client ${customer.customer_id.slice(0, 8)}`
+  }
+
+  const customerInitials = (customer: Customer) => {
+    const name = customerDisplayName(customer)
+    return name.slice(0, 2).toUpperCase()
+  }
 
   // ─── Pagination component ────────────────────────────────────────────────────
 
@@ -294,7 +316,7 @@ export default function Customers() {
           <CardContent className="p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-4">
             <div className="relative flex-1 min-w-0 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input placeholder="Rechercher par ID, email..." className="pl-10 rounded-xl h-12 w-full" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
+              <Input placeholder="Rechercher: entreprise, email, téléphone, ID..." className="pl-10 rounded-xl h-12 w-full" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {(["", "true", "false"] as const).map((f, i) => (
@@ -334,17 +356,22 @@ export default function Customers() {
                       <div className="flex items-start sm:items-center gap-3 sm:space-x-4 min-w-0 flex-1">
                         <Avatar className="h-10 w-10 sm:h-12 sm:w-12 shrink-0">
                           <AvatarFallback className="bg-slate-200 dark:bg-neutral-700 font-semibold text-sm">
-                            {customer.customer_id.slice(0, 2).toUpperCase()}
+                            {customerInitials(customer)}
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-neutral-900 dark:text-white text-sm truncate">
-                            {customer.grpc_info?.entreprise_name || `Client ${customer.customer_id.slice(0, 8)}`}
+                            {customerDisplayName(customer)}
                           </p>
-                          <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">{customer.grpc_info?.email || customer.customer_id}</p>
+                          <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                            {customer.grpc_info?.email || "Email indisponible"}
+                          </p>
                           {customer.grpc_info?.phone && (
                             <p className="text-xs text-neutral-500 dark:text-neutral-400">{customer.grpc_info.phone}</p>
                           )}
+                          <p className="text-[11px] text-neutral-400 dark:text-neutral-500 font-mono truncate mt-0.5">
+                            {customer.customer_id}
+                          </p>
                           <div className="flex flex-wrap items-center gap-2 mt-1">
                             <Badge className={customer.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
                               {customer.is_active ? "Actif" : "Inactif"}
@@ -405,7 +432,9 @@ export default function Customers() {
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center"><Shield className="h-5 w-5 mr-2 text-blue-600" />Gestion des Permissions</DialogTitle>
-            <DialogDescription>Client : {selectedCustomerForAction?.customer_id.slice(0, 8)}</DialogDescription>
+            <DialogDescription>
+              Client : {selectedCustomerForAction ? customerDisplayName(selectedCustomerForAction) : "—"}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <h4 className="font-semibold text-neutral-900 dark:text-white">Permissions actuelles</h4>
