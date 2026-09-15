@@ -310,8 +310,8 @@ export function WithdrawalsContent() {
     pending: withdrawals.filter(w => w.status === "pending").length,
     approved: withdrawals.filter(w => w.status === "approved").length,
     rejected: withdrawals.filter(w => w.status === "rejected").length,
-    totalAmount: withdrawals.reduce((sum, w) => sum + w.amount, 0),
-    pendingAmount: withdrawals.filter(w => w.status === "pending").reduce((sum, w) => sum + w.amount, 0)
+    totalAmount: withdrawals.reduce((sum, w) => sum + (Number(w.amount) || 0), 0),
+    pendingAmount: withdrawals.filter(w => w.status === "pending").reduce((sum, w) => sum + (Number(w.amount) || 0), 0)
   }
 
   return (

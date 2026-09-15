@@ -1180,7 +1180,9 @@ export function TransactionsContent() {
   const totalAmountLabel = Object.entries(totalsByCurrency)
     .map(([code, amount]) => `${Number(amount).toLocaleString()} ${code}`)
     .join(" · ") || "0"
-  const completedTransactions = filteredTransactions.filter((t) => t.status === "completed").length
+  const completedTransactions = filteredTransactions.filter(
+    (t) => t.status === "success" || t.status === "completed"
+  ).length
 
   return (
     <div className="space-y-6 min-w-0">

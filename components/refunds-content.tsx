@@ -298,7 +298,7 @@ export function RefundsContent() {
     pending: refunds.filter(r => r.status === "pending").length,
     approved: refunds.filter(r => r.status === "approved").length,
     rejected: refunds.filter(r => r.status === "rejected").length,
-    totalAmount: refunds.reduce((sum, r) => sum + r.amount, 0)
+    totalAmount: refunds.reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
   }
 
   return (

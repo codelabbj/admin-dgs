@@ -351,8 +351,8 @@ export function RechargesContent() {
     pending: recharges.filter(r => r.status === "pending").length,
     approved: recharges.filter(r => r.status === "approved").length,
     rejected: recharges.filter(r => r.status === "rejected").length,
-    totalAmount: recharges.reduce((sum, r) => sum + r.amount, 0),
-    pendingAmount: recharges.filter(r => r.status === "pending").reduce((sum, r) => sum + r.amount, 0)
+    totalAmount: recharges.reduce((sum, r) => sum + (Number(r.amount) || 0), 0),
+    pendingAmount: recharges.filter(r => r.status === "pending").reduce((sum, r) => sum + (Number(r.amount) || 0), 0)
   }
 
   return (

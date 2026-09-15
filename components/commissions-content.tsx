@@ -415,8 +415,8 @@ export function CommissionsContent() {
     confirmed: commissions.filter(c => c.status === "confirmed").length,
     paid: commissions.filter(c => c.status === "paid").length,
     pending: commissions.filter(c => c.status === "pending").length,
-    totalAmount: commissions.reduce((sum, c) => sum + c.commission_amount, 0),
-    unpaidAmount: unpaidCommissions.reduce((sum, c) => sum + c.commission_amount, 0)
+    totalAmount: commissions.reduce((sum, c) => sum + (Number(c.commission_amount) || 0), 0),
+    unpaidAmount: unpaidCommissions.reduce((sum, c) => sum + (Number(c.commission_amount) || 0), 0)
   }
 
   return (
@@ -732,7 +732,7 @@ export function CommissionsContent() {
               <p className="text-sm text-neutral-600 dark:text-neutral-400">
                 Montant total: {commissions
                   .filter(c => selectedCommissions.includes(c.id))
-                  .reduce((sum, c) => sum + c.commission_amount, 0)
+                  .reduce((sum, c) => sum + (Number(c.commission_amount) || 0), 0)
                   .toLocaleString()} FCFA
               </p>
             </div>

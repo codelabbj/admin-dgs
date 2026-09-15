@@ -990,6 +990,7 @@ export function DashboardContent() {
                     <p className="text-sm text-orange-700 dark:text-orange-300 mb-1 text-right">Total des commissions</p>
                     <CurrencyCommissionList
                       rows={globalStats.commissions_by_currency}
+                      alignWith={globalStats.unpaid_commissions_by_currency}
                       emptyFallback={globalStats.total_commissions}
                       textClass="text-orange-900 dark:text-orange-100"
                     />
