@@ -30,7 +30,7 @@ interface Corridor {
   status?: string | boolean | null
 }
 
-function yesNo(value: FeeInfo["enabled"]) {
+function yesNo(value: boolean | string | number | null | undefined) {
   if (value === true || value === "true" || value === 1 || value === "1") return "Oui"
   if (value === false || value === "false" || value === 0 || value === "0") return "Non"
   return "—"

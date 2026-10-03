@@ -1108,7 +1108,7 @@ export function TransactionsContent() {
           </span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -1261,7 +1261,7 @@ export function TransactionsContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 md:gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">{t("totalTransactions")}</CardTitle>
@@ -1308,7 +1308,7 @@ export function TransactionsContent() {
           <CardDescription>{t("viewAndFilterHistory")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <div className="relative col-span-1 md:col-span-2">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -1581,7 +1581,7 @@ export function TransactionsContent() {
               }
 
               return (
-                <div className="grid grid-cols-4 items-center gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 items-center gap-4">
                   <label htmlFor="status" className="text-right">
                     Nouveau Statut
                   </label>
@@ -1646,7 +1646,7 @@ export function TransactionsContent() {
             {selectedTransactionDetails && (
               <div className="space-y-6">
                 {/* Basic Information */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">ID de Transaction</label>
                     <div className="flex items-center gap-2">
@@ -1686,7 +1686,7 @@ export function TransactionsContent() {
                 </div>
 
                 {/* Transaction Reference */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {selectedTransactionDetails.transac_reference && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Référence de Transaction</label>
@@ -1754,7 +1754,7 @@ export function TransactionsContent() {
                 </div>
 
                 {/* Amount, Status, and Type */}
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Montant</label>
                     <p className="text-lg font-semibold text-green-600">
@@ -1775,7 +1775,7 @@ export function TransactionsContent() {
                 </div>
 
                 {/* Network and Phone */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Réseau</label>
                     <p className="text-sm font-medium">{selectedTransactionDetails.network || "-"}</p>
@@ -1807,7 +1807,7 @@ export function TransactionsContent() {
                 {selectedTransactionDetails.beneficiary && (
                   <div className="border-t pt-4">
                     <h4 className="text-sm font-medium mb-3">Informations Bénéficiaire</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Nom</label>
                         <p className="text-sm font-medium">{selectedTransactionDetails.beneficiary.name || "-"}</p>
@@ -1860,7 +1860,7 @@ export function TransactionsContent() {
                 {/* Additional Details */}
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium mb-3">Détails Supplémentaires</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Code Pays</label>
                       <p className="text-sm">{selectedTransactionDetails.country_code || "-"}</p>
@@ -1896,7 +1896,7 @@ export function TransactionsContent() {
                 {/* Dates */}
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium mb-3">Dates</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                       <p className="text-sm">
@@ -1930,7 +1930,7 @@ export function TransactionsContent() {
                 }
               }}
               disabled={syncLoading[selectedTransactionDetails?.uid || selectedTransactionDetails?.transaction_uid || selectedTransactionDetails?.id]}
-              className="flex items-center space-x-2"
+              className="flex items-center flex-wrap gap-2"
             >
               {syncLoading[selectedTransactionDetails?.uid || selectedTransactionDetails?.transaction_uid || selectedTransactionDetails?.id] ? (
                 <>
@@ -2092,7 +2092,7 @@ export function TransactionsContent() {
                   </div>
                 </div> */}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Référence</label>
                     <div className="flex items-center gap-2">
@@ -2117,7 +2117,7 @@ export function TransactionsContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Montant</label>
                     <p className="text-lg font-semibold text-green-600">
@@ -2132,7 +2132,7 @@ export function TransactionsContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
                     <p className="text-sm font-mono">{statusVerificationData?.phone || "-"}</p>
@@ -2187,7 +2187,7 @@ export function TransactionsContent() {
               <div className="space-y-4">
                 {webhookLogs.map((log, index) => (
                   <div key={index} className="border border-slate-200 dark:border-neutral-700 rounded-lg p-4">
-                    <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">URL</label>
                         <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded break-all">
@@ -2207,7 +2207,7 @@ export function TransactionsContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                       <div>
                         <label className="text-sm font-medium text-muted-foreground">Méthode</label>
                         <p className="text-sm font-mono">{log.method || "N/A"}</p>
@@ -2361,7 +2361,7 @@ export function TransactionsContent() {
             <Button
               onClick={createWaveWebhook}
               disabled={webhookLoading || !transactionId || !webhookStatus || !webhookAmount || !webhookPhone}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-xl"
             >
               {webhookLoading ? (
                 <>

@@ -78,7 +78,7 @@ export function DashboardContent() {
   // if (isLoading) {
   //   return (
   //     <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 flex items-center justify-center">
-  //       <div className="flex items-center space-x-2">
+  //       <div className="flex items-center flex-wrap gap-2">
   //         <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
   //         <span className="text-lg font-medium text-blue-600">Loading dashboard...</span>
   //       </div>
@@ -932,9 +932,9 @@ export function DashboardContent() {
         {/* Global Stats Section */}
         {globalStats && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                     <BarChart3 className="h-6 w-6 text-white" />
                   </div>
@@ -946,9 +946,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 backdrop-blur-xl border-green-200 dark:border-green-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-green-50/70 dark:bg-green-950/30 border-green-200 dark:border-green-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-green-600 rounded-xl shadow-lg">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
@@ -963,9 +963,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                     <TrendingDown className="h-6 w-6 text-white" />
                   </div>
@@ -980,7 +980,7 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-orange-50/70 dark:bg-orange-950/30 border-orange-200 dark:border-orange-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="p-3 bg-orange-600 rounded-xl shadow-lg shrink-0">
@@ -999,7 +999,7 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 backdrop-blur-xl border-red-200 dark:border-red-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-red-50/70 dark:bg-red-950/30 border-red-200 dark:border-red-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="p-3 bg-red-600 rounded-xl shadow-lg shrink-0">
@@ -1018,9 +1018,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 backdrop-blur-xl border-indigo-200 dark:border-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-indigo-600 rounded-xl shadow-lg">
                     <CalendarDays className="h-6 w-6 text-white" />
                   </div>
@@ -1039,7 +1039,7 @@ export function DashboardContent() {
 
         {/* Global Stats Charts */}
         {globalStats && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1049,7 +1049,7 @@ export function DashboardContent() {
                 Répartition des volumes et commissions
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Transaction Volume Distribution */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
@@ -1085,7 +1085,7 @@ export function DashboardContent() {
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
                   <h4 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">Commissions par devise</h4>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                    <table className="w-full min-w-[480px] text-sm">
                       <thead>
                         <tr className="text-left text-neutral-500 border-b border-slate-200 dark:border-neutral-700">
                           <th className="py-2 pr-3 font-medium">Devise</th>
@@ -1129,10 +1129,10 @@ export function DashboardContent() {
 
         {/* API Health Section */}
         {apiHealth && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className={`p-3 ${apiHealth.status === 'healthy' ? 'bg-green-600' : 'bg-red-600'} rounded-xl shadow-lg`}>
                     <Shield className="h-6 w-6 text-white" />
                   </div>
@@ -1144,9 +1144,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className={`p-3 ${apiHealth.wave_api === 'healthy' ? 'bg-green-600' : 'bg-red-600'} rounded-xl shadow-lg`}>
                     <Zap className="h-6 w-6 text-white" />
                   </div>
@@ -1158,9 +1158,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
@@ -1172,9 +1172,9 @@ export function DashboardContent() {
               </CardHeader>
             </Card>
 
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
                     <RefreshCw className="h-6 w-6 text-white" />
                   </div>
@@ -1190,7 +1190,7 @@ export function DashboardContent() {
 
         {/* Operator Health Section */}
         {operatorHealth && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <Zap className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1200,7 +1200,7 @@ export function DashboardContent() {
                 Real-time status of payment operators
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {operatorHealth.operators.map((operator, index) => (
                   <div key={index} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
@@ -1234,7 +1234,7 @@ export function DashboardContent() {
 
         {/* Daily Report Section */}
         {dailyReport && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1244,8 +1244,8 @@ export function DashboardContent() {
                 Résumé des transactions de la journée
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100">Nombre de Transactions</h4>
@@ -1286,7 +1286,7 @@ export function DashboardContent() {
               </div>
 
               <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h4 className="text-lg font-semibold text-neutral-900 dark:text-white">Total des Frais</h4>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">(Frais totaux payés aujourd'hui par vos utilisateurs)</p>
@@ -1357,7 +1357,7 @@ export function DashboardContent() {
 
         {/* Commission Report Section */}
         {commissionReport && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <DollarSign className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1367,7 +1367,7 @@ export function DashboardContent() {
                 Période: {new Date(commissionReport.period.start).toLocaleDateString()} - {new Date(commissionReport.period.end).toLocaleDateString()}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center justify-between mb-2">
@@ -1404,7 +1404,7 @@ export function DashboardContent() {
                       <h5 className="font-semibold text-neutral-900 dark:text-white">{operator.operator_config__operator_name}</h5>
                       <Badge className="bg-blue-100 text-blue-800">{operator.operator_config__operator_code}</Badge>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 text-sm">
                       <div>
                         <p className="text-neutral-600 dark:text-neutral-400">Transactions</p>
                         <p className="font-semibold text-neutral-900 dark:text-white">{operator.count}</p>
@@ -1485,7 +1485,7 @@ export function DashboardContent() {
 
         {/* Reconciliation Report Section */}
         {reconciliationReport && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <Activity className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1495,7 +1495,7 @@ export function DashboardContent() {
                 État des comptes et mouvements financiers
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
                   <div className="flex items-center justify-between mb-2">
@@ -1629,9 +1629,9 @@ export function DashboardContent() {
 
         {/* Enhanced Balance Cards */}
         <div className="grid grid-cols-1 gap-8">
-          {/* <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 backdrop-blur-xl border-emerald-200 dark:border-emerald-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          {/* <Card className="bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
@@ -1642,19 +1642,19 @@ export function DashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
                 {formatCurrency(stats?.all_operation_amount)}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-emerald-200 text-emerald-800 hover:bg-emerald-200 rounded-full">+8.2%</Badge>
                 <span className="text-sm text-emerald-700 dark:text-emerald-300">{t("fromLastWeek")}</span>
               </div>
             </CardContent>
           </Card> */}
 
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <Card className="bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                   <TrendingDown className="h-6 w-6 text-white" />
                 </div>
@@ -1665,10 +1665,10 @@ export function DashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
                 {formatCurrency(globalStats?.available_fund)}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full">-2.1%</Badge>
                 <span className="text-sm text-purple-700 dark:text-purple-300">{t("fromYesterday")}</span>
               </div>
@@ -1691,10 +1691,10 @@ export function DashboardContent() {
 
         {/* Realtime Monitoring Section */}
         {realtimeData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <Card className="bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                     <Activity className="h-6 w-6 text-white" />
                   </div>
@@ -1705,10 +1705,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
                   {realtimeData.last_hour.transactions}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
                     {formatCurrency(realtimeData.last_hour.total_amount)}
                   </Badge>
@@ -1716,9 +1716,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 backdrop-blur-xl border-green-200 dark:border-green-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-green-50/70 dark:bg-green-950/30 border-green-200 dark:border-green-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-green-600 rounded-xl shadow-lg">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
@@ -1729,10 +1729,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-900 dark:text-green-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-green-900 dark:text-green-100 mb-2">
                   {realtimeData.today.transactions}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-green-200 text-green-800 hover:bg-green-200 rounded-full">
                     {formatCurrency(realtimeData.today.total_amount)}
                   </Badge>
@@ -1740,9 +1740,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                     <Shield className="h-6 w-6 text-white" />
                   </div>
@@ -1753,10 +1753,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
                   {realtimeData.alerts.failed_webhooks + realtimeData.alerts.failed_callbacks}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full text-xs">
                     Webhooks: {realtimeData.alerts.failed_webhooks}
                   </Badge>
@@ -1767,9 +1767,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 backdrop-blur-xl border-orange-200 dark:border-orange-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-orange-50/70 dark:bg-orange-950/30 border-orange-200 dark:border-orange-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
                     <Clock className="h-6 w-6 text-white" />
                   </div>
@@ -1780,10 +1780,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-orange-900 dark:text-orange-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-orange-900 dark:text-orange-100 mb-2">
                   {realtimeData.last_hour.avg_processing_seconds}s
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-orange-200 text-orange-800 hover:bg-orange-200 rounded-full">
                     En cours: {realtimeData.last_hour.processing}
                   </Badge>
@@ -1795,7 +1795,7 @@ export function DashboardContent() {
 
         {/* Health Status Section */}
         {healthData && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <Shield className={`h-5 w-5 mr-2 ${
@@ -1809,7 +1809,7 @@ export function DashboardContent() {
                 Dernière mise à jour: {new Date(healthData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <div className="flex items-center space-x-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
                   <div className="w-4 h-4 bg-red-500 rounded-full"></div>
@@ -1874,7 +1874,7 @@ export function DashboardContent() {
 
         {/* Transaction Flow Chart */}
         {transactionFlowData && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1884,7 +1884,7 @@ export function DashboardContent() {
                 Évolution des transactions par heure
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-center mb-6">
                 <ResponsiveContainer width="100%" height={400}>
                   <AreaChart data={transactionFlowData.data}>
@@ -1924,10 +1924,10 @@ export function DashboardContent() {
 
         {/* Financial Summary Section */}
         {financialSummaryData && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 backdrop-blur-xl border-emerald-200 dark:border-emerald-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <Card className="bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
                     <TrendingUp className="h-6 w-6 text-white" />
                   </div>
@@ -1938,10 +1938,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-emerald-900 dark:text-emerald-100 mb-2">
                   {financialSummaryData.payin.count}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-emerald-200 text-emerald-800 hover:bg-emerald-200 rounded-full">
                     {formatCurrency(financialSummaryData.payin.volume)}
                   </Badge>
@@ -1952,9 +1952,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 backdrop-blur-xl border-red-200 dark:border-red-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-red-50/70 dark:bg-red-950/30 border-red-200 dark:border-red-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-red-600 rounded-xl shadow-lg">
                     <TrendingDown className="h-6 w-6 text-white" />
                   </div>
@@ -1965,10 +1965,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-900 dark:text-red-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-red-900 dark:text-red-100 mb-2">
                   {financialSummaryData.payout.count}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-red-200 text-red-800 hover:bg-red-200 rounded-full">
                     {formatCurrency(financialSummaryData.payout.volume)}
                   </Badge>
@@ -1979,9 +1979,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 backdrop-blur-xl border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-purple-50/70 dark:bg-purple-950/30 border-purple-200 dark:border-purple-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                     <DollarSign className="h-6 w-6 text-white" />
                   </div>
@@ -1992,10 +1992,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-purple-900 dark:text-purple-100 mb-2">
                   {financialSummaryData.commissions.count}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-purple-200 text-purple-800 hover:bg-purple-200 rounded-full text-xs">
                     Opérateur: {formatCurrency(financialSummaryData.commissions.total_operator_fees)}
                   </Badge>
@@ -2006,9 +2006,9 @@ export function DashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 backdrop-blur-xl border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+            <Card className="bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                     <Users className="h-6 w-6 text-white" />
                   </div>
@@ -2019,10 +2019,10 @@ export function DashboardContent() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
+                <div className="text-xl sm:text-3xl font-bold text-blue-900 dark:text-blue-100 mb-2">
                   {formatCurrency(financialSummaryData.total_customer_balances)}
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center flex-wrap gap-2">
                   <Badge className="bg-blue-200 text-blue-800 hover:bg-blue-200 rounded-full">
                     Total
                   </Badge>
@@ -2034,7 +2034,7 @@ export function DashboardContent() {
 
         {/* Operator Performance Chart */}
         {operatorPerformanceData && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -2044,7 +2044,7 @@ export function DashboardContent() {
                 Comparaison des performances par opérateur
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center justify-center mb-6">
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart data={operatorPerformanceData.operators}>
@@ -2108,7 +2108,7 @@ export function DashboardContent() {
 
         {/* Sync Status Section */}
         {syncStatusData && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <RefreshCw className="h-5 w-5 mr-2 text-crimson-600" />
@@ -2118,8 +2118,8 @@ export function DashboardContent() {
                 Dernière mise à jour: {new Date(syncStatusData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <CardContent className="p-4 sm:p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Sync Automatique</h4>
                   <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">
@@ -2188,8 +2188,8 @@ export function DashboardContent() {
         )}
 
         {/* Celery Tasks Monitoring - TEMPORARILY DISABLED */}
-        {false && celeryTasksData && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+        {!!celeryTasksData && (
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <Zap className="h-5 w-5 mr-2 text-crimson-600" />
@@ -2199,18 +2199,18 @@ export function DashboardContent() {
                 Dernière mise à jour: {new Date(celeryTasksData.timestamp).toLocaleString()}
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-700">
                   <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Tâches Activées</h4>
-                  <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
+                  <p className="text-xl sm:text-3xl font-bold text-blue-900 dark:text-blue-100">
                     {celeryTasksData.total_enabled_tasks}
                   </p>
                 </div>
                 
                 <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-700">
                   <h4 className="font-semibold text-green-900 dark:text-green-100 mb-2">Tâches Configurées</h4>
-                  <p className="text-3xl font-bold text-green-900 dark:text-green-100">
+                  <p className="text-xl sm:text-3xl font-bold text-green-900 dark:text-green-100">
                     {celeryTasksData.tasks.length}
                   </p>
                 </div>
@@ -2259,7 +2259,7 @@ export function DashboardContent() {
 
         {/* Complete API Data Summary */}
         {false && (
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
               <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -2269,7 +2269,7 @@ export function DashboardContent() {
                 Toutes les données de l'API de statistiques
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Financial Data */}
                 <div className="space-y-4">
@@ -2286,7 +2286,7 @@ export function DashboardContent() {
         )}
 
         {/* Recent Transactions */}
-        {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+        {/* <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
           <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
             <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
               <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -2296,7 +2296,7 @@ export function DashboardContent() {
               Dernières activités de paiement et transferts
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
               {recentTransactions.map((transaction) => (
                 <div key={transaction.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">

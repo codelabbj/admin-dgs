@@ -604,7 +604,7 @@ export default function Customers() {
               Affichage de {Math.min(1, users.length)} à {users.length} sur {totalUsers} utilisateurs
             </span>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
             <span className="text-sm text-muted-foreground whitespace-nowrap">Lignes par page</span>
             <Select
               value={pageSize.toString()}
@@ -899,13 +899,13 @@ export default function Customers() {
         </div>
 
         {/* Statistiques des Clients */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {loading ? (
             // Afficher des cartes de chargement pour les statistiques
             Array.from({ length: 4 }).map((_, index) => (
-              <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg rounded-2xl overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+              <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg rounded-xl overflow-hidden">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="p-3 bg-slate-200 dark:bg-neutral-700 rounded-xl animate-pulse">
                       <div className="h-6 w-6 bg-slate-300 dark:bg-neutral-600 rounded"></div>
                     </div>
@@ -923,8 +923,8 @@ export default function Customers() {
           ) : error ? (
             // Afficher un message d'erreur pour les statistiques
             <div className="col-span-full">
-              <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 rounded-2xl">
-                <CardContent className="p-6 text-center">
+              <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 rounded-xl">
+                <CardContent className="p-4 sm:p-6 text-center">
                   <p className="text-red-600 dark:text-red-400">⚠️ Impossible de charger les statistiques</p>
                   <p className="text-sm text-red-500 dark:text-red-300 mt-1">{error}</p>
                 </CardContent>
@@ -932,9 +932,9 @@ export default function Customers() {
             </div>
           ) : (
             customerStats.map((stat, index) => (
-              <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
+              <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
                       <stat.icon className="h-6 w-6 text-white" />
                     </div>
@@ -955,14 +955,14 @@ export default function Customers() {
         </div>
 
         {/* Recherche et Filtres */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
               <div className="relative flex-1 min-w-0">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                   placeholder="Rechercher des clients par nom, email ou localisation..."
-                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12 w-full"
+                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 w-full"
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                 />
@@ -974,7 +974,7 @@ export default function Customers() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Tous les Clients */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Users className="h-5 w-5 mr-2 text-crimson-600" />
@@ -984,7 +984,7 @@ export default function Customers() {
                   Liste complète de tous les clients ({totalUsers} au total)
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {loading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin text-crimson-600" />
@@ -1059,7 +1059,7 @@ export default function Customers() {
                               <>
                                 <Button
                                   size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-lg"
                                   onClick={() => openVerificationModal(customer.user)}
                                   disabled={verifying}
                                 >
@@ -1080,7 +1080,7 @@ export default function Customers() {
                             </Button>
                             <Button
                               size="sm"
-                              className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                              className="bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-lg"
                               onClick={() => router.push(`/customers/${customer.user.id}/permissions`)}
                             >
                               <Shield className="h-3 w-3 mr-1" />
@@ -1124,7 +1124,7 @@ export default function Customers() {
           {/* Aperçu des Clients */}
           <div className="space-y-6">
             {/* Meilleures Localisations */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Globe className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1134,10 +1134,10 @@ export default function Customers() {
                   Répartition des clients par pays
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {topLocations.map((location, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div key={index} className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-slate-100 dark:bg-neutral-800 rounded-lg">
                           <MapPin className="h-4 w-4 text-crimson-600" />
@@ -1162,7 +1162,7 @@ export default function Customers() {
             </Card>
 
             {/* Actions Rapides */}
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>
@@ -1227,7 +1227,7 @@ export default function Customers() {
                     Statut de vérification
                   </label>
                   <div className="flex space-x-4">
-                    <label className="flex items-center space-x-2">
+                    <label className="flex items-center flex-wrap gap-2">
                       <input
                         type="radio"
                         name="status"
@@ -1238,7 +1238,7 @@ export default function Customers() {
                       />
                       <span className="text-sm text-neutral-700 dark:text-neutral-300">Approuver</span>
                     </label>
-                    <label className="flex items-center space-x-2">
+                    <label className="flex items-center flex-wrap gap-2">
                       <input
                         type="radio"
                         name="status"

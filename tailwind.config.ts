@@ -12,6 +12,7 @@ const config: Config = {
 	],
 	theme: {
 		extend: {
+			screens: { xs: '480px' },
 			colors: {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
@@ -42,6 +43,14 @@ const config: Config = {
 				destructive: {
 					DEFAULT: 'hsl(var(--destructive))',
 					foreground: 'hsl(var(--destructive-foreground))'
+				},
+				crimson: {
+					'50': 'hsl(0 86% 97%)',
+					'100': 'hsl(0 93% 94%)',
+					'500': 'hsl(0 84% 60%)',
+					'600': 'hsl(0 72% 51%)',
+					'700': 'hsl(0 74% 42%)',
+					'800': 'hsl(0 70% 35%)'
 				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

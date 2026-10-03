@@ -217,7 +217,7 @@ export function ProfileContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
           <span className="text-lg font-medium text-blue-600">{t("loadingProfile")}</span>
         </div>
@@ -238,18 +238,18 @@ export function ProfileContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 p-6">
+    <div className="min-h-screen bg-slate-50/30 dark:bg-neutral-950 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
         {/* En-tête */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("profile")}</h1>
+          <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">{t("profile")}</h1>
           <p className="text-neutral-600 dark:text-neutral-400 text-lg">{t("manageAccountInfo")}</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Carte de Profil */}
           <div className="lg:col-span-1">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-100 dark:border-neutral-800 shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-100 dark:border-neutral-800 rounded-xl overflow-hidden">
               <CardHeader className="text-center pb-6 pt-8">
                 <div className="relative mx-auto mb-4">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-500 via-slate-400 to-slate-600 flex items-center justify-center text-white text-2xl font-bold overflow-hidden relative shadow-lg">
@@ -290,7 +290,7 @@ export function ProfileContent() {
 
                 {/* Badges de Statut */}
                 <div className="mt-6 space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("verificationStatus")}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       userProfile.is_verify 
@@ -300,7 +300,7 @@ export function ProfileContent() {
                       {userProfile.is_verify ? t("verified") : t("pending")}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("accountStatus")}</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       userProfile.is_block 
@@ -310,7 +310,7 @@ export function ProfileContent() {
                       {userProfile.is_block ? t("blocked") : t("active")}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">{t("availableFunds")}</span>
                     <span className="text-sm font-medium text-neutral-900 dark:text-white">
                       {(userProfile.availavailable_fund || 0).toLocaleString()} FCFA
@@ -323,7 +323,7 @@ export function ProfileContent() {
 
           {/* Formulaire de Modification */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-100 dark:border-neutral-800 shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-100 dark:border-neutral-800 rounded-xl overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 pt-8">
                 <div>
                   <CardTitle className="text-2xl font-bold text-neutral-900 dark:text-white">
@@ -333,7 +333,7 @@ export function ProfileContent() {
                     {t("updatePersonalBusinessInfo")}
                   </CardDescription>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   {/* Bouton d'édition supprimé car il est maintenant géré par Input */}
                 </div>
               </CardHeader>
@@ -354,7 +354,7 @@ export function ProfileContent() {
                           value={userProfile.first_name || ''}
                           onChange={(e) => setUserProfile((prev: typeof userProfile) => ({ ...prev, first_name: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -368,7 +368,7 @@ export function ProfileContent() {
                           value={userProfile.last_name || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, last_name: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -383,7 +383,7 @@ export function ProfileContent() {
                           value={userProfile.email || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, email: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -397,7 +397,7 @@ export function ProfileContent() {
                           value={userProfile.phone || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, phone: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -411,7 +411,7 @@ export function ProfileContent() {
                           value={userProfile.country || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, country: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
                     </div>
@@ -430,7 +430,7 @@ export function ProfileContent() {
                           value={userProfile.entreprise_name || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, entreprise_name: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -444,7 +444,7 @@ export function ProfileContent() {
                           value={userProfile.website || ''}
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, website: e.target.value }))}
                           disabled={!isLoading}
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -459,7 +459,7 @@ export function ProfileContent() {
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, success_url: e.target.value }))}
                           disabled={!isLoading}
                           placeholder="https://yoursite.com/success"
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -474,7 +474,7 @@ export function ProfileContent() {
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, cancel_url: e.target.value }))}
                           disabled={!isLoading}
                           placeholder="https://yoursite.com/cancel"
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -489,7 +489,7 @@ export function ProfileContent() {
                           onChange={(e) => setUserProfile((prev: any) => ({ ...prev, callback_url: e.target.value }))}
                           disabled={!isLoading}
                           placeholder="https://yoursite.com/callback"
-                          className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
+                          className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent"
                         />
                       </div>
 
@@ -505,7 +505,7 @@ export function ProfileContent() {
                             accept="image/*"
                             onChange={handleFileUpload}
                             disabled={!isLoading}
-                            className="h-12 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-2xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent pr-12"
+                            className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border-slate-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-crimson-600 focus:border-transparent pr-12"
                           />
                           {isLoading && (
                             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-slate-600 text-white p-2 rounded-lg cursor-pointer hover:bg-slate-700 transition-colors">
@@ -537,7 +537,7 @@ export function ProfileContent() {
                         <Label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           {t("memberSince")}
                         </Label>
-                        <div className="h-12 bg-slate-50/50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-2xl flex items-center px-4 text-neutral-600 dark:text-neutral-400">
+                        <div className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl flex items-center px-4 text-neutral-600 dark:text-neutral-400">
                           {new Date(userProfile.date_joined).toLocaleDateString()}
                         </div>
                       </div>
@@ -545,7 +545,7 @@ export function ProfileContent() {
                         <Label className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
                           {t("lastLogin")}
                         </Label>
-                        <div className="h-12 bg-slate-50/50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-2xl flex items-center px-4 text-neutral-600 dark:text-neutral-400">
+                        <div className="h-10 sm:h-11 bg-slate-50/50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl flex items-center px-4 text-neutral-600 dark:text-neutral-400">
                           {userProfile.last_login ? new Date(userProfile.last_login).toLocaleDateString() : t("never")}
                         </div>
                       </div>
@@ -570,7 +570,7 @@ export function ProfileContent() {
                         logo: prev.logo,
                       }))}
                       variant="outline"
-                      className="rounded-2xl border-slate-200 dark:border-neutral-700"
+                      className="rounded-xl border-slate-200 dark:border-neutral-700"
                       disabled={isLoading}
                     >
                       <X className="w-4 h-4 mr-2" />
@@ -579,7 +579,7 @@ export function ProfileContent() {
                     <Button
                       type="submit"
                       disabled={isLoading}
-                      className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-2xl"
+                      className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
                     >
                       {(isLoading) ? (
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />

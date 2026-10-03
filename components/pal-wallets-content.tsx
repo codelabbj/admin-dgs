@@ -111,7 +111,7 @@ export function PalWalletsContent() {
                     <p className="text-xs text-neutral-500">Solde</p>
                     <p className="text-2xl font-semibold">{formatAmount(wallet.balance, code)}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-xs text-neutral-500">Disponible</p>
                       <p className="font-medium">{formatAmount(wallet.balance_available, code)}</p>

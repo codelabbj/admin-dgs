@@ -653,14 +653,14 @@ export function OperatorsContent() {
             Gérer les opérateurs de paiement et suivre leur état de santé
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto shrink-0">
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-auto shrink-0">
           <Plus className="h-4 w-4 mr-2" />
           Ajouter un opérateur
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total opérateurs</CardTitle>
@@ -934,7 +934,7 @@ export function OperatorsContent() {
       </DialogHeader>
       <div className="grid gap-4 py-4">
         {/* Basic Info */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="operator_name">Nom interne (admin)</Label>
             <Input
@@ -967,7 +967,7 @@ export function OperatorsContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="api_backend">Passerelle d'API</Label>
             <Select
@@ -1043,7 +1043,7 @@ export function OperatorsContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="api_token">Clé API</Label>
                 <Input
@@ -1123,7 +1123,7 @@ export function OperatorsContent() {
         </div>
 
         {/* Limits */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="min_payin_amount">Montant min. collecte</Label>
             <Input
@@ -1144,7 +1144,7 @@ export function OperatorsContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="min_payout_amount">Montant min. retrait</Label>
             <Input
@@ -1165,7 +1165,7 @@ export function OperatorsContent() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="min_bank_transfer_amount">Montant min. virement</Label>
             <Input
@@ -1194,7 +1194,7 @@ export function OperatorsContent() {
         )}
 
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Switch
               id="is_active"
               checked={formData.is_active}
@@ -1202,7 +1202,7 @@ export function OperatorsContent() {
             />
             <Label htmlFor="is_active">Actif</Label>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Switch
               id="supports_smartlink"
               checked={formData.supports_smartlink}
@@ -1241,7 +1241,7 @@ export function OperatorsContent() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             {/* Basic Info */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_operator_name">Nom interne (admin)</Label>
                 <Input
@@ -1269,7 +1269,7 @@ export function OperatorsContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_api_backend">Passerelle d'API</Label>
                 <Select
@@ -1341,7 +1341,7 @@ export function OperatorsContent() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit_api_token">Clé API (laisser vide pour conserver)</Label>
                     <Input
@@ -1421,7 +1421,7 @@ export function OperatorsContent() {
             </div>
 
             {/* Limits */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_min_payin_amount">Montant min. collecte</Label>
                 <Input
@@ -1442,7 +1442,7 @@ export function OperatorsContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_min_payout_amount">Montant min. retrait</Label>
                 <Input
@@ -1463,7 +1463,7 @@ export function OperatorsContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit_min_bank_transfer_amount">Montant min. virement</Label>
                 <Input
@@ -1492,7 +1492,7 @@ export function OperatorsContent() {
             )}
 
             <div className="flex items-center space-x-6">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Switch
                   id="edit_is_active"
                   checked={formData.is_active}
@@ -1500,7 +1500,7 @@ export function OperatorsContent() {
                 />
                 <Label htmlFor="edit_is_active">Actif</Label>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Switch
                   id="edit_supports_smartlink"
                   checked={formData.supports_smartlink}

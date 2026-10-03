@@ -116,7 +116,7 @@ export function PayinContent() {
             </div>
             <Button 
               type="submit" 
-              className="w-full h-12 bg-black text-white hover:bg-gray-800 transition-colors font-medium" 
+              className="w-full h-10 sm:h-11 bg-black text-white hover:bg-gray-800 transition-colors font-medium" 
               disabled={isLoading}
             >
               {isLoading ? t("processing") : t("createTransaction")}

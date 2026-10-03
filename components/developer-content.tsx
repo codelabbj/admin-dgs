@@ -60,11 +60,11 @@ export default function ApiKeysComponent() {
   };
 
   return (
-    <div className="min-h-screen transition-colors duration-300 ">
-      <div className="max-w-4xl mx-auto p-6">
+    <div className="min-h-screen transition-colors duration-300">
+      <div className="max-w-4xl mx-auto p-4 sm:p-6">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-black-500 dark:text-white">
+          <h1 className="text-xl sm:text-3xl font-bold text-black-500 dark:text-white">
             {t("developers")}
           </h1>
         </div>
@@ -89,7 +89,7 @@ export default function ApiKeysComponent() {
 
           {/* Contenu des Clés API */}
           {activeTab === 'Clés API' && (
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               {/* Clé API Publique */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -156,7 +156,7 @@ export default function ApiKeysComponent() {
 
           {/* Contenu Webhook */}
           {activeTab === 'Webhook' && (
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                 <p>{t("webhookConfigNotice")}</p>
               </div>

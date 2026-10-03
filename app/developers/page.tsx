@@ -73,12 +73,12 @@ export default function Developers() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* En-tête Amélioré */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Portail Développeur</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Portail Développeur</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Documentation API, surveillance et outils de développement</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <Filter className="h-4 w-4 mr-2" />
               Filtres
@@ -91,11 +91,11 @@ export default function Developers() {
         </div>
 
         {/* Statistiques Développeur */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {devStats.map((stat, index) => (
-            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
                     <stat.icon className="h-6 w-6 text-white" />
                   </div>
@@ -115,19 +115,19 @@ export default function Developers() {
         </div>
 
         {/* Recherche et Actions Rapides */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                   placeholder="Rechercher des APIs, endpoints ou documentation..."
-                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 />
               </div>
               <Button
                 variant="outline"
-                className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6"
+                className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6"
                 asChild
               >
                 <a
@@ -139,7 +139,7 @@ export default function Developers() {
                   Documentation
                 </a>
               </Button>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6">
                 <Terminal className="h-4 w-4 mr-2" />
                 Terrain de Jeu
               </Button>
@@ -150,7 +150,7 @@ export default function Developers() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Appels API Récents */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -160,11 +160,11 @@ export default function Developers() {
                     Surveillance en temps réel des requêtes et réponses API
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {recentApiCalls.map((apiCall) => (
                     <div key={apiCall.id} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                      <div className="flex items-center space-x-4">
+                      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                         <div className={`p-2 rounded-lg ${
                           apiCall.status === 'Succès' ? 'bg-emerald-100 dark:bg-emerald-900/20' :
                           'bg-red-100 dark:bg-red-900/20'
@@ -172,7 +172,7 @@ export default function Developers() {
                           {apiCall.status === 'Succès' ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : <AlertCircle className="h-4 w-4 text-red-600" />}
                         </div>
                         <div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center flex-wrap gap-2">
                             <Badge 
                               className={`text-xs ${
                                 apiCall.method === 'GET' ? 'bg-blue-100 text-blue-800' :
@@ -191,7 +191,7 @@ export default function Developers() {
                       
                       <div className="text-right">
                         <p className="text-sm font-medium text-neutral-900 dark:text-white mb-1">{apiCall.response}</p>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <span className="text-xs text-neutral-500 dark:text-neutral-400">{apiCall.time}</span>
                           <Button variant="ghost" size="sm" className="rounded-lg text-crimson-600 hover:text-crimson-700">
                             <Eye className="h-4 w-4" />
@@ -208,7 +208,7 @@ export default function Developers() {
           {/* Aperçu Développeur */}
           <div className="space-y-6">
             {/* Métriques Système */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Server className="h-5 w-5 mr-2 text-crimson-600" />
@@ -218,10 +218,10 @@ export default function Developers() {
                     Performance système en temps réel
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {systemMetrics.map((metric, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div key={index} className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-slate-100 dark:bg-neutral-800 rounded-lg">
                           <metric.icon className="h-4 w-4 text-crimson-600" />
@@ -247,7 +247,7 @@ export default function Developers() {
             </Card>
 
             {/* Points de Terminaison API */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Code className="h-5 w-5 mr-2 text-crimson-600" />
@@ -257,7 +257,7 @@ export default function Developers() {
                     Points de terminaison API disponibles
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-3">
                   {apiEndpoints.map((endpoint, index) => (
                     <div key={index} className="p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg border border-slate-200 dark:border-neutral-600">
@@ -293,7 +293,7 @@ export default function Developers() {
             </Card>
 
             {/* Actions Rapides */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>

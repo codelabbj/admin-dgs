@@ -87,12 +87,12 @@ export default function Direct() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Direct Messages</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Direct Messages</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Manage customer conversations and support chats</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <Filter className="h-4 w-4 mr-2" />
               Filters
@@ -105,11 +105,11 @@ export default function Direct() {
         </div>
 
         {/* Direct Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {directStats.map((stat, index) => (
-            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
                     <stat.icon className="h-6 w-6 text-white" />
                   </div>
@@ -129,21 +129,21 @@ export default function Direct() {
         </div>
 
         {/* Search and Quick Actions */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                   placeholder="Search conversations, customers, or messages..."
-                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 />
               </div>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6">
                 <Users className="h-4 w-4 mr-2" />
                 All Chats
               </Button>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6">
                 <Filter className="h-4 w-4 mr-2" />
                 Advanced Filters
               </Button>
@@ -154,7 +154,7 @@ export default function Direct() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Chats */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <MessageCircle className="h-5 w-5 mr-2 text-crimson-600" />
@@ -164,7 +164,7 @@ export default function Direct() {
                   Latest customer messages and support requests
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {recentChats.map((chat) => (
                     <div key={chat.id} className="flex items-center space-x-4 p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 hover:bg-slate-100 dark:hover:bg-neutral-700 transition-colors cursor-pointer">
@@ -183,7 +183,7 @@ export default function Direct() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="font-semibold text-neutral-900 dark:text-white truncate">{chat.name}</h3>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex items-center flex-wrap gap-2">
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">{chat.time}</span>
                             {chat.unread > 0 && (
                               <Badge className="bg-crimson-600 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center">
@@ -195,7 +195,7 @@ export default function Direct() {
                         
                         <p className="text-sm text-neutral-600 dark:text-neutral-400 truncate mb-1">{chat.lastMessage}</p>
                         
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <Badge 
                             className={`text-xs ${
                               chat.status === 'Online' ? 'bg-emerald-100 text-emerald-800' :
@@ -208,7 +208,7 @@ export default function Direct() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <Button variant="ghost" size="sm" className="rounded-lg text-crimson-600 hover:text-crimson-700">
                           <MessageCircle className="h-4 w-4" />
                         </Button>
@@ -226,7 +226,7 @@ export default function Direct() {
           {/* Chat Insights & Quick Actions */}
           <div className="space-y-6">
             {/* Chat Metrics */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2 text-crimson-600" />
@@ -236,10 +236,10 @@ export default function Direct() {
                   Performance indicators
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {chatMetrics.map((metric, index) => (
-                    <div key={index} className="flex items-center justify-between">
+                    <div key={index} className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center space-x-3">
                         <div className="p-2 bg-slate-100 dark:bg-neutral-800 rounded-lg">
                           <metric.icon className="h-4 w-4 text-crimson-600" />
@@ -267,7 +267,7 @@ export default function Direct() {
             </Card>
 
             {/* Quick Replies */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Send className="h-5 w-5 mr-2 text-crimson-600" />
@@ -277,7 +277,7 @@ export default function Direct() {
                   Pre-written responses for common queries
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-3">
                   {quickReplies.map((reply, index) => (
                     <Button
@@ -293,7 +293,7 @@ export default function Direct() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Quick Actions</CardTitle>
               </CardHeader>
@@ -318,7 +318,7 @@ export default function Direct() {
             </Card>
 
             {/* Contact Info */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Contact Information</CardTitle>
               </CardHeader>

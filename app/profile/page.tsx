@@ -599,12 +599,12 @@ export default function Profile() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* En-tête Amélioré */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Profil Paramètres</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Profil Paramètres</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Gérez vos informations personnelles et préférences</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button 
               variant="outline" 
               className="rounded-xl border-slate-200 dark:border-neutral-700"
@@ -629,13 +629,13 @@ export default function Profile() {
             </Button>
             {isEditing && (
               <Button 
-                className="bg-crimson-600 hover:bg-crimson-700 text-black dark:text-white rounded-xl"
+                className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
                 onClick={handleSaveProfile}
                 disabled={saving}
               >
                 {saving ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin " />
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Enregistrement...
                   </>
                 ) : (
@@ -713,7 +713,7 @@ export default function Profile() {
           {/* Informations du Profil */}
           <div className="lg:col-span-2 space-y-6">
             {/* Informations de Base */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <User className="h-5 w-5 mr-2 text-crimson-600" />
@@ -723,7 +723,7 @@ export default function Profile() {
                     Vos informations personnelles et de contact
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">Prénom</Label>
@@ -790,7 +790,7 @@ export default function Profile() {
             </Card>
 
             {/* Informations de l'Entreprise */}
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Building className="h-5 w-5 mr-2 text-crimson-600" />
@@ -800,7 +800,7 @@ export default function Profile() {
                     Vos détails d'entreprise et de société
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                                           <Label htmlFor="companyName">Nom de l'Entreprise</Label>
@@ -847,7 +847,7 @@ export default function Profile() {
             </Card> */}
 
             {/* Paramètres de Sécurité */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Shield className="h-5 w-5 mr-2 text-crimson-600" />
@@ -857,7 +857,7 @@ export default function Profile() {
                     Gérez la sécurité de votre compte et l'authentification
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Password Change Section */}
                   <div className="space-y-4">
@@ -1019,7 +1019,7 @@ export default function Profile() {
             </Card>
 
             {/* Préférences */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Globe className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1029,7 +1029,7 @@ export default function Profile() {
                     Personnalisez votre expérience de tableau de bord
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Language Settings */}
                   <div className="space-y-4">
@@ -1090,7 +1090,7 @@ export default function Profile() {
             </Card>
 
             {/* Paramètres de Paiement */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
@@ -1100,7 +1100,7 @@ export default function Profile() {
                   Configurez les limites et frais de paiement
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Webhook URL */}
                   <div className="space-y-4">
@@ -1151,7 +1151,7 @@ export default function Profile() {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <Checkbox
                         id="use_fixed_fees"
                         checked={paymentSettings.use_fixed_fees}
@@ -1265,7 +1265,7 @@ export default function Profile() {
                   <div className="space-y-4">
                     <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Liste Blanche IP</h4>
                     <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <Checkbox
                           id="require_ip_whitelist"
                           checked={paymentSettings.require_ip_whitelist}
@@ -1318,13 +1318,13 @@ export default function Profile() {
           {/* Barre Latérale */}
           <div className="space-y-6">
             {/* Photo de Profil */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-              <CardContent className="p-6">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
+              <CardContent className="p-4 sm:p-6">
                 <div className="text-center space-y-4">
                   <div className="relative inline-block">
                     <Avatar className="h-32 w-32 mx-auto ring-4 ring-crimson-600">
                       <AvatarImage src={previewUrl || profileData.logo || "/placeholder-user.jpg"} />
-                      <AvatarFallback className="bg-gradient-to-br from-crimson-600 to-crimson-700 text-white text-3xl font-bold">
+                      <AvatarFallback className="bg-gradient-to-br from-crimson-600 to-crimson-700 text-white text-xl sm:text-3xl font-bold">
                         {loading ? "..." : `${profileData.first_name} ${profileData.last_name}`.trim().split(' ').map(n => n[0]).join('').slice(0, 2) || "U"}
                       </AvatarFallback>
                     </Avatar>
@@ -1388,7 +1388,7 @@ export default function Profile() {
                             {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>
-                        <div className="flex space-x-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button
                             onClick={handleImageUpload}
                             disabled={uploadingImage}
@@ -1423,24 +1423,24 @@ export default function Profile() {
             </Card>
 
             {/* Statut du Compte */}
-            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            {/* <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Statut du Compte</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Type de Compte</span>
                   <Badge className="bg-emerald-100 text-emerald-800">Premium</Badge>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Statut</span>
                   <Badge className="bg-emerald-100 text-emerald-800">Actif</Badge>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Dernière Connexion</span>
                   <span className="text-sm text-neutral-900 dark:text-white">Il y a 2 heures</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Membre Depuis</span>
                   <span className="text-sm text-neutral-900 dark:text-white">Jan 2024</span>
                 </div>
@@ -1448,27 +1448,27 @@ export default function Profile() {
             </Card> */}
 
             {/* Statistiques d'Activité */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Statistiques d'Activité</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center flex-wrap gap-2">
                     <Activity className="h-4 w-4 text-crimson-600" />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">Total Connexions</span>
                   </div>
                   <span className="text-sm font-bold text-neutral-900 dark:text-white">156</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center flex-wrap gap-2">
                     <CreditCard className="h-4 w-4 text-crimson-600" />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">Transactions</span>
                   </div>
                   <span className="text-sm font-bold text-neutral-900 dark:text-white">89</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center flex-wrap gap-2">
                     <TrendingUp className="h-4 w-4 text-crimson-600" />
                     <span className="text-sm text-neutral-600 dark:text-neutral-400">Taux de Réussite</span>
                   </div>
@@ -1478,7 +1478,7 @@ export default function Profile() {
             </Card>
 
             {/* Actions Rapides */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>

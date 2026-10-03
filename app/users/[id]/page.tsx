@@ -611,7 +611,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -652,7 +652,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center flex-wrap gap-2">
             <Loader2 className="h-6 w-6 animate-spin" />
             <span>Chargement des détails utilisateur...</span>
           </div>
@@ -695,16 +695,16 @@ export default function UserDetail({ params }: { params: { id: string } }) {
 
   return (
     <DashboardLayout>
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-6">
         {/* Header avec bouton retour */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button variant="outline" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Retour
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">Détails de l'Utilisateur</h1>
+              <h1 className="text-xl sm:text-3xl font-bold">Détails de l'Utilisateur</h1>
               <p className="text-muted-foreground">Informations complètes sur {user.fullname}</p>
             </div>
           </div>
@@ -821,12 +821,12 @@ export default function UserDetail({ params }: { params: { id: string } }) {
         {/* Informations sur les frais */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center flex-wrap gap-2">
                 <Percent className="h-5 w-5" />
                 <span className="text-lg font-bold">Informations sur les Frais</span>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 {feeUpdateSuccess && (
                   <Badge className="bg-green-100 text-green-800 border-green-200">
                     Frais mis à jour avec succès
@@ -843,7 +843,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                     <span>Modifier</span>
                   </Button>
                 ) : (
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -987,7 +987,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
               ) : (
                 // Affichage des frais actuels
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center flex-wrap gap-2">
                     <Badge 
                       className={`${
                         areAllFeesNull() 
@@ -1009,7 +1009,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                       return (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <TrendingUp className="h-4 w-4 text-blue-600" />
                               <span className="font-medium text-blue-900">Frais d'Entrée</span>
                             </div>
@@ -1018,7 +1018,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <TrendingUp className="h-4 w-4 text-green-600" />
                               <span className="font-medium text-green-900">Frais de Sortie</span>
                             </div>
@@ -1027,7 +1027,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <DollarSign className="h-4 w-4 text-purple-600" />
                               <span className="font-medium text-purple-900">Min Entrée</span>
                             </div>
@@ -1036,7 +1036,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <DollarSign className="h-4 w-4 text-orange-600" />
                               <span className="font-medium text-orange-900">Min Sortie</span>
                             </div>
@@ -1045,7 +1045,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <CreditCard className="h-4 w-4 text-indigo-600" />
                               <span className="font-medium text-indigo-900">Max Entrée</span>
                             </div>
@@ -1054,7 +1054,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                             </span>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <CreditCard className="h-4 w-4 text-pink-600" />
                               <span className="font-medium text-pink-900">Max Sortie</span>
                             </div>
@@ -1070,7 +1070,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {displayFees.payin_fee !== null && (
                             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <TrendingUp className="h-4 w-4 text-blue-600" />
                                 <span className="font-medium text-blue-900">Frais d'Entrée</span>
                               </div>
@@ -1081,7 +1081,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payout_fee !== null && (
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <TrendingUp className="h-4 w-4 text-green-600" />
                                 <span className="font-medium text-green-900">Frais de Sortie</span>
                               </div>
@@ -1098,7 +1098,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {displayFees.payin_fee !== null && (
                             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <TrendingUp className="h-4 w-4 text-blue-600" />
                                 <span className="font-medium text-blue-900">Frais d'Entrée</span>
                               </div>
@@ -1109,7 +1109,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payout_fee !== null && (
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <TrendingUp className="h-4 w-4 text-green-600" />
                                 <span className="font-medium text-green-900">Frais de Sortie</span>
                               </div>
@@ -1120,7 +1120,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payin_fee_fixed !== null && (
                             <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <DollarSign className="h-4 w-4 text-purple-600" />
                                 <span className="font-medium text-purple-900">Frais Fixe Entrée</span>
                               </div>
@@ -1131,7 +1131,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payout_fee_fixed !== null && (
                             <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <DollarSign className="h-4 w-4 text-orange-600" />
                                 <span className="font-medium text-orange-900">Frais Fixe Sortie</span>
                               </div>
@@ -1142,7 +1142,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payin_fee_limite !== null && (
                             <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <CreditCard className="h-4 w-4 text-indigo-600" />
                                 <span className="font-medium text-indigo-900">Limite Frais Entrée</span>
                               </div>
@@ -1153,7 +1153,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
                           )}
                           {displayFees.payout_fee_limite !== null && (
                             <div className="flex items-center justify-between p-3 bg-pink-50 rounded-lg">
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center flex-wrap gap-2">
                                 <CreditCard className="h-4 w-4 text-pink-600" />
                                 <span className="font-medium text-pink-900">Limite Frais Sortie</span>
                               </div>
@@ -1448,7 +1448,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
            <CardContent>
              {transactionsLoading ? (
                <div className="flex items-center justify-center py-8">
-                 <div className="flex items-center space-x-2">
+                 <div className="flex items-center flex-wrap gap-2">
                    <Loader2 className="h-5 w-5 animate-spin" />
                    <span>Chargement des transactions...</span>
                  </div>
@@ -1516,7 +1516,7 @@ export default function UserDetail({ params }: { params: { id: string } }) {
          {/* Complete API Data Summary */}
          <Card>
            <CardHeader>
-             <CardTitle className="flex items-center space-x-2">
+             <CardTitle className="flex items-center flex-wrap gap-2">
                <FileText className="h-5 w-5" />
                <span>Résumé Complet des Données API</span>
              </CardTitle>

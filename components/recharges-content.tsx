@@ -268,7 +268,7 @@ export function RechargesContent() {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -431,7 +431,7 @@ export function RechargesContent() {
       )}
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Recharges</CardTitle>
@@ -484,13 +484,13 @@ export function RechargesContent() {
 
       {/* Filtres */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <Input
                 placeholder="Rechercher par référence ou montant..."
-                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -588,7 +588,7 @@ export function RechargesContent() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -660,7 +660,7 @@ export function RechargesContent() {
           {selectedRecharge && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Référence</p>
                     <p className="font-medium">{selectedRecharge.reference}</p>
@@ -751,7 +751,7 @@ export function RechargesContent() {
           {selectedRecharge && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Référence</p>
                     <p className="font-medium">{selectedRecharge.reference}</p>
@@ -830,7 +830,7 @@ export function RechargesContent() {
           
           {selectedRecharge && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">UID</label>
                   <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{selectedRecharge.uid}</p>
@@ -841,7 +841,7 @@ export function RechargesContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Montant</label>
                   <p className="text-lg font-semibold text-green-600">{selectedRecharge.amount.toLocaleString()} {selectedRecharge.currency_code || "XOF"}</p>
@@ -852,7 +852,7 @@ export function RechargesContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Statut</label>
                   <div className="mt-1">{getStatusBadge(selectedRecharge.status)}</div>
@@ -863,7 +863,7 @@ export function RechargesContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Référence Bancaire</label>
                   <p className="text-sm font-mono">{selectedRecharge.bank_reference || "N/A"}</p>
@@ -893,7 +893,7 @@ export function RechargesContent() {
 
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Informations Client</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Email</label>
                     <p className="text-sm">{selectedRecharge.user_info?.email || "N/A"}</p>
@@ -935,7 +935,7 @@ export function RechargesContent() {
 
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Dates</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                     <p className="text-sm">{new Date(selectedRecharge.created_at).toLocaleString()}</p>

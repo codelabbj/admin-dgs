@@ -431,8 +431,8 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
     <DashboardLayout>
       <div className="space-y-8">
         {/* En-tête */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button
               variant="ghost"
               onClick={() => router.back()}
@@ -442,7 +442,7 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
               Retour
             </Button>
             <div>
-              <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
+              <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">
                 {`${customer.grpc_info?.first_name || ""} ${customer.grpc_info?.last_name || ""}`.trim()
                   || customer.grpc_info?.entreprise_name
                   || customer.grpc_info?.email
@@ -456,7 +456,7 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button
               onClick={() => setIsEditModalOpen(true)}
               className="bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl"
@@ -471,14 +471,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Informations du client */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <User className="h-5 w-5 mr-2 text-crimson-600" />
                   Informations du Client
                 </CardTitle>
                </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Nom complet</label>
@@ -586,14 +586,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
 
             {/* Documents */}
             {(userData?.gerant_doc || userData?.trade_commerce) && (
-              <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+              <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
                 <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <FileText className="h-5 w-5 mr-2 text-crimson-600" />
                     Documents
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4">
                     {userData.gerant_doc && (
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
@@ -653,14 +653,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
             )}
 
             {/* Configuration des frais */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <DollarSign className="h-5 w-5 mr-2 text-crimson-600" />
                   Configuration des Frais
                 </CardTitle>
              </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {([
                     ["Collecte", customer.payin_fee_mode, customer.payin_fee_rate, customer.payin_fee_fixed, customer.payin_fee_base],
@@ -691,14 +691,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
             </Card>
 
             {/* Limites */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Shield className="h-5 w-5 mr-2 text-crimson-600" />
                   Limites
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Limite quotidienne Payin</label>
@@ -729,14 +729,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
            </Card>
 
             {/* IP Whitelist */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Shield className="h-5 w-5 mr-2 text-crimson-600" />
                   IP Whitelist
                 </CardTitle>
            </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   <div>
                     <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">IP Whitelist requise</label>
@@ -768,14 +768,14 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
           {/* Compte et statistiques */}
           <div className="space-y-6">
             {/* Informations du compte */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
                   Compte
              </CardTitle>
            </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                <div className="space-y-4">
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -889,13 +889,13 @@ export default function CustomerDetails({ params }: { params: { id: string } }) 
             </Card>
 
             {/* Actions rapides */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">
                   Actions Rapides
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-3">
+              <CardContent className="p-4 sm:p-6 space-y-3">
                 <Button 
                   variant="outline" 
                   className="w-full justify-start rounded-xl border-slate-200 dark:border-neutral-700"

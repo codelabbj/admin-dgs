@@ -246,10 +246,10 @@ export function AdminDashboardContent() {
 
         {/* System Status Cards */}
         {showSystemStats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                     <Cpu className="h-6 w-6 text-white" />
                   </div>
@@ -267,9 +267,9 @@ export function AdminDashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+            <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                     <HardDrive className="h-6 w-6 text-white" />
                   </div>
@@ -287,9 +287,9 @@ export function AdminDashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+            <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
                     <Wifi className="h-6 w-6 text-white" />
                   </div>
@@ -307,9 +307,9 @@ export function AdminDashboardContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden">
+            <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
               <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
                     <ShieldCheck className="h-6 w-6 text-white" />
                   </div>
@@ -332,10 +332,10 @@ export function AdminDashboardContent() {
         )}
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
                   <Users className="h-6 w-6 text-white" />
                 </div>
@@ -346,19 +346,19 @@ export function AdminDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 {systemMetrics.activeUsers.toLocaleString()}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 rounded-full">+12.5%</Badge>
                 <span className="text-sm text-slate-500 dark:text-slate-400">from last week</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                   <CreditCard className="h-6 w-6 text-white" />
                 </div>
@@ -369,19 +369,19 @@ export function AdminDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 {systemMetrics.totalTransactions.toLocaleString()}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 rounded-full">+8.2%</Badge>
                 <span className="text-sm text-slate-500 dark:text-slate-400">from last month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                   <DollarSign className="h-6 w-6 text-white" />
                 </div>
@@ -392,19 +392,19 @@ export function AdminDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 ${systemMetrics.revenue.toLocaleString()}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 rounded-full">+15.3%</Badge>
                 <span className="text-sm text-slate-500 dark:text-slate-400">from last month</span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden group">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm transition-all duration-300 rounded-xl overflow-hidden group">
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-orange-600 rounded-xl shadow-lg">
                   <AlertCircle className="h-6 w-6 text-white" />
                 </div>
@@ -415,10 +415,10 @@ export function AdminDashboardContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
+              <div className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
                 {systemMetrics.pendingApprovals}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center flex-wrap gap-2">
                 <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100 rounded-full">Requires attention</Badge>
               </div>
             </CardContent>
@@ -428,7 +428,7 @@ export function AdminDashboardContent() {
         {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* User Activity Chart */}
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">User Activity & Revenue</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -458,7 +458,7 @@ export function AdminDashboardContent() {
           </Card>
 
           {/* System Alerts */}
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">System Alerts</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -491,7 +491,7 @@ export function AdminDashboardContent() {
         {/* Recent Activity & Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Activity */}
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden lg:col-span-2">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden lg:col-span-2">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Recent Activity</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -535,7 +535,7 @@ export function AdminDashboardContent() {
           </Card>
 
           {/* Quick Actions */}
-          <Card className="bg-white/70 dark:bg-neutral-900/70 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl overflow-hidden">
+          <Card className="bg-white/70 dark:bg-neutral-900/70 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="text-lg font-bold text-slate-900 dark:text-white">Quick Actions</CardTitle>
               <CardDescription className="text-slate-600 dark:text-slate-400">
@@ -544,7 +544,7 @@ export function AdminDashboardContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white rounded-xl">
+                <Button className="w-full justify-start bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-xl">
                   <UserCheck className="h-4 w-4 mr-2" />
                   Manage Users
                 </Button>

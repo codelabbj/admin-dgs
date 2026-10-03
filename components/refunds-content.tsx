@@ -240,7 +240,7 @@ export function RefundsContent() {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -304,8 +304,8 @@ export function RefundsContent() {
   return (
     <div className="space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             onClick={() => router.back()}
@@ -315,11 +315,11 @@ export function RefundsContent() {
             Retour
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Gestion des Remboursements</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">Gestion des Remboursements</h1>
             <p className="text-muted-foreground">Gérez les demandes de remboursement des clients</p>
           </div>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => fetchRefunds(searchTerm, currentPage)}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
@@ -377,7 +377,7 @@ export function RefundsContent() {
       )}
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Demandes</CardTitle>
@@ -422,13 +422,13 @@ export function RefundsContent() {
 
       {/* Recherche */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <Input
                 placeholder="Rechercher par ID transaction ou client..."
-                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -508,7 +508,7 @@ export function RefundsContent() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -579,7 +579,7 @@ export function RefundsContent() {
           {selectedRefund && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Transaction ID</p>
                     <p className="font-medium">{selectedRefund.transaction_uid.slice(0, 8)}...</p>
@@ -645,7 +645,7 @@ export function RefundsContent() {
           {selectedRefund && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Transaction ID</p>
                     <p className="font-medium">{selectedRefund.transaction_uid.slice(0, 8)}...</p>
@@ -724,7 +724,7 @@ export function RefundsContent() {
           
           {selectedRefund && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">ID Transaction</label>
                   <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{selectedRefund.transaction_uid}</p>
@@ -735,7 +735,7 @@ export function RefundsContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Montant</label>
                   <p className="text-lg font-semibold text-green-600">{selectedRefund.amount.toLocaleString()} FCFA</p>
@@ -754,7 +754,7 @@ export function RefundsContent() {
               {selectedRefund.transaction_details && (
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-medium mb-3">Détails de la Transaction</h4>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">Référence</label>
                       <p className="text-sm font-mono">{selectedRefund.transaction_details.reference || "N/A"}</p>
@@ -769,7 +769,7 @@ export function RefundsContent() {
 
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Dates</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                     <p className="text-sm">{new Date(selectedRefund.created_at).toLocaleString()}</p>

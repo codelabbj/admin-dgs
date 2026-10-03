@@ -12,12 +12,12 @@ export default function Pay() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Payment Center</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Payment Center</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Send money, make payments, and manage transactions</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <BarChart3 className="h-4 w-4 mr-2" />
               View History
@@ -30,10 +30,10 @@ export default function Pay() {
         </div>
 
         {/* Payment Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-emerald-600 rounded-xl shadow-lg">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
@@ -48,9 +48,9 @@ export default function Pay() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-blue-600 rounded-xl shadow-lg">
                   <Users className="h-6 w-6 text-white" />
                 </div>
@@ -65,9 +65,9 @@ export default function Pay() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-purple-600 rounded-xl shadow-lg">
                   <CheckCircle className="h-6 w-6 text-white" />
                 </div>
@@ -82,9 +82,9 @@ export default function Pay() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
+          <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="p-3 bg-amber-600 rounded-xl shadow-lg">
                   <Clock className="h-6 w-6 text-white" />
                 </div>
@@ -103,7 +103,7 @@ export default function Pay() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Payment Form */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Zap className="h-5 w-5 mr-2 text-crimson-600" />
@@ -113,7 +113,7 @@ export default function Pay() {
                   Transfer money to any recipient quickly and securely
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Recipient Selection */}
                   <div className="space-y-2">
@@ -128,9 +128,9 @@ export default function Pay() {
                       <Input
                         id="recipient"
                         placeholder="Enter phone number, email, or select from contacts"
-                        className="rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                        className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                       />
-                      <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-4">
+                      <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-4">
                         <Users className="h-4 w-4 mr-2" />
                         Contacts
                       </Button>
@@ -189,7 +189,7 @@ export default function Pay() {
                   </div>
 
                   {/* Send Button */}
-                  <Button className="w-full bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl h-14 text-lg font-semibold">
+                  <Button className="w-full bg-crimson-600 hover:bg-crimson-700 text-white rounded-xl h-10 sm:h-11 text-lg font-semibold">
                     <Send className="h-5 w-5 mr-2" />
                     Send Payment
                   </Button>
@@ -201,7 +201,7 @@ export default function Pay() {
           {/* Payment Options & Quick Actions */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Quick Actions</CardTitle>
               </CardHeader>
@@ -222,7 +222,7 @@ export default function Pay() {
             </Card>
 
             {/* Recent Recipients */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Recent Recipients</CardTitle>
               </CardHeader>
@@ -278,20 +278,20 @@ export default function Pay() {
             </Card>
 
             {/* Payment Limits */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Payment Limits</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Daily Limit</span>
                   <span className="text-sm font-bold text-neutral-900 dark:text-white">500,000 FCFA</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Monthly Limit</span>
                   <span className="text-sm font-bold text-neutral-900 dark:text-white">5,000,000 FCFA</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Used Today</span>
                   <span className="text-sm font-bold text-neutral-900 dark:text-white">125,000 FCFA</span>
                 </div>

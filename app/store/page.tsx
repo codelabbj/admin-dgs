@@ -108,12 +108,12 @@ export default function Store() {
     <DashboardLayout>
       <div className="space-y-8">
         {/* Enhanced Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">Store Management</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">Store Management</h1>
             <p className="text-neutral-600 dark:text-neutral-400 text-lg">Manage your products, orders, and store analytics</p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700">
               <Filter className="h-4 w-4 mr-2" />
               Filters
@@ -126,11 +126,11 @@ export default function Store() {
         </div>
 
         {/* Store Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {storeStats.map((stat, index) => (
-            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
+            <Card key={index} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg hover:shadow-sm transition-all duration-300 rounded-xl overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}>
                     <stat.icon className="h-6 w-6 text-white" />
                   </div>
@@ -150,21 +150,21 @@ export default function Store() {
         </div>
 
         {/* Search and Filters */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
                 <Input
                   placeholder="Search products, categories, or customers..."
-                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                  className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 />
               </div>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6">
                 <Tag className="h-4 w-4 mr-2" />
                 Categories
               </Button>
-              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-12 px-6">
+              <Button variant="outline" className="rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11 px-6">
                 <Filter className="h-4 w-4 mr-2" />
                 Advanced Filters
               </Button>
@@ -175,7 +175,7 @@ export default function Store() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Featured Products */}
           <div className="lg:col-span-2">
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Star className="h-5 w-5 mr-2 text-crimson-600" />
@@ -185,7 +185,7 @@ export default function Store() {
                   Your best-selling and most popular products
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {featuredProducts.map((product) => (
                     <div key={product.id} className="group relative bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 overflow-hidden hover:shadow-lg transition-all duration-300">
@@ -194,7 +194,7 @@ export default function Store() {
                         <img
                           src={product.image}
                           alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="w-full h-full object-cover group- transition-transform duration-300"
                         />
                         {product.discount > 0 && (
                           <Badge className="absolute top-3 left-3 bg-red-600 text-white">
@@ -243,8 +243,8 @@ export default function Store() {
                           <span className="text-sm text-neutral-600 dark:text-neutral-400">({product.reviews})</span>
                         </div>
 
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center flex-wrap gap-2">
                             <span className="text-lg font-bold text-neutral-900 dark:text-white">{product.price}</span>
                             {product.originalPrice && (
                               <span className="text-sm text-neutral-500 dark:text-neutral-400 line-through">{product.originalPrice}</span>
@@ -266,7 +266,7 @@ export default function Store() {
           {/* Store Insights */}
           <div className="space-y-6">
             {/* Categories */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <Tag className="h-5 w-5 mr-2 text-crimson-600" />
@@ -276,7 +276,7 @@ export default function Store() {
                   Product distribution by category
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {categories.map((category, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg border border-slate-200 dark:border-neutral-600">
@@ -296,7 +296,7 @@ export default function Store() {
             </Card>
 
             {/* Recent Orders */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <ShoppingCart className="h-5 w-5 mr-2 text-crimson-600" />
@@ -306,7 +306,7 @@ export default function Store() {
                   Latest customer orders
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-4">
                   {recentOrders.map((order) => (
                     <div key={order.id} className="flex items-center space-x-3 p-3 bg-slate-50 dark:bg-neutral-800 rounded-lg border border-slate-200 dark:border-neutral-600">
@@ -343,7 +343,7 @@ export default function Store() {
             </Card>
 
             {/* Quick Actions */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Quick Actions</CardTitle>
               </CardHeader>

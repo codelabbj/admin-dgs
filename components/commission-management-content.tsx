@@ -514,7 +514,7 @@ export function CommissionManagementContent() {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -573,23 +573,23 @@ export function CommissionManagementContent() {
   return (
     <div className="space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => router.back()}
-            className="flex items-center space-x-2"
+            className="flex items-center flex-wrap gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Retour</span>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Gestion des Commissions</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">Gestion des Commissions</h1>
             <p className="text-muted-foreground">Gérez les commissions et les retraits</p>
           </div>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleExportCSV}>
             <Download className="h-4 w-4 mr-2" />
             Exporter CSV
@@ -660,7 +660,7 @@ export function CommissionManagementContent() {
             <p className="text-sm text-muted-foreground">Aucune commission disponible.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[480px] text-sm">
                 <thead>
                   <tr className="text-left text-muted-foreground border-b">
                     <th className="py-2 pr-4 font-medium">Devise</th>
@@ -782,7 +782,7 @@ export function CommissionManagementContent() {
                 </div>
                 <Button 
                   onClick={() => setRefreshKey(prev => prev + 1)} 
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground text-white"
                 >
                   🔄 Réessayer
                 </Button>
@@ -806,7 +806,7 @@ export function CommissionManagementContent() {
                   key={commission.uid || Math.random()} 
                   className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600 transition-all"
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                     <Checkbox
                       checked={isSelected}
                       disabled={!isConfirmed}
@@ -892,7 +892,7 @@ export function CommissionManagementContent() {
                             {batch.country_label || countryLabel(batch.country_code)}
                           </Badge>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4 mt-3">
                           <div>
                             <p className="text-xs text-neutral-600 dark:text-neutral-400">Nombre de commissions</p>
                             <p className="text-sm font-medium text-neutral-900 dark:text-white">{batch.commission_count}</p>
@@ -1037,7 +1037,7 @@ export function CommissionManagementContent() {
           
           <div className="space-y-4">
             <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-neutral-600 dark:text-neutral-400">Nombre de commissions</p>
                   <p className="font-medium text-neutral-900 dark:text-white text-lg">{unpaidSummary.count}</p>

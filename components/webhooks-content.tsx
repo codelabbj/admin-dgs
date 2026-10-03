@@ -262,7 +262,7 @@ export function WebhooksContent() {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -302,8 +302,8 @@ export function WebhooksContent() {
   return (
     <div className="space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             onClick={() => router.back()}
@@ -313,12 +313,12 @@ export function WebhooksContent() {
             Retour
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Gestion des Webhooks</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">Gestion des Webhooks</h1>
             <p className="text-muted-foreground">Consultez les logs des webhooks entrants et sortants</p>
           </div>
         </div>
-        <div className="flex space-x-2">
-          {/* <Button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-700 text-white">
+        <div className="flex flex-wrap gap-2">
+          {/* <Button onClick={openCreateModal} className="bg-primary hover:bg-primary/90 text-primary-foreground text-white">
             <Plus className="h-4 w-4 mr-2" />
             Créer un Webhook
           </Button> */}
@@ -345,7 +345,7 @@ export function WebhooksContent() {
       )}
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Webhooks</CardTitle>
@@ -388,13 +388,13 @@ export function WebhooksContent() {
 
       {/* Recherche */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center space-x-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <Input
                 placeholder="Rechercher par référence transaction, opérateur ou statut..."
-                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -574,7 +574,7 @@ export function WebhooksContent() {
             <Button
               onClick={createWaveWebhook}
               disabled={createLoading || !transactionId || !status || !amount || !phone}
-              className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-xl"
             >
               {createLoading ? (
                 <>

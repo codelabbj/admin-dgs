@@ -310,9 +310,9 @@ export default function Settings() {
           {/* Paramètres Principaux */}
           <div className="lg:col-span-2 space-y-4 lg:space-y-6">
             {/* Paramètres du Compte */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                       <User className="h-5 w-5 mr-2 text-crimson-600" />
@@ -322,7 +322,7 @@ export default function Settings() {
                       Gérez vos informations personnelles et préférences de compte
                     </CardDescription>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex flex-wrap gap-2">
                     {!isEditingAccount ? (
                       <Button
                         variant="outline"
@@ -334,7 +334,7 @@ export default function Settings() {
                         Modifier
                       </Button>
                     ) : (
-                      <div className="flex space-x-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -363,7 +363,7 @@ export default function Settings() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">Prénom</Label>
@@ -431,7 +431,7 @@ export default function Settings() {
             </Card>
 
             {/* Paramètres de Sécurité */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Shield className="h-5 w-5 mr-2 text-crimson-600" />
@@ -441,7 +441,7 @@ export default function Settings() {
                     Configurez les politiques de sécurité et méthodes d'authentification
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
@@ -479,7 +479,7 @@ export default function Settings() {
                   
                   {/* Change Password Section */}
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <h4 className="text-md font-semibold text-neutral-900 dark:text-white">Changer le Mot de Passe</h4>
                       <Button
                         variant="outline"
@@ -631,7 +631,7 @@ export default function Settings() {
             </Card>
 
             {/* Paramètres de Paiement */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                   <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
@@ -641,7 +641,7 @@ export default function Settings() {
                   Configurez les limites et frais de paiement
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   {/* Limites de Paiement */}
                   <div className="space-y-4">
@@ -758,7 +758,7 @@ export default function Settings() {
             </Card>
 
             {/* Paramètres de Notification */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
                                   <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
                     <Bell className="h-5 w-5 mr-2 text-crimson-600" />
@@ -768,7 +768,7 @@ export default function Settings() {
                     Configurez comment vous recevez les notifications et alertes
                   </CardDescription>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="space-y-6">
                   <div className="space-y-4">
                     <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
@@ -831,7 +831,7 @@ export default function Settings() {
           {/* Barre Latérale */}
           <div className="space-y-4 lg:space-y-6">
             {/* Actions Rapides */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Actions Rapides</CardTitle>
               </CardHeader>
@@ -852,24 +852,24 @@ export default function Settings() {
             </Card>
 
             {/* Statut du Compte */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Statut du Compte</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Type de Compte</span>
                   <Badge className="bg-emerald-100 text-emerald-800">Premium</Badge>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Statut</span>
                   <Badge className="bg-emerald-100 text-emerald-800">Actif</Badge>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Dernière Connexion</span>
                   <span className="text-sm text-neutral-900 dark:text-white">Il y a 2 heures</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Membre Depuis</span>
                   <span className="text-sm text-neutral-900 dark:text-white">Jan 2024</span>
                 </div>
@@ -877,20 +877,20 @@ export default function Settings() {
             </Card>
 
             {/* Informations Système */}
-            <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+            <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
               <CardHeader>
                 <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white">Informations Système</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Version</span>
                   <span className="text-sm text-neutral-900 dark:text-white">v2.1.0</span>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Environnement</span>
                   <Badge className="bg-blue-100 text-blue-800">Production</Badge>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="text-sm text-neutral-600 dark:text-neutral-400">Dernière Mise à Jour</span>
                   <span className="text-sm text-neutral-900 dark:text-white">Il y a 2 jours</span>
                 </div>

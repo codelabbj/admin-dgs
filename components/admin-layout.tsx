@@ -153,24 +153,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[85vw] bg-white dark:bg-neutral-900 border-r border-slate-200 dark:border-neutral-700 shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between h-24 px-8 border-b border-slate-200 dark:border-neutral-700 bg-gradient-to-r from-slate-800 to-slate-900 dark:from-neutral-800 dark:to-neutral-900 flex-shrink-0">
-          <div className="flex items-center space-x-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-700 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-blue-500/20">
+        <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200 dark:border-neutral-700 bg-gradient-to-r from-card to-card dark:from-neutral-800 dark:to-neutral-900 flex-shrink-0">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary/90 to-primary rounded-xl flex items-center justify-center shadow-lg border border-primary/20">
               <ShieldCheck className="w-8 h-8 text-white" />
             </div>
             <div>
-              <p className="text-xl font-bold text-white">{t("companyShortName") || "Admin"}</p>
-              <p className="text-sm text-blue-200 dark:text-blue-300 font-medium">Administration Panel</p>
+              <p className="text-xl font-bold text-foreground">{t("companyShortName") || "Admin"}</p>
+              <p className="text-sm text-muted-foreground font-medium">Administration Panel</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden text-white hover:bg-white/20"
+            className="lg:hidden hover:bg-accent"
             onClick={() => setSidebarOpen(false)}
           >
             <X className="h-6 w-6" />
@@ -179,22 +179,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Navigation - Scrollable */}
         <div className="flex-1 overflow-y-auto">
-          <nav className="px-6 py-8 space-y-2">
+          <nav className="px-3 py-4 space-y-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`group flex items-center justify-between px-6 py-4 mx-2 rounded-xl text-sm font-medium transition-all duration-300 ${isActive
-                    ? "bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg shadow-blue-600/25 scale-105"
-                    : "text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-neutral-800 hover:scale-105"
+                  className={`group flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${isActive
+                    ? "bg-gradient-to-r from-primary/90 to-primary text-white scale-105"
+                    : "text-slate-700 dark:text-slate-300 hover:text-primary hover:bg-slate-100 dark:hover:bg-neutral-800 hover:scale-105"
                     }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                     <item.icon
-                      className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-500 group-hover:text-blue-600"}`}
+                      className={`h-5 w-5 ${isActive ? "text-white" : "text-slate-500 group-hover:text-primary"}`}
                     />
                     <span className="font-semibold">{item.name}</span>
                   </div>
@@ -216,13 +216,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-6 border-t border-slate-200 dark:border-neutral-700 flex-shrink-0">
+        <div className="p-4 sm:p-6 border-t border-slate-200 dark:border-neutral-700 flex-shrink-0">
           <Link href="/admin/profile" className="block">
-            <div className="bg-slate-100 dark:bg-neutral-800 rounded-2xl p-4 mb-4 hover:bg-slate-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer border border-slate-200 dark:border-neutral-600">
+            <div className="bg-slate-100 dark:bg-neutral-800 rounded-xl p-4 mb-4 hover:bg-slate-200 dark:hover:bg-neutral-700 transition-colors cursor-pointer border border-slate-200 dark:border-neutral-600">
               <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12 ring-2 ring-blue-600 dark:ring-blue-400 text-white">
+                <Avatar className="h-12 w-12 ring-2 ring-primary text-white">
                   <AvatarImage src={userProfile?.logo || ""} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold">
+                  <AvatarFallback className="bg-gradient-to-br from-primary/90 to-primary text-white font-bold">
                     {getUserInitials()}
                   </AvatarFallback>
                 </Avatar>
@@ -252,7 +252,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0 h-full">
         {/* Top navbar - Fixed */}
-        <header className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-neutral-700 h-24 flex items-center justify-between px-4 md:px-8 shadow-sm flex-shrink-0 z-30">
+        <header className="bg-white/90 dark:bg-neutral-900/90 border-b border-slate-200 dark:border-neutral-700 h-16 flex items-center justify-between px-4 md:px-8 shadow-sm flex-shrink-0 z-30">
           <div className="flex items-center space-x-8">
             <Button
               variant="ghost"
@@ -269,16 +269,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
 
-          <div className="flex items-center space-x-4 md:space-x-8">
+          <div className="flex items-center gap-2 sm:gap-4">
             {/* System Status Toggle */}
-            <div className="flex items-center space-x-2 md:space-x-4 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-3 md:px-6 py-2 md:py-3 border border-slate-200 dark:border-neutral-600">
+            <div className="hidden md:flex items-center space-x-2 md:space-x-4 bg-slate-100 dark:bg-neutral-800 rounded-xl px-3 md:px-6 py-2 md:py-3 border border-slate-200 dark:border-neutral-600">
               <span className="text-sm font-medium text-slate-600 dark:text-slate-400 hidden sm:inline">
                 System Stats
               </span>
               <Switch
                 checked={showSystemStats}
                 onCheckedChange={setShowSystemStats}
-                className="data-[state=checked]:bg-blue-600"
+                className="data-[state=checked]:bg-primary"
               />
               <Button
                 variant="ghost"
@@ -291,14 +291,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             </div>
 
             {/* Live/Sandbox Toggle */}
-            <div className="flex items-center space-x-2 md:space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-2xl px-3 md:px-4 py-2 border border-slate-200 dark:border-neutral-600">
+            <div className="flex items-center space-x-2 md:space-x-3 bg-slate-100 dark:bg-neutral-800 rounded-xl px-3 md:px-4 py-2 border border-slate-200 dark:border-neutral-600">
               <span className={`text-sm font-medium hidden lg:inline ${!isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
                 Sandbox
               </span>
               <Switch
                 checked={isLiveMode}
                 onCheckedChange={setIsLiveMode}
-                className="data-[state=checked]:bg-blue-600"
+                className="data-[state=checked]:bg-primary"
               />
               <span className={`text-sm font-medium hidden lg:inline ${isLiveMode ? "text-slate-500" : "text-slate-700 dark:text-slate-300"}`}>
                 Live
@@ -341,9 +341,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   variant="ghost"
                   className="flex items-center space-x-3 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-xl px-4 py-2"
                 >
-                  <Avatar className="h-10 w-10 ring-2 ring-blue-600 text-white">
+                  <Avatar className="h-10 w-10 ring-2 ring-primary text-white">
                     <AvatarImage src={userProfile?.logo || ""} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-600 to-indigo-700 text-white font-bold">
+                    <AvatarFallback className="bg-gradient-to-br from-primary/90 to-primary text-white font-bold">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
@@ -358,7 +358,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   <ChevronDown className="h-4 w-4 text-slate-400" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-2xl border-slate-200 dark:border-neutral-700">
+              <DropdownMenuContent align="end" className="w-64 rounded-xl border-slate-200 dark:border-neutral-700">
                 <DropdownMenuLabel className="font-semibold">Administrator Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <Link href="/admin/profile">

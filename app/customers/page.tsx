@@ -362,8 +362,8 @@ export default function Customers() {
         {/* ── Stats ────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((stat, i) => (
-            <Card key={i} className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-lg rounded-2xl">
-              <CardContent className="p-6 flex items-center justify-between">
+            <Card key={i} className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-lg rounded-xl">
+              <CardContent className="p-4 sm:p-6 flex items-center justify-between">
                 <div className={`p-3 bg-${stat.color}-600 rounded-xl shadow-lg`}><stat.icon className="h-6 w-6 text-white" /></div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-neutral-900 dark:text-white">{stat.value}</p>
@@ -375,15 +375,15 @@ export default function Customers() {
         </div>
 
         {/* ── Search + Filter ───────────────────────────────────────── */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
           <CardContent className="p-4 sm:p-6 flex flex-wrap items-center gap-3 sm:gap-4">
             <div className="relative flex-1 min-w-0 w-full sm:min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <Input placeholder="Rechercher: entreprise, email, téléphone, ID..." className="pl-10 rounded-xl h-12 w-full" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
+              <Input placeholder="Rechercher: entreprise, email, téléphone, ID..." className="pl-10 rounded-xl h-10 sm:h-11 w-full" value={searchQuery} onChange={e => handleSearch(e.target.value)} />
             </div>
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
             {(["", "true", "false"] as const).map((f, i) => (
-              <Button key={i} variant={isActiveFilter === f ? "default" : "outline"} className="rounded-xl h-12 flex-1 sm:flex-none" onClick={() => handleActiveFilter(f)}>
+              <Button key={i} variant={isActiveFilter === f ? "default" : "outline"} className="rounded-xl h-10 sm:h-11 flex-1 sm:flex-none" onClick={() => handleActiveFilter(f)}>
                 {f === "" ? "Tous" : f === "true" ? "Actifs" : "Inactifs"}
               </Button>
             ))}
@@ -392,14 +392,14 @@ export default function Customers() {
         </Card>
 
         {/* ── Customer list ─────────────────────────────────────────── */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
           <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
             <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
               <Users className="h-5 w-5 mr-2 text-primary" />Tous les Clients
             </CardTitle>
             <CardDescription>{totalCustomers} client(s) au total</CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -461,7 +461,7 @@ export default function Customers() {
                         <Button size="sm" variant="outline" className="rounded-lg text-primary border-primary/30" onClick={() => router.push(`/customers/${customer.customer_id}`)}>
                           Voir détails
                         </Button>
-                        <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg" onClick={async () => { setSelectedCustomerForAction(customer); await fetchCustomerPermissions(customer.customer_id); await fetchOperators(); setIsPermissionsModalOpen(true) }}>
+                        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground text-white rounded-lg" onClick={async () => { setSelectedCustomerForAction(customer); await fetchCustomerPermissions(customer.customer_id); await fetchOperators(); setIsPermissionsModalOpen(true) }}>
                           <Shield className="h-3 w-3 mr-1" />Permissions
                         </Button>
                         {customer.is_active ? (
@@ -553,7 +553,7 @@ export default function Customers() {
                 <FeeFlowFields idPrefix="grant-bank" title="Virement" mode={feeForm.bank_transfer_fee_mode} rate={feeForm.bank_transfer_fee_rate} fixed={feeForm.bank_transfer_fee_fixed} base={feeForm.bank_transfer_fee_base} onMode={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_mode: v }))} onRate={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_rate: v }))} onFixed={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_fixed: v }))} onBase={(v) => setFeeForm(f => ({ ...f, bank_transfer_fee_base: v }))} />
               </div>
               <div className="flex justify-end">
-                <Button onClick={() => selectedOperator && grantPermission(selectedCustomerForAction!.customer_id, selectedOperator)} disabled={!selectedOperator || actionLoading} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button onClick={() => selectedOperator && grantPermission(selectedCustomerForAction!.customer_id, selectedOperator)} disabled={!selectedOperator || actionLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground text-white">
                   {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accorder"}
                 </Button>
               </div>

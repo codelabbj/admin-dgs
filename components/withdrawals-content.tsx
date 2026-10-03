@@ -250,7 +250,7 @@ export function WithdrawalsContent() {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -317,8 +317,8 @@ export function WithdrawalsContent() {
   return (
     <div className="space-y-6 min-w-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
             onClick={() => router.back()}
@@ -328,11 +328,11 @@ export function WithdrawalsContent() {
             Retour
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Gestion des Retraits</h1>
+            <h1 className="text-xl sm:text-3xl font-bold">Gestion des Retraits</h1>
             <p className="text-muted-foreground">Gérez les demandes de retrait des clients</p>
           </div>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setRefreshKey(prev => prev + 1)}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
@@ -390,7 +390,7 @@ export function WithdrawalsContent() {
       )}
 
       {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Retraits</CardTitle>
@@ -443,13 +443,13 @@ export function WithdrawalsContent() {
 
       {/* Filtres */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col md:flex-row gap-3 sm:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <Input
                 placeholder="Rechercher par référence, téléphone ou montant..."
-                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-12"
+                className="pl-10 rounded-xl border-slate-200 dark:border-neutral-700 h-10 sm:h-11"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />
@@ -541,7 +541,7 @@ export function WithdrawalsContent() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center flex-wrap gap-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -612,7 +612,7 @@ export function WithdrawalsContent() {
           {selectedWithdrawal && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Référence</p>
                     <p className="font-medium">{selectedWithdrawal.reference}</p>
@@ -698,7 +698,7 @@ export function WithdrawalsContent() {
           {selectedWithdrawal && (
             <div className="space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Référence</p>
                     <p className="font-medium">{selectedWithdrawal.reference}</p>
@@ -781,7 +781,7 @@ export function WithdrawalsContent() {
           
           {selectedWithdrawal && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">UID</label>
                   <p className="text-sm font-mono bg-slate-100 dark:bg-slate-800 p-2 rounded">{selectedWithdrawal.uid}</p>
@@ -792,7 +792,7 @@ export function WithdrawalsContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Montant</label>
                   <p className="text-lg font-semibold text-red-600">{selectedWithdrawal.amount.toLocaleString()} FCFA</p>
@@ -803,7 +803,7 @@ export function WithdrawalsContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground">Téléphone</label>
                   <p className="text-sm font-mono">{selectedWithdrawal.phone}</p>
@@ -837,7 +837,7 @@ export function WithdrawalsContent() {
 
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">Dates</h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">Date de Création</label>
                     <p className="text-sm">{new Date(selectedWithdrawal.created_at).toLocaleString()}</p>

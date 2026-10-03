@@ -360,7 +360,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
           </span>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -401,8 +401,8 @@ export default function Transactions({ params }: { params: { id: string } }) {
     <DashboardLayout>
       <div className="space-y-8">
         {/* En-tête */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Button
               variant="ghost"
               onClick={() => router.back()}
@@ -412,7 +412,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
               Retour
             </Button>
             <div>
-              <h1 className="text-4xl font-bold text-neutral-900 dark:text-white mb-2">
+              <h1 className="text-2xl sm:text-4xl font-bold text-neutral-900 dark:text-white mb-2">
                 Transactions
               </h1>
               <p className="text-neutral-600 dark:text-neutral-400 text-lg">
@@ -447,9 +447,9 @@ export default function Transactions({ params }: { params: { id: string } }) {
         )}
 
         {/* Filtres */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
+          <CardContent className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               <div>
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 block">
                   Recherche
@@ -540,7 +540,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
         </Card>
 
         {/* Liste des transactions */}
-        <Card className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-slate-200 dark:border-neutral-700 shadow-xl rounded-2xl">
+        <Card className="bg-white/80 dark:bg-neutral-900/80 border-slate-200 dark:border-neutral-700 shadow-sm rounded-xl">
           <CardHeader className="border-b border-slate-200 dark:border-neutral-700">
             <CardTitle className="text-lg font-bold text-neutral-900 dark:text-white flex items-center">
               <CreditCard className="h-5 w-5 mr-2 text-crimson-600" />
@@ -550,7 +550,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
               {totalTransactions} transaction(s) trouvée(s)
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-crimson-600" />
@@ -582,7 +582,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
               <div className="space-y-4">
                 {transactions.map((transaction) => (
                   <div key={transaction.uid} className="flex items-center justify-between p-4 bg-slate-50 dark:bg-neutral-800 rounded-xl border border-slate-200 dark:border-neutral-600">
-                    <div className="flex items-center space-x-4">
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                       <div className="p-3 bg-slate-200 dark:bg-neutral-700 rounded-xl">
                         <CreditCard className="h-6 w-6 text-crimson-600" />
                       </div>
@@ -618,7 +618,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center flex-wrap gap-2">
                       <div className="text-right mr-4">
                         <p className="text-lg font-bold text-neutral-900 dark:text-white">
                           {formatTxAmount(transaction.amount, txCurrency(transaction))}
@@ -969,7 +969,7 @@ export default function Transactions({ params }: { params: { id: string } }) {
                       {selectedTransaction.webhook_logs.map((log) => (
                         <div key={log.uid} className="p-4 bg-slate-50 dark:bg-neutral-800 rounded-lg border border-slate-200 dark:border-neutral-700">
                           <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-2">
+                            <div className="flex items-center flex-wrap gap-2">
                               <Badge className={
                                 log.processing_status === 'processed' ? 'bg-green-100 text-green-800' :
                                 log.processing_status === 'failed' ? 'bg-red-100 text-red-800' :

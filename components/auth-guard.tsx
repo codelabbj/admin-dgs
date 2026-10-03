@@ -112,7 +112,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   useEffect(() => {
     if (isLoading) return
 
-    const publicRoutes = ["/login", "/register", "/forgot-password"]
+    const publicRoutes = ["/login"]
     const isPublicRoute = publicRoutes.includes(pathname)
 
     console.log('AuthGuard redirect logic:', {
@@ -174,7 +174,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
           <span className="text-lg font-medium text-blue-600">{t("loading")}</span>
         </div>
@@ -183,7 +183,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
   }
 
   // Don't render anything while redirecting
-  const publicRoutes = ["/login", "/register", "/forgot-password"]
+  const publicRoutes = ["/login"]
   const isPublicRoute = publicRoutes.includes(pathname)
   
   if (!isPublicRoute && (!isAuthenticated || !isStaffUser)) {
@@ -195,7 +195,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     })
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
           <span className="text-lg font-medium text-blue-600">{t("loading")}</span>
         </div>
