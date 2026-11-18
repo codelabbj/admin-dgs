@@ -26,6 +26,12 @@ import {
   ArrowDownToLine,
   ArrowUpFromLine,
   Loader2,
+  LayoutGrid,
+  ListChecks,
+  Scale,
+  SlidersHorizontal,
+  WalletCards,
+  Landmark,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -107,6 +113,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { name: "Retraits", href: "/withdrawal", icon: ArrowUpFromLine },
         { name: "Remboursements", href: "/refunds", icon: AlertTriangle },
         { name: "Commissions", href: "/commission-management", icon: DollarSign },
+        { name: "Point de solde", href: "/treasury", icon: Landmark },
+      ],
+    },
+    {
+      label: "Cartes",
+      items: [
+        { name: "Vue d'ensemble", href: "/cards", icon: LayoutGrid },
+        { name: "Toutes les cartes", href: "/cards/list", icon: WalletCards },
+        { name: "Opérations", href: "/cards/operations", icon: ListChecks },
+        { name: "Programmes", href: "/cards/programs", icon: SlidersHorizontal },
+        { name: "Trésorerie", href: "/cards/treasury", icon: Scale },
       ],
     },
     {
@@ -122,8 +139,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     },
   ]
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname === href || pathname?.startsWith(href + "/")
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/"
+    if (href === "/cards") return pathname === "/cards"
+    // Fiche carte /cards/<uid> → « Toutes les cartes »
+    if (href === "/cards/list" && /^\/cards\/[0-9a-f-]{36}$/.test(pathname || "")) return true
+    return pathname === href || !!pathname?.startsWith(href + "/")
+  }
 
   const currentTitle =
     groups.flatMap((g) => g.items).find((i) => isActive(i.href))?.name ||
