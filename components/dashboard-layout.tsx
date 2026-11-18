@@ -32,6 +32,7 @@ import {
   SlidersHorizontal,
   WalletCards,
   Landmark,
+  ShieldCheck,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 
@@ -103,6 +104,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { name: t("dashboard"), href: "/", icon: Home },
         { name: t("users"), href: "/users", icon: Users },
         { name: "Clients (config)", href: "/customers", icon: Shield },
+        { name: "Journal de connexions", href: "/security", icon: ShieldCheck },
       ],
     },
     {
