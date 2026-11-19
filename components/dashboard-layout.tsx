@@ -124,6 +124,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         { name: "Vue d'ensemble", href: "/cards", icon: LayoutGrid },
         { name: "Toutes les cartes", href: "/cards/list", icon: WalletCards },
         { name: "Opérations", href: "/cards/operations", icon: ListChecks },
+        { name: "Contestations", href: "/cards/disputes", icon: ListChecks },
         { name: "Programmes", href: "/cards/programs", icon: SlidersHorizontal },
         { name: "Trésorerie", href: "/cards/treasury", icon: Scale },
       ],

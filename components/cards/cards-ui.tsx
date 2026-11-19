@@ -75,6 +75,7 @@ const TABS = [
   { href: "/cards/programs", label: "Programmes" },
   { href: "/cards/treasury", label: "Trésorerie" },
   { href: "/cards/events", label: "Événements" },
+  { href: "/cards/disputes", label: "Contestations" },
 ]
 
 export function CardsShell({

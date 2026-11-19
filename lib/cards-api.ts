@@ -121,6 +121,8 @@ export interface Program {
   enabled: boolean
   creation_fee: string
   creation_fee_mastercard: string | null
+  creation_prefund: string
+  contactless: boolean
   fund_fee_percent: string
   fund_fee_fixed: string
   withdraw_fee_percent: string

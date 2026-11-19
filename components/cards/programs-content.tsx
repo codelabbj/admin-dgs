@@ -9,10 +9,13 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { ApiError, cardsApi, dateTime, usd, type Program } from "@/lib/cards-api"
 import { CardsShell, ConfirmAction, EmptyState, ErrorBanner, Panel } from "./cards-ui"
+import { CardFxRatesPanel } from "./fx-rates-panel"
 
 const DEFAULTS: Partial<Program> = {
   enabled: false,
   creation_fee: "0",
+  creation_prefund: "2.00",
+  contactless: false,
   fund_fee_percent: "0",
   fund_fee_fixed: "0",
   withdraw_fee_percent: "0",
@@ -31,6 +34,7 @@ const DEFAULTS: Partial<Program> = {
 const FEE_FIELDS: [keyof Program, string, string][] = [
   ["creation_fee", "Prix création — VISA", "USD"],
   ["creation_fee_mastercard", "Prix création — Mastercard (vide = VISA)", "USD"],
+  ["creation_prefund", "Solde chargé à la création (min. 0,01)", "USD"],
   ["fund_fee_percent", "Recharge — %", "%"],
   ["fund_fee_fixed", "Recharge — fixe", "USD"],
   ["withdraw_fee_percent", "Retrait — %", "%"],
@@ -107,6 +111,8 @@ export function CardProgramsContent() {
                   <dl className="space-y-1.5 text-sm">
                     <Row k="Création VISA" v={usd(p.creation_fee)} />
                     <Row k="Création Mastercard" v={usd(p.creation_fee_mastercard ?? p.creation_fee)} />
+                    <Row k="Préfinancement carte" v={usd(p.creation_prefund)} />
+                    <Row k="Sans contact" v={p.contactless ? "Oui (Apple/Google Pay)" : "Non"} />
                     <Row k="Recharge" v={`${Number(p.fund_fee_percent)} % + ${usd(p.fund_fee_fixed)}`} />
                     <Row k="Retrait" v={`${Number(p.withdraw_fee_percent)} % + ${usd(p.withdraw_fee_fixed)}`} />
                     <Row k="Mensuel" v={usd(p.monthly_fee)} />
@@ -153,6 +159,8 @@ export function CardProgramsContent() {
           }}
         />
       )}
+
+      <CardFxRatesPanel />
 
       <ConfirmAction
         open={!!rotating}
@@ -240,6 +248,7 @@ function ProgramDialog({
     body.creation_fee_mastercard = form.creation_fee_mastercard === "" || form.creation_fee_mastercard == null ? null : form.creation_fee_mastercard
     body.enabled = form.enabled
     body.pass_through_provider_charges = form.pass_through_provider_charges
+    body.contactless = !!form.contactless
     try {
       if (isNew) {
         await cardsApi("programs/", { method: "POST", body: { ...body, customer_id: form.customer_id }, totp })
@@ -300,6 +309,13 @@ function ProgramDialog({
               </div>
               <Switch checked={!!form.pass_through_provider_charges} onCheckedChange={(v) => set("pass_through_provider_charges", v)} />
             </div>
+          </div>
+          <div className="flex items-center justify-between rounded-lg border p-3">
+            <div>
+              <p className="text-sm font-medium">Cartes sans contact (Apple Pay / Google Pay)</p>
+              <p className="text-xs text-muted-foreground">Le code d’activation est transmis au partenaire par événement signé.</p>
+            </div>
+            <Switch checked={!!form.contactless} onCheckedChange={(v) => set("contactless", v)} />
           </div>
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Limites anti-perte</p>
